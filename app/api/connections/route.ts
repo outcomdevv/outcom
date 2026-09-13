@@ -1,0 +1,1 @@
+import {NextResponse} from "next/server";import {getWorkspaceStore} from "@/lib/db";export async function GET(){try{const store=await getWorkspaceStore();return NextResponse.json({connections:await store.connections.list()})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Unauthorized"},{status:401})}}

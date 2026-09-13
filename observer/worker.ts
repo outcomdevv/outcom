@@ -1,0 +1,1 @@
+export default {async scheduled(_controller:unknown,env:{OUTCOM_APP_URL:string;OUTCOM_CRON_SECRET:string}){await fetch(`${env.OUTCOM_APP_URL.replace(/\/$/,"")}/api/cron/observe`,{method:"POST",headers:{Authorization:`Bearer ${env.OUTCOM_CRON_SECRET}`}})}};

@@ -1,0 +1,32 @@
+{
+  "name": "outcom",
+  "version": "0.2.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/public-check.mjs"
+  },
+  "dependencies": {
+    "next": "16.3.4",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "4.3.6",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
+    "@vitest/coverage-v8": "4.0.16",
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.3.4",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vitest": "4.0.16"
+  }
+}

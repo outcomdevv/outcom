@@ -1,0 +1,3 @@
+import { NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+export async function POST(request:Request){const form=await request.formData();const email=String(form.get("email")||"");const password=String(form.get("password")||"");const supabase=await createSupabaseServerClient();const {data,error}=await supabase.auth.signUp({email,password});if(error)return NextResponse.redirect(new URL(`/auth/signup?error=${encodeURIComponent(error.message)}`,request.url),303);if(data.session)return NextResponse.redirect(new URL("/",request.url),303);return NextResponse.redirect(new URL("/auth/login?notice=Check%20your%20email%20to%20confirm%20your%20account",request.url),303)}

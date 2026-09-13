@@ -1,0 +1,1 @@
+import {NextResponse} from "next/server";import {getWorkspaceStore} from "@/lib/db";export async function GET(){const s=await getWorkspaceStore();return NextResponse.json({incidents:await s.incidents.list()})}

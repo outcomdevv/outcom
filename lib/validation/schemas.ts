@@ -1,0 +1,4 @@
+import { z } from "zod";
+export const eventSchema=z.object({workflow_id:z.string().min(1),execution_id:z.string().min(1),timestamp:z.string().datetime(),platform:z.string().min(1),status:z.enum(["success","failed"]),data:z.record(z.string(),z.unknown()).default({}),metadata:z.record(z.string(),z.unknown()).default({})});
+export const workflowSchema=z.object({id:z.string().min(1).optional(),name:z.string().min(1),platform:z.string().min(1).default("n8n"),description:z.string().default("")});
+export const contractSchema=z.object({id:z.string().min(1).optional(),workflowId:z.string().min(1),name:z.string().min(1),type:z.enum(["record_exists","state_invariant","output_count"]),system:z.string().default("mock_crm"),entity:z.string().default("contact"),configuration:z.record(z.string(),z.unknown()),severity:z.enum(["low","medium","high"]).default("high"),enabled:z.boolean().default(true)});

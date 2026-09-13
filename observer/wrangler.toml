@@ -1,0 +1,10 @@
+name = "outcom-observer"
+main = "worker.ts"
+compatibility_date = "2026-09-12"
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[vars]
+OUTCOM_APP_URL = "https://YOUR-OUTCOM-DOMAIN.vercel.app"
+# Set OUTCOM_CRON_SECRET with `wrangler secret put OUTCOM_CRON_SECRET`
