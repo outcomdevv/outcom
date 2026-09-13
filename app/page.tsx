@@ -45,7 +45,17 @@ function Landing(){return <div className="landing-page">
       </div>
     </section>
 
-    <section className="landing-marquee" id="stack"><div><span>OBSERVE</span><b>n8n</b><b>Make</b><b>Zapier</b><b>HighLevel</b><span>VERIFY</span><b>Execution</b><b>Entity</b><b>State</b><b>Evidence</b><span>PROVE</span></div></section>
+    <section className="landing-marquee" id="stack" aria-label="Outcom platform coverage">
+      <div className="marquee-track">
+        {[0,1].map(copy => <div className="marquee-set" key={copy} aria-hidden={copy === 1}>
+          <span className="marquee-label">OBSERVE</span>
+          {(["n8n","make","zapier","ghl"] as const).map(name => <div className="marquee-platform" key={name}><IntegrationLogo name={name} size={25}/><b>{name === "ghl" ? "HighLevel" : name === "n8n" ? "n8n" : name[0].toUpperCase()+name.slice(1)}</b></div>)}
+          <span className="marquee-label">VERIFY</span>
+          {(["Execution","Entity","State","Evidence"] as const).map(item => <div className="marquee-tab" key={item}>{item}</div>)}
+          <span className="marquee-label">PROVE</span>
+        </div>)}
+      </div>
+    </section>
 
     <section className="landing-section" id="why">
       <div className="landing-section-intro"><div><span className="section-number">01</span><span className="section-kicker">THE GAP</span></div><h2>Execution logs answer<br/><em>the wrong question.</em></h2><p>Automation platforms tell you whether a workflow ran. Agencies need to know whether the client got the result they were promised.</p></div>
@@ -69,10 +79,12 @@ function Landing(){return <div className="landing-page">
 
     <section className="landing-section stack-section">
       <div className="landing-section-intro compact"><div><span className="section-number">04</span><span className="section-kicker">BUILT AROUND YOUR STACK</span></div><h2>One assurance layer.<br/><em>Your existing tools.</em></h2></div>
-      <div className="stack-grid"><div><IntegrationLogo name="n8n" size={28}/><strong>n8n</strong><span>Native workflow observation</span></div><div><IntegrationLogo name="make" size={28}/><strong>Make</strong><span>Scenario fleet coverage</span></div><div><IntegrationLogo name="zapier" size={28}/><strong>Zapier</strong><span>Zap discovery & assurance</span></div><div><IntegrationLogo name="ghl" size={28}/><strong>HighLevel</strong><span>Downstream business state</span></div></div>
+      <div className="stack-carousel"><div className="stack-carousel-track">
+        {(["n8n","make","zapier","ghl","n8n","make","zapier","ghl"] as const).map((name, i) => <div className="stack-card glass-card" key={`${name}-${i}`}><div className="stack-card-logo"><IntegrationLogo name={name} size={42}/></div><strong>{name === "ghl" ? "HighLevel" : name === "n8n" ? "n8n" : name[0].toUpperCase()+name.slice(1)}</strong><span>{name === "ghl" ? "Downstream business state" : name === "n8n" ? "Native workflow observation" : name === "make" ? "Scenario fleet coverage" : "Zap discovery & assurance"}</span></div>)}
+      </div></div>
     </section>
 
     <section className="landing-final"><div><span className="section-kicker">FOR AGENCIES THAT OWN THE OUTCOME</span><h2>Stop proving that<br/><em>the workflow ran.</em></h2><p>Start proving that the client got what they expected.</p></div><Link className="final-cta" href="/auth/signup">Build Outcom <span>↗</span></Link></section>
   </main>
-  <footer className="landing-footer"><div><img src="/outcom-logo.png" alt="Outcom"/><p>Business outcome assurance for automation agencies.</p></div><div><span>PRODUCT</span><a href="#why">Why Outcom</a><a href="#how">How it works</a><a href="#stack">Stack</a></div><div><span>ACCESS</span><Link href="/auth/login">Sign in</Link><Link href="/auth/signup">Request access</Link></div><small>© 2026 Outcom. Built for agencies that own the outcome.</small></footer>
+  <footer className="landing-footer"><div><img src="/outcom-logo.png" alt="Outcom"/><p>Business outcome assurance for automation agencies.</p><a className="footer-email" href="mailto:outcom.devv@gmail.com">outcom.devv@gmail.com</a></div><div><span>PRODUCT</span><a href="#why">Why Outcom</a><a href="#how">How it works</a><a href="#stack">Stack</a></div><div><span>ACCESS</span><Link href="/auth/login">Sign in</Link><Link href="/auth/signup">Request access</Link></div><small>© 2026 Outcom. Built for agencies that own the outcome.</small></footer>
 </div>}

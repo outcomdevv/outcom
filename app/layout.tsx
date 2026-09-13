@@ -7,7 +7,7 @@ import "./globals.css";
 import "./final.css";
 import OperatorAssistant from "@/app/assistant";
 
-export const metadata = { title: "Outcom — Business Outcome Assurance", description: "Verify what your automation actually accomplished." };
+export const metadata = { title: "Outcom — Business Outcome Assurance", description: "Verify what your automation actually accomplished.", icons: { icon: "/outcom-mark.png", apple: "/outcom-mark.png" } };
 const nav = [
   { href: "/", label: "Command Center", icon: "⌂" },
   { href: "/workflows", label: "Protected Workflows", icon: "◇" },

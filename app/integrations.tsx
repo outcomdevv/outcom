@@ -1,9 +1,9 @@
 export type IntegrationName = "n8n" | "zapier" | "make" | "ghl";
 
 const logoUrl = (name: IntegrationName) => ({
-  n8n: "https://api.iconify.design/simple-icons:n8n.svg",
-  zapier: "https://api.iconify.design/simple-icons:zapier.svg",
-  make: "https://api.iconify.design/simple-icons:make.svg",
+  n8n: "https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/n8n.svg",
+  zapier: "https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/zapier.svg",
+  make: "https://cdn.jsdelivr.net/npm/simple-icons@v16/icons/make.svg",
   // Official HighLevel brand asset from HighLevel's 2026 brand kit.
   ghl: "https://assets.cdn.filesafe.space/zELBHkVp0JPbbLvKIlF5/media/690a5f4a57ea175183408da2.png",
 }[name]);
