@@ -24,19 +24,20 @@ function Landing(){return <div className="landing-page">
     <section className="landing-hero-v2">
       <div className="landing-hero-copy">
         <div className="landing-kicker"><i/> BUSINESS OUTCOME ASSURANCE FOR AUTOMATION AGENCIES</div>
-        <h1>Green execution.<br/><em>Wrong outcome.</em></h1>
+        <h1><span className="hero-word hero-green">Green</span> execution.<br/><span className="hero-word hero-wrong">Wrong</span> <span className="hero-word hero-outcome">outcome.</span></h1>
         <p className="landing-lede">Your automation can finish successfully while the customer record, CRM state, or downstream business result is wrong. Outcom sits outside the workflow and proves what actually happened.</p>
         <div className="landing-actions"><Link className="primary-cta" href="/auth/signup">Build a protected workspace <span>↗</span></Link><a className="secondary-cta" href="#proof">See the proof chain ↓</a></div>
         <div className="landing-trustline"><span>READ-ONLY BY DESIGN</span><i/> <span>NO WORKFLOW INSTRUMENTATION</span><i/> <span>BUILT FOR CLIENT FLEETS</span></div>
       </div>
       <div className="landing-hero-visual" aria-label="Outcom outcome assurance example">
+        <div className="mascot-orb mascot-hero" aria-hidden="true"><img src="/outcom-mascot.png" alt=""/></div>
         <div className="visual-window-bar"><span><i/><i/><i/></span><b>OUTCOM / LIVE ASSURANCE</b><small>READ-ONLY</small></div>
         <div className="visual-window-body">
           <div className="visual-summary"><div><span>WORKFLOW</span><strong>Lead → CRM</strong></div><div><span>VERDICT</span><strong className="green-text">MISMATCH</strong></div><div><span>LATENCY</span><strong>42 sec</strong></div></div>
           <div className="visual-chain">
             <div className="chain-node"><small>01 · EXECUTION</small><div><IntegrationLogo name="n8n" size={22}/><strong>Successful run</strong></div><em className="ok-pill">SUCCESS ✓</em></div>
             <div className="chain-arrow">→</div>
-            <div className="chain-node"><small>02 · ENTITY</small><div><IntegrationLogo name="ghl" size={22}/><strong>Contact #4821</strong></div><em>IDENTIFIED</em></div>
+            <div className="chain-node"><small>02 · ENTITY</small><div><IntegrationLogo name="ghl" size={22}/><strong>Contact&nbsp;#4821</strong></div><em>IDENTIFIED</em></div>
             <div className="chain-arrow">→</div>
             <div className="chain-node alert"><small>03 · BUSINESS STATE</small><div><span className="state-dot"/><strong>Expected tag missing</strong></div><em className="bad-pill">MISMATCH ✕</em></div>
           </div>
@@ -46,6 +47,7 @@ function Landing(){return <div className="landing-page">
     </section>
 
     <section className="landing-marquee" id="stack" aria-label="Outcom platform coverage">
+      <div className="marquee-swipe-hint" aria-hidden="true">SWIPE TO EXPLORE <span>→</span></div>
       <div className="marquee-track">
         {[0,1].map(copy => <div className="marquee-set" key={copy} aria-hidden={copy === 1}>
           <span className="marquee-label">OBSERVE</span>
@@ -57,7 +59,8 @@ function Landing(){return <div className="landing-page">
       </div>
     </section>
 
-    <section className="landing-section" id="why">
+    <section className="landing-section landing-section-why" id="why">
+      <div className="mascot-orb mascot-why" aria-hidden="true"><img src="/outcom-mascot.png" alt=""/></div>
       <div className="landing-section-intro"><div><span className="section-number">01</span><span className="section-kicker">THE GAP</span></div><h2>Execution logs answer<br/><em>the wrong question.</em></h2><p>Automation platforms tell you whether a workflow ran. Agencies need to know whether the client got the result they were promised.</p></div>
       <div className="landing-feature-grid">
         <article className="landing-feature dark"><span>01 / OBSERVE FROM OUTSIDE</span><h3>No HTTP node.<br/>No instrumentation.</h3><p>Outcom reads native workflow definitions and execution history instead of asking builders to modify every client automation.</p><div className="feature-tag">READ-ONLY OBSERVER</div></article>
@@ -68,23 +71,27 @@ function Landing(){return <div className="landing-page">
     </section>
 
     <section className="landing-section process-section" id="how">
+      <div className="mascot-orb mascot-process" aria-hidden="true"><img src="/outcom-mascot.png" alt=""/></div>
       <div className="landing-section-intro compact"><div><span className="section-number">02</span><span className="section-kicker">HOW IT WORKS</span></div><h2>From workflow to<br/><em>proof in three moves.</em></h2></div>
       <div className="process-grid"><article><b>01</b><span>CONNECT</span><h3>Connect the stack you already run.</h3><p>Bring in n8n, Make, Zapier and HighLevel. Keep the automation itself untouched.</p></article><article><b>02</b><span>INFER & VERIFY</span><h3>Outcom reconstructs the outcome.</h3><p>We read topology, observe runs, correlate entities and inspect downstream business state.</p></article><article><b>03</b><span>PROVE & REMEMBER</span><h3>Turn silent failure into evidence.</h3><p>Get a verdict, causal evidence and historical context your agency can act on and explain.</p></article></div>
     </section>
 
     <section className="landing-proof-v2" id="proof">
+      <div className="mascot-orb mascot-proof" aria-hidden="true"><img src="/outcom-mascot.png" alt=""/></div>
       <div className="proof-v2-copy"><span className="section-kicker">03 / THE OUTCOM STANDARD</span><h2>When green isn't<br/><em>good enough.</em></h2><p>A successful API response is not proof that a lead was routed, a tag survived, or a customer reached the right state.</p><Link className="primary-cta" href="/auth/signup">Protect your first workflow ↗</Link></div>
-      <div className="proof-v2-card"><div className="proof-v2-head"><span>OUTCOME ASSURANCE</span><b><i/> LIVE OBSERVER</b></div><div className="proof-v2-row"><span>Automation</span><strong>n8n · Lead qualification</strong><em className="ok-pill">SUCCESS</em></div><div className="proof-v2-row"><span>Entity</span><strong>HighLevel · Contact #4821</strong><em>FOUND</em></div><div className="proof-v2-row critical"><span>Business state</span><strong>Expected tag: <b>paid-customer</b></strong><em className="bad-pill">MISSING</em></div><div className="proof-v2-verdict"><span>VERDICT</span><strong>Workflow succeeded.<br/>Outcome did not.</strong><small>3 signals · 1 mismatch · 42 sec detection</small></div></div>
+      <div className="proof-v2-card"><div className="proof-v2-head"><span>OUTCOME ASSURANCE</span><b><i/> LIVE OBSERVER</b></div><div className="proof-v2-row"><span>Automation</span><strong>n8n · Lead qualification</strong><em className="ok-pill">SUCCESS</em></div><div className="proof-v2-row"><span>Entity</span><strong>HighLevel · Contact&nbsp;#4821</strong><em>FOUND</em></div><div className="proof-v2-row critical"><span>Business state</span><strong>Expected tag: <b>paid-customer</b></strong><em className="bad-pill">MISSING</em></div><div className="proof-v2-verdict"><span>VERDICT</span><strong>Workflow succeeded.<br/>Outcome did not.</strong><small>3 signals · 1 mismatch · 42 sec detection</small></div></div>
     </section>
 
     <section className="landing-section stack-section">
+      <div className="mascot-orb mascot-stack" aria-hidden="true"><img src="/outcom-mascot.png" alt=""/></div>
       <div className="landing-section-intro compact"><div><span className="section-number">04</span><span className="section-kicker">BUILT AROUND YOUR STACK</span></div><h2>One assurance layer.<br/><em>Your existing tools.</em></h2></div>
       <div className="stack-carousel"><div className="stack-carousel-track">
         {(["n8n","make","zapier","ghl","n8n","make","zapier","ghl"] as const).map((name, i) => <div className="stack-card glass-card" key={`${name}-${i}`}><div className="stack-card-logo"><IntegrationLogo name={name} size={42}/></div><strong>{name === "ghl" ? "HighLevel" : name === "n8n" ? "n8n" : name[0].toUpperCase()+name.slice(1)}</strong><span>{name === "ghl" ? "Downstream business state" : name === "n8n" ? "Native workflow observation" : name === "make" ? "Scenario fleet coverage" : "Zap discovery & assurance"}</span></div>)}
       </div></div>
     </section>
 
-    <section className="landing-final"><div><span className="section-kicker">FOR AGENCIES THAT OWN THE OUTCOME</span><h2>Stop proving that<br/><em>the workflow ran.</em></h2><p>Start proving that the client got what they expected.</p></div><Link className="final-cta" href="/auth/signup">Build Outcom <span>↗</span></Link></section>
+    <section className="landing-final">
+      <div className="mascot-orb mascot-final" aria-hidden="true"><img src="/outcom-mascot.png" alt=""/></div><div><span className="section-kicker">FOR AGENCIES THAT OWN THE OUTCOME</span><h2>Stop proving that<br/><em>the workflow ran.</em></h2><p>Start proving that the client got what they expected.</p></div><Link className="final-cta" href="/auth/signup">Build Outcom <span>↗</span></Link></section>
   </main>
   <footer className="landing-footer"><div><img src="/outcom-logo.png" alt="Outcom"/><p>Business outcome assurance for automation agencies.</p><a className="footer-email" href="mailto:outcom.devv@gmail.com">outcom.devv@gmail.com</a></div><div><span>PRODUCT</span><a href="#why">Why Outcom</a><a href="#how">How it works</a><a href="#stack">Stack</a></div><div><span>ACCESS</span><Link href="/auth/login">Sign in</Link><Link href="/auth/signup">Request access</Link></div><small>© 2026 Outcom. Built for agencies that own the outcome.</small></footer>
 </div>}

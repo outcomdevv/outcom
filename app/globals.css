@@ -57,3 +57,147 @@
 .landing-final{background:rgba(224,226,229,.58);backdrop-filter:blur(25px);box-shadow:inset 0 1px rgba(255,255,255,.9)}.landing-final h2{font-size:clamp(54px,6vw,88px)}.landing-final p{font-size:14px}.landing-footer{position:relative}.landing-footer p,.landing-footer a{font-size:12px}.footer-email{display:inline-block!important;margin-top:8px;color:#55585e!important;text-decoration:underline;text-underline-offset:3px}.landing-footer>small{font-size:10px}
 @media(max-width:950px){.landing-nav-center{display:none}.landing-hero-v2{grid-template-columns:1fr;gap:24px}.landing-hero-visual{transform:none}.landing-hero-copy h1{font-size:clamp(62px,12vw,95px)}.marquee-platform,.marquee-tab{height:40px}.landing-feature h3{font-size:29px}.stack-card{width:220px}}
 @media(max-width:650px){.landing-nav{height:72px}.landing-logo{width:140px}.landing-nav-cta{font-size:11px;padding:11px 13px}.landing-hero-v2{padding-top:38px}.landing-hero-copy h1{font-size:54px}.landing-lede{font-size:15px}.landing-trustline{font-size:8px;line-height:1.8}.visual-summary{grid-template-columns:1fr}.visual-chain{grid-template-columns:1fr}.chain-arrow{transform:rotate(90deg)}.marquee-set{gap:8px}.marquee-label{font-size:10px}.marquee-platform,.marquee-tab{height:38px;padding:0 11px}.landing-section-intro h2{font-size:42px}.landing-feature h3{font-size:27px}.stack-card{width:205px;min-height:175px}}
+
+/* V29 — world-class landing refinement */
+:root{--hero-green:#20a86b;--hero-orange:#f06a45;--hero-purple:#7358e8;--glass-white:rgba(255,255,255,.58)}
+.landing-page{background:radial-gradient(circle at 82% 18%,rgba(115,88,232,.09),transparent 26%),radial-gradient(circle at 12% 28%,rgba(32,168,107,.08),transparent 23%),#f2f3f5}
+.landing-nav{height:84px;padding:0 clamp(24px,5.4vw,82px);background:rgba(247,248,249,.72);border-bottom:1px solid rgba(17,18,20,.09);box-shadow:0 10px 35px rgba(20,20,20,.025)}
+.landing-logo{width:154px}
+.landing-nav-center{gap:31px;margin-right:30px}.landing-nav-center a{font-size:12px;font-weight:720;color:#5f6268}.landing-nav-actions{gap:17px}.landing-nav-link{font-size:12px}.landing-nav-cta{font-size:12px;padding:12px 17px;border-radius:12px}
+.landing-hero-v2{padding-top:38px;padding-bottom:48px;grid-template-columns:minmax(0,1fr) minmax(430px,.86fr);gap:48px;align-items:start}
+.landing-hero-copy{padding-top:3px}.landing-kicker{font-size:9px}.landing-hero-copy h1{font-size:clamp(68px,7.5vw,116px);line-height:.82;margin:12px 0 19px;max-width:760px}
+.hero-word{display:inline-block}.hero-green{color:var(--hero-green);text-shadow:0 8px 30px rgba(32,168,107,.14)}.hero-wrong{color:var(--hero-orange);text-shadow:0 8px 30px rgba(240,106,69,.13)}.hero-outcome{color:var(--hero-purple);text-shadow:0 8px 30px rgba(115,88,232,.13)}
+.landing-lede{font-size:16px;line-height:1.55;max-width:620px}.landing-actions{margin-top:22px}.landing-trustline{font-size:9px;margin-top:23px}
+.landing-hero-visual{transform:none;border-radius:24px;box-shadow:0 26px 80px rgba(17,18,20,.16);margin-top:0}
+.visual-window-bar{height:47px;padding:0 17px}.visual-window-bar b{font-size:8px}.visual-window-bar small{font-size:7px}.visual-window-body{padding:14px;background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.06))}
+.visual-summary{gap:6px}.visual-summary>div{padding:8px;border-radius:9px}.visual-summary span,.visual-proof span,.chain-node small{font-size:6.5px}.visual-summary strong{font-size:9px;margin-top:4px}
+.visual-chain{grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr) 18px minmax(0,1fr);gap:3px;margin-top:8px}.chain-node{min-height:98px;padding:9px;border-radius:11px}.chain-node>div{margin-top:8px;gap:6px}.chain-node strong{font-size:9px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.chain-node em{font-size:5.5px}.chain-node .integration-logo-image{flex:none}.chain-node:nth-of-type(3) strong{white-space:normal}.chain-arrow{font-size:12px}.visual-proof{padding:9px;margin-top:8px;border-radius:10px}.visual-proof strong{font-size:9px}.proof-mini b{font-size:7px}
+/* Prevent the marquee's old direct-child flex-wrap rule from creating a second row. */
+.landing-marquee>div.marquee-track{max-width:none;min-height:0;margin:0;padding:0;justify-content:flex-start;flex-wrap:nowrap;display:flex;width:max-content}
+.marquee-track{animation:outcom-marquee 34s linear infinite}.marquee-set{flex:none;gap:10px;padding:13px 14px}.marquee-label{font-size:10px}.marquee-platform,.marquee-tab{height:42px;padding:0 13px;border-radius:13px}.marquee-platform b,.marquee-tab{font-size:12px}.marquee-platform{min-width:122px;justify-content:flex-start}.marquee-platform img{width:24px;height:24px;flex:none}.marquee-platform .integration-logo-ghl{width:28px!important;height:28px!important}
+.landing-section{padding-top:105px;padding-bottom:105px}.landing-section-intro{margin-bottom:42px}.landing-section-intro .section-kicker,.section-number{font-size:9px}.landing-section-intro h2{font-size:clamp(48px,5vw,70px)}.landing-section-intro p{font-size:14px;line-height:1.65}
+.landing-feature{padding:29px;min-height:320px;border-radius:23px;background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.82);box-shadow:0 18px 55px rgba(20,20,20,.055),inset 0 1px rgba(255,255,255,.95);backdrop-filter:blur(22px) saturate(140%)}.landing-feature.dark{background:linear-gradient(145deg,rgba(25,26,29,.97),rgba(17,18,20,.92));box-shadow:0 20px 60px rgba(17,18,20,.13),inset 0 1px rgba(255,255,255,.08)}.landing-feature>span{font-size:9px}.landing-feature h3{font-size:34px;line-height:.98}.landing-feature p{font-size:12px;line-height:1.7}.feature-tag{font-size:8px}.feature-visual span{font-size:9px;padding:9px 11px}.regression-line b,.regression-line strong{font-size:9px}.evidence-stack small,.evidence-stack span{font-size:8px}.evidence-stack b{font-size:10px}
+.process-section{padding-top:110px;padding-bottom:110px;background:linear-gradient(180deg,#111214,#151619)}.process-grid{border-color:rgba(255,255,255,.14);border-radius:22px;background:rgba(255,255,255,.1);box-shadow:0 20px 70px rgba(0,0,0,.2)}.process-grid article{padding:31px;min-height:275px;background:rgba(23,24,27,.72);backdrop-filter:blur(18px)}.process-grid article>b{font-size:10px}.process-grid article>span{font-size:9px;margin-top:34px}.process-grid h3{font-size:29px}.process-grid p{font-size:12px;line-height:1.7}
+.landing-proof-v2{padding-top:110px;padding-bottom:110px;gap:62px}.proof-v2-copy h2{font-size:clamp(52px,5.5vw,78px)}.proof-v2-copy p{font-size:14px;line-height:1.7}.proof-v2-card{padding:21px;background:rgba(23,24,27,.82);border:1px solid rgba(255,255,255,.14);box-shadow:0 30px 90px rgba(0,0,0,.2);backdrop-filter:blur(25px)}.proof-v2-row>span{font-size:8px}.proof-v2-row>strong{font-size:11px}.proof-v2-row>em{font-size:7px}.proof-v2-verdict strong{font-size:24px}.proof-v2-verdict small{font-size:8px}
+.stack-section{padding-top:92px}.stack-carousel{margin-top:35px;padding:10px 0 28px}.stack-carousel-track{animation-duration:30s}.stack-card{width:268px;min-height:205px;padding:25px;border-radius:23px}.stack-card-logo{width:66px;height:66px}.stack-card strong{font-size:21px}.stack-card span{font-size:13px}.stack-card img{max-width:48px;max-height:48px}
+.landing-final{margin-top:25px;background:linear-gradient(135deg,rgba(226,229,232,.78),rgba(246,247,248,.62));border:1px solid rgba(255,255,255,.9);box-shadow:0 25px 70px rgba(20,20,20,.07),inset 0 1px rgba(255,255,255,.95);backdrop-filter:blur(26px)}.landing-final h2{font-size:clamp(56px,6vw,88px)}.landing-final p{font-size:14px}
+.landing-footer{padding-top:70px}.landing-footer p,.landing-footer a{font-size:12px}.landing-footer>div>span{font-size:8px}.landing-footer small{font-size:9px}
+@media(max-width:1000px){.landing-hero-v2{grid-template-columns:1fr}.landing-hero-visual{max-width:760px}.landing-hero-copy h1{font-size:clamp(68px,11vw,100px)}}
+@media(max-width:650px){.landing-nav{height:70px;padding:0 18px}.landing-logo{width:138px}.landing-hero-v2{padding-top:35px}.landing-hero-copy h1{font-size:54px}.landing-lede{font-size:15px}.landing-hero-visual{margin-top:10px}.visual-chain{grid-template-columns:1fr}.chain-arrow{transform:rotate(90deg);height:13px}.marquee-set{gap:7px}.marquee-platform{min-width:112px}.landing-feature{min-height:290px}.landing-feature h3{font-size:29px}.process-grid article{min-height:255px}.proof-v2-row{grid-template-columns:1fr 1.5fr auto}.stack-card{width:225px}}
+
+/* V30 — responsive motion system + Outcom blue mascot language */
+html{scroll-behavior:smooth;scroll-padding-top:88px}
+.landing-nav{position:sticky;top:0;z-index:1000}
+.landing-page{position:relative;overflow:clip}
+.landing-nav::after{content:"";position:absolute;inset:auto 0 -1px 0;height:1px;background:linear-gradient(90deg,transparent,rgba(77,62,230,.22),rgba(32,168,107,.22),transparent);pointer-events:none}
+
+/* Blue mascot becomes a recurring visual signature without competing with the product UI. */
+.mascot-orb{position:absolute;z-index:0;pointer-events:none;display:grid;place-items:center;border:1px solid rgba(91,72,255,.20);background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.82),rgba(92,74,255,.16) 42%,rgba(57,42,190,.08) 72%,transparent 73%);box-shadow:0 25px 70px rgba(55,43,180,.13),inset 0 1px rgba(255,255,255,.85);backdrop-filter:blur(18px) saturate(145%);-webkit-backdrop-filter:blur(18px) saturate(145%);border-radius:50%}
+.mascot-orb img{width:62%;height:62%;object-fit:contain;filter:drop-shadow(0 14px 20px rgba(43,32,150,.18))}
+.mascot-hero{width:106px;height:106px;right:-34px;top:-34px;opacity:.9;transform:rotate(8deg)}
+.mascot-why{width:150px;height:150px;right:4%;top:40px;opacity:.24;transform:rotate(-10deg)}
+.mascot-process{width:165px;height:165px;right:4%;bottom:20px;opacity:.18;transform:rotate(9deg)}
+.mascot-proof{width:130px;height:130px;left:-38px;top:-34px;opacity:.22;transform:rotate(-8deg)}
+.mascot-stack{width:145px;height:145px;right:3%;top:18px;opacity:.20;transform:rotate(8deg)}
+.mascot-final{width:145px;height:145px;right:4%;top:-44px;opacity:.28;transform:rotate(-7deg)}
+.landing-section-why,.process-section,.landing-proof-v2,.stack-section,.landing-final{position:relative;overflow:clip}
+.landing-section-why>*:not(.mascot-orb),.process-section>*:not(.mascot-orb),.landing-proof-v2>*:not(.mascot-orb),.stack-section>*:not(.mascot-orb),.landing-final>*:not(.mascot-orb){position:relative;z-index:1}
+
+/* Toolbar / platform rail: one precise row, with motion that can also be touched on mobile. */
+.landing-marquee{position:sticky;top:84px;z-index:900;touch-action:pan-x;overscroll-behavior-x:contain}
+.landing-marquee:hover .marquee-track,.landing-marquee:active .marquee-track{animation-play-state:paused}
+.marquee-set{user-select:none;-webkit-user-select:none}
+.marquee-swipe-hint{display:none}
+
+/* Scroll-reveal feel for major landing blocks. */
+@media (prefers-reduced-motion:no-preference){
+  .landing-feature,.process-grid article,.proof-v2-card,.stack-card,.landing-final{animation:outcom-rise linear both;animation-timeline:view();animation-range:entry 0% cover 24%}
+  .mascot-orb{animation:mascot-float 7s ease-in-out infinite}
+}
+@keyframes outcom-rise{from{opacity:.35;transform:translateY(26px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes mascot-float{0%,100%{translate:0 0}50%{translate:0 -9px}}
+
+/* More color, but controlled: section accents inherit the same three Outcom signals. */
+.landing-section-intro h2 em{background:linear-gradient(90deg,#7b7e84 0%,#6e65c9 70%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.process-section .landing-section-intro h2 em{background:linear-gradient(90deg,#7e8088,#8b7ff1);-webkit-background-clip:text;background-clip:text;color:transparent}
+.proof-v2-copy h2 em{background:linear-gradient(90deg,#7f8188,#7358e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+.landing-final h2 em{background:linear-gradient(90deg,#777a80,#7358e8);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+@media(max-width:1000px){
+  .landing-marquee{top:70px}
+  .mascot-hero{right:-16px;top:-30px}
+  .mascot-why,.mascot-process,.mascot-stack{opacity:.13}
+}
+
+@media(max-width:650px){
+  html{scroll-padding-top:72px}
+  .landing-nav{position:sticky;top:0;height:70px;padding:0 16px}
+  .landing-logo{width:128px}
+  .landing-nav-actions{gap:8px}
+  .landing-nav-cta{padding:10px 12px;font-size:10px}
+  .landing-marquee{position:sticky;top:70px;z-index:900;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;-ms-overflow-style:none}
+  .landing-marquee::-webkit-scrollbar{display:none}
+  .landing-marquee>div.marquee-track{animation-duration:38s}
+  .marquee-set{scroll-snap-align:start;padding:11px 12px}
+  .marquee-platform,.marquee-tab{height:40px;padding:0 12px;border-radius:12px}
+  .marquee-platform b,.marquee-tab{font-size:11px}
+  .marquee-label{font-size:9px;letter-spacing:.13em}
+  .marquee-swipe-hint{display:flex;position:absolute;right:12px;top:3px;z-index:4;align-items:center;gap:5px;font-size:7px;font-weight:850;letter-spacing:.1em;color:rgba(20,20,20,.48);opacity:0;animation:swipe-hint 4s ease 1s 1 forwards;pointer-events:none}
+  .marquee-swipe-hint span{font-size:11px}
+  .landing-hero-v2{padding:34px 18px 48px;gap:18px}
+  .landing-hero-copy h1{font-size:clamp(50px,15vw,66px);line-height:.84;letter-spacing:-.09em}
+  .landing-lede{font-size:15px;line-height:1.55}
+  .landing-actions{gap:7px;flex-wrap:wrap}
+  .primary-cta,.secondary-cta{font-size:11px}
+  .landing-hero-visual{width:100%;margin-top:2px}
+  .visual-window-bar{height:46px;padding:0 14px}
+  .visual-window-body{padding:11px}
+  .visual-summary{grid-template-columns:1fr 1fr}
+  .visual-summary>div:last-child{display:none}
+  .visual-chain{grid-template-columns:1fr;gap:4px}
+  .chain-arrow{transform:rotate(90deg);height:10px;line-height:10px}
+  .chain-node{min-height:78px;padding:10px}
+  .chain-node strong{font-size:10px}
+  .chain-node:nth-of-type(3) strong{white-space:normal}
+  .visual-proof{margin-top:6px}
+  .mascot-hero{width:70px;height:70px;right:-8px;top:-28px;opacity:.72}
+  .mascot-why,.mascot-process,.mascot-proof,.mascot-stack,.mascot-final{width:92px;height:92px;opacity:.10}
+  .mascot-why{right:-20px;top:22px}
+  .mascot-process{right:-12px;bottom:12px}
+  .mascot-proof{left:-28px;top:-18px}
+  .mascot-stack{right:-18px;top:14px}
+  .mascot-final{right:-14px;top:-30px}
+  .landing-section,.landing-proof-v2{padding-left:18px;padding-right:18px}
+  .landing-section{padding-top:76px;padding-bottom:76px}
+  .landing-section-intro h2{font-size:clamp(40px,11vw,52px)}
+  .landing-section-intro p{font-size:14px}
+  .landing-feature{padding:23px;min-height:280px}
+  .landing-feature h3{font-size:28px}
+  .landing-feature p{font-size:13px}
+  .process-section{padding-top:78px;padding-bottom:78px}
+  .process-grid article{padding:24px;min-height:235px}
+  .process-grid h3{font-size:27px}
+  .process-grid p{font-size:12px}
+  .landing-proof-v2{padding-top:82px;padding-bottom:82px;gap:36px}
+  .proof-v2-copy h2{font-size:clamp(46px,12vw,60px)}
+  .proof-v2-copy p{font-size:14px}
+  .proof-v2-card{padding:15px}
+  .proof-v2-row{grid-template-columns:1fr 1.4fr auto;gap:8px;padding:14px 0}
+  .proof-v2-row>strong{font-size:10px}
+  .proof-v2-row>span,.proof-v2-row>em{font-size:7px}
+  .proof-v2-verdict strong{font-size:22px}
+  .stack-section{padding-top:78px}
+  .stack-carousel{margin-top:25px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory;padding:8px 0 24px}
+  .stack-carousel::-webkit-scrollbar{display:none}
+  .stack-carousel-track{animation-duration:34s}
+  .stack-card{width:230px;min-height:185px;padding:22px;scroll-snap-align:start}
+  .stack-card strong{font-size:20px}
+  .stack-card span{font-size:12px}
+  .landing-final{margin-left:12px;margin-right:12px;padding:52px 21px}
+  .landing-final h2{font-size:clamp(44px,12vw,58px)}
+  .landing-final p{font-size:13px;max-width:250px}
+  .landing-footer{padding-left:18px;padding-right:18px}
+}
+@keyframes swipe-hint{0%{opacity:0;transform:translateX(8px)}15%{opacity:1}55%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(-5px)}}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.marquee-track,.stack-carousel-track,.mascot-orb,.landing-feature,.process-grid article,.proof-v2-card,.stack-card,.landing-final{animation:none!important}.marquee-swipe-hint{display:none}}
