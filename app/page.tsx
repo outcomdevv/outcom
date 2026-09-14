@@ -47,15 +47,14 @@ function Landing(){return <div className="landing-page">
     </section>
 
     <section className="landing-marquee" id="stack" aria-label="Outcom platform coverage">
-      <div className="marquee-swipe-hint" aria-hidden="true">SWIPE TO EXPLORE <span>→</span></div>
-      <div className="marquee-track">
-        {[0,1].map(copy => <div className="marquee-set" key={copy} aria-hidden={copy === 1}>
-          <span className="marquee-label">OBSERVE</span>
-          {(["n8n","make","zapier","ghl"] as const).map(name => <div className="marquee-platform" key={name}><IntegrationLogo name={name} size={25}/><b>{name === "ghl" ? "HighLevel" : name === "n8n" ? "n8n" : name[0].toUpperCase()+name.slice(1)}</b></div>)}
-          <span className="marquee-label">VERIFY</span>
-          {(["Execution","Entity","State","Evidence"] as const).map(item => <div className="marquee-tab" key={item}>{item}</div>)}
-          <span className="marquee-label">PROVE</span>
-        </div>)}
+      <div className="marquee-swipe-hint" aria-hidden="true">INTEGRATES WITH <span>SWIPE →</span></div>
+      <div className="marquee-viewport">
+        <div className="marquee-track">
+          {[0,1].map(copy => <div className="marquee-set" key={copy} aria-hidden={copy === 1}>
+            <span className="marquee-label">INTEGRATES WITH</span>
+            {(["n8n","make","zapier","ghl"] as const).map(name => <div className="marquee-platform" key={name}><IntegrationLogo name={name} size={27}/><b>{name === "ghl" ? "HighLevel" : name === "n8n" ? "n8n" : name[0].toUpperCase()+name.slice(1)}</b></div>)}
+          </div>)}
+        </div>
       </div>
     </section>
 

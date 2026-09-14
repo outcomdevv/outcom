@@ -201,3 +201,115 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
 @keyframes swipe-hint{0%{opacity:0;transform:translateX(8px)}15%{opacity:1}55%{opacity:1;transform:translateX(0)}100%{opacity:0;transform:translateX(-5px)}}
 
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.marquee-track,.stack-carousel-track,.mascot-orb,.landing-feature,.process-grid article,.proof-v2-card,.stack-card,.landing-final{animation:none!important}.marquee-swipe-hint{display:none}}
+
+/* V31 — clean sticky platform rail + tighter premium composition */
+.landing-logo{width:150px;height:auto;display:block;mix-blend-mode:multiply}
+.landing-nav{backdrop-filter:blur(20px) saturate(125%);-webkit-backdrop-filter:blur(20px) saturate(125%)}
+
+/* The sticky rail contains ONLY real integrated platforms. */
+.landing-marquee{
+  position:sticky;
+  top:82px;
+  z-index:900;
+  min-height:72px;
+  background:rgba(16,17,19,.90);
+  border-top:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.10);
+  backdrop-filter:blur(22px) saturate(135%);
+  -webkit-backdrop-filter:blur(22px) saturate(135%);
+  overflow:hidden;
+}
+.marquee-viewport{width:100%;overflow:hidden}
+.landing-marquee .marquee-track{
+  display:flex;
+  width:max-content;
+  flex-wrap:nowrap;
+  align-items:center;
+  justify-content:flex-start;
+  animation:outcom-platform-slide 26s linear infinite;
+  will-change:transform;
+}
+.landing-marquee .marquee-set{
+  flex:none;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 20px;
+  min-height:72px;
+  white-space:nowrap;
+}
+.landing-marquee .marquee-label{
+  font-size:9px;
+  letter-spacing:.15em;
+  color:#74777f;
+  font-weight:850;
+  margin-right:4px;
+}
+.landing-marquee .marquee-platform{
+  height:46px;
+  min-width:128px;
+  padding:0 16px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  border-radius:15px;
+  border:1px solid rgba(255,255,255,.11);
+  background:linear-gradient(135deg,rgba(255,255,255,.105),rgba(255,255,255,.045));
+  box-shadow:inset 0 1px rgba(255,255,255,.10),0 8px 28px rgba(0,0,0,.16);
+  backdrop-filter:blur(16px) saturate(130%);
+  -webkit-backdrop-filter:blur(16px) saturate(130%);
+}
+.landing-marquee .marquee-platform img{width:27px!important;height:27px!important;object-fit:contain;flex:none}
+.landing-marquee .marquee-platform b{font-size:13px;color:#e6e7e9;font-weight:750;letter-spacing:-.02em}
+.marquee-swipe-hint{display:none}
+@keyframes outcom-platform-slide{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%,0,0)}}
+
+/* Hero mascot: make the original white eye/body outline read clearly over the blue glass. */
+.mascot-hero{
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.90),rgba(74,61,231,.22) 43%,rgba(39,29,169,.10) 72%,transparent 73%);
+  border-color:rgba(77,63,230,.28);
+  box-shadow:0 24px 65px rgba(47,37,180,.20),inset 0 1px rgba(255,255,255,.95);
+}
+.mascot-hero img{width:68%;height:68%;filter:drop-shadow(0 0 0 rgba(255,255,255,0)) drop-shadow(0 16px 24px rgba(36,27,145,.24))}
+
+/* Keep the assurance demo compact and prevent long identifiers from wrapping into a column. */
+.landing-hero-visual{max-width:610px;justify-self:end}
+.visual-chain{grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr) 16px minmax(0,1fr)}
+.chain-node{min-width:0}
+.chain-node>div{min-width:0}
+.chain-node strong{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.chain-node:nth-of-type(3) strong{white-space:normal;overflow-wrap:anywhere}
+
+/* Slightly stronger readable type in the editorial sections. */
+.landing-section-intro .section-kicker,.landing-section-intro .section-number{font-size:10px}
+.landing-feature>span{font-size:10px}
+.landing-feature p{font-size:13px}
+.process-grid article>span{font-size:10px}
+.process-grid p{font-size:13px}
+.proof-v2-copy p{font-size:15px}
+.evidence-stack small,.evidence-stack span{font-size:9px}
+
+@media(max-width:1000px){
+  .landing-marquee{top:70px}
+  .landing-hero-visual{max-width:720px;justify-self:stretch}
+}
+@media(max-width:650px){
+  .landing-logo{width:132px}
+  .landing-marquee{top:70px;min-height:66px}
+  .landing-marquee .marquee-set{min-height:66px;padding:9px 14px;gap:8px}
+  .landing-marquee .marquee-label{font-size:8px}
+  .landing-marquee .marquee-platform{height:42px;min-width:108px;padding:0 12px;border-radius:13px;gap:8px}
+  .landing-marquee .marquee-platform img{width:23px!important;height:23px!important}
+  .landing-marquee .marquee-platform b{font-size:11px}
+  .marquee-swipe-hint{display:flex;position:absolute;right:14px;top:50%;transform:translateY(-50%);z-index:3;pointer-events:none;gap:7px;align-items:center;font-size:7px;letter-spacing:.12em;color:rgba(255,255,255,.45);font-weight:800}
+  .marquee-swipe-hint span{color:rgba(255,255,255,.72);font-size:8px}
+  .landing-hero-visual{max-width:100%;}
+  .visual-chain{gap:2px}
+  .chain-node{padding:8px}
+  .chain-node strong{font-size:8px}
+  .landing-feature p,.process-grid p{font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .landing-marquee .marquee-track{animation:none}
+}
