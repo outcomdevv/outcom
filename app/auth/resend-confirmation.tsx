@@ -28,11 +28,11 @@ export default function ResendConfirmation() {
   }
 
   return (
-    <div className="auth-resend">
+    <div className="auth-resend" aria-label="Send confirmation email again">
       <div className="auth-divider"><span>Didn't receive the email?</span></div>
       <form onSubmit={submit}>
-        <label>Email for confirmation<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" placeholder="you@example.com" /></label>
-        <button className="auth-secondary" type="submit" disabled={state === "loading"}>{state === "loading" ? "Sending…" : "Resend confirmation email"}</button>
+        <label>Email to resend confirmation<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" placeholder="you@example.com" /></label>
+        <button className="auth-secondary" type="submit" disabled={state === "loading"}>{state === "loading" ? "Sending…" : "Send confirmation email again"}</button>
       </form>
       {message && <div className={state === "error" ? "auth-error" : "auth-notice"}>{message}</div>}
     </div>

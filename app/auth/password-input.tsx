@@ -20,7 +20,7 @@ export default function PasswordInput({ label, ...props }: Props) {
           aria-pressed={visible}
           onClick={() => setVisible((value) => !value)}
         >
-          {visible ? "Hide" : "Show"}
+          {visible ? "HIDE" : "SHOW"}
         </button>
       </span>
     </label>
