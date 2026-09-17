@@ -54,3 +54,14 @@
 @media(max-width:650px){.outcom-error-card{padding:25px}.outcom-error-card h1{font-size:31px}.outcom-error-actions{grid-template-columns:1fr}}
 
 .auth-password-control{position:relative;display:block}.auth-password-control input{width:100%;padding-right:62px!important}.auth-password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);border:1px solid #d7d9dc;border-radius:7px;background:#f7f7f8;color:#22252a;font-size:9px;font-weight:850;cursor:pointer;padding:6px 8px;z-index:2}.auth-password-toggle:hover{background:#e9eaec}.auth-password-toggle:hover{text-decoration:underline}.auth-resend{margin-top:8px}.auth-resend form{gap:9px}.auth-resend .auth-divider{margin:17px 0 10px}.auth-resend button:disabled{opacity:.6;cursor:wait}.auth-resend .auth-notice,.auth-resend .auth-error{margin-top:9px}
+
+
+/* V38 — force auth controls to remain visible across cached styles */
+.auth-password-field{display:grid!important;gap:5px!important}
+.auth-field-label{font-size:9px;font-weight:750;color:#55585e}
+.auth-password-control{position:relative!important;display:block!important}
+.auth-password-control input{width:100%!important;padding-right:82px!important}
+.auth-password-toggle{display:inline-flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+.auth-resend{display:block!important;margin-top:12px!important}
+.auth-resend form{display:grid!important;gap:9px!important}
+.auth-resend button{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center;justify-content:center;width:100%;min-height:43px;cursor:pointer}
