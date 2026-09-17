@@ -19,10 +19,18 @@ export default function ConfirmedPage() {
         const accessToken = hash.get("access_token");
         const refreshToken = hash.get("refresh_token");
         const errorDescription = hash.get("error_description");
+        const code = new URLSearchParams(window.location.search).get("code");
 
         if (errorDescription) throw new Error(errorDescription.replace(/\+/g, " "));
 
-        if (accessToken && refreshToken) {
+        // Supabase may return either an implicit-flow token pair in the hash
+        // or a PKCE authorization code in the query string. Handle both so
+        // email confirmation reliably creates the browser session.
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          window.history.replaceState({}, document.title, "/auth/confirmed");
+        } else if (accessToken && refreshToken) {
           const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
           if (error) throw error;
           window.history.replaceState({}, document.title, "/auth/confirmed");

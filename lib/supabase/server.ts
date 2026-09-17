@@ -20,6 +20,17 @@ export async function createSupabaseServerClient() {
   });
 }
 
+/**
+ * Server-only Supabase admin client.
+ *
+ * Supabase now calls the server-side key a "secret key" (sb_secret_...),
+ * while older projects expose the legacy service-role key. Accept both so a
+ * Vercel deployment does not unexpectedly crash the authenticated app when
+ * the project has been configured with the newer key name.
+ */
 export function createSupabaseServiceClient() {
-  return createServiceClient(env("NEXT_PUBLIC_SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), { auth: { autoRefreshToken: false, persistSession: false } });
+  const url = env("NEXT_PUBLIC_SUPABASE_URL");
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error("SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY is not configured");
+  return createServiceClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
 }
