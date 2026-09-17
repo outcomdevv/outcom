@@ -17,12 +17,14 @@ export async function ensureWorkspace() {
   const slug = `${base}-${user.id.slice(0, 8)}`;
   const { data: workspace, error } = await admin.from("workspaces").insert({ name: `${user.email?.split("@")[0] || "My"} Workspace`, slug, owner_id: user.id }).select().single();
   if (error) {
-    const { data: retry } = await admin.from("workspace_members").select("workspace_id, role, workspaces(*)").eq("user_id", user.id).limit(1).maybeSingle();
+    const { data: retry } = await admin.from("workspace_members").select("workspace_id, role, workspaces(*)").eq("user_id", user.id).order("created_at", { ascending: true }).limit(1).maybeSingle();
     if (retry?.workspace_id) return { user, workspaceId: retry.workspace_id as string, role: retry.role as string, workspace: (retry as any).workspaces };
     throw error;
   }
-  await admin.from("workspace_members").insert({ workspace_id: workspace.id, user_id: user.id, role: "owner" });
-  await admin.from("workspace_settings").insert({ workspace_id: workspace.id });
+  const { error: memberError } = await admin.from("workspace_members").upsert({ workspace_id: workspace.id, user_id: user.id, role: "owner" }, { onConflict: "workspace_id,user_id" });
+  if (memberError) throw memberError;
+  const { error: settingsError } = await admin.from("workspace_settings").upsert({ workspace_id: workspace.id }, { onConflict: "workspace_id" });
+  if (settingsError) throw settingsError;
   return { user, workspaceId: workspace.id as string, role: "owner", workspace };
 }
 

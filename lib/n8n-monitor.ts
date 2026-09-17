@@ -102,8 +102,8 @@ export function analyzeN8nWorkflow(workflow: N8nWorkflowDetail) {
     candidateCount: protections.length,
     protections,
     recommendation: protections.length
-      ? "OutcomeGuard can protect this workflow without adding an HTTP Request node. It will observe native n8n executions and verify the downstream state directly."
-      : "No supported HighLevel write node was found yet. OutcomeGuard cannot safely infer the business outcome from this workflow without more context.",
+      ? "Outcom can protect this workflow without adding an HTTP Request node. It will observe native n8n executions and verify the downstream state directly."
+      : "No supported HighLevel write node was found yet. Outcom cannot safely infer the business outcome from this workflow without more context.",
   };
 }
 

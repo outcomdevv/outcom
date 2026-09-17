@@ -139,8 +139,16 @@ export default function ConnectClient() {
 
   async function protectWorkflow(id: string, workflowName: string, sourcePlatform: Platform) {
     setPlatform(sourcePlatform); setName(workflowName); setWorkflowId(sourcePlatform === "n8n" ? id : `${sourcePlatform}_${id}`);
-    if (sourcePlatform !== "n8n") {
-      setTestResult(`${sourcePlatform === "make" ? "Make" : "Zapier"} discovery is connected, but protection is not enabled yet. Outcom will not create a fake protected workflow.`);
+    if (sourcePlatform === "make") {
+      setN8nMessage("Reading scenario topology and inferring the outcome…");
+      const r = await fetch("/api/make/protect", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scenarioId: id }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j.protected) { setCreated(true); setN8nMessage(`Protected natively · ${j.createdContracts?.length || 0} outcome checks inferred`); router.refresh(); }
+      else setN8nMessage(j.error || j.reason || "Outcom could not safely infer a business outcome from this Make scenario.");
+      return;
+    }
+    if (sourcePlatform === "zapier") {
+      setTestResult("Zapier is connected and discovered. Outcom will not claim an outcome verdict until native run-history access is available through the selected Zapier API path.");
       return;
     }
     setN8nMessage("Reading workflow topology and inferring the outcome…");

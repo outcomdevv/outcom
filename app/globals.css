@@ -313,3 +313,73 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
 @media(prefers-reduced-motion:reduce){
   .landing-marquee .marquee-track{animation:none}
 }
+
+
+/* V32 — platform rail separation: the heading scrolls away; only the platform rail stays sticky. */
+.landing-marquee-wrap{
+  position:relative;
+  overflow:visible;
+  background:transparent;
+  padding-top:0;
+}
+.marquee-heading{
+  min-height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  padding:12px 20px;
+  background:#f3f4f5;
+  color:#202125;
+  border-top:1px solid #dedfe2;
+  border-bottom:1px solid #dedfe2;
+}
+.marquee-heading span{
+  font-size:10px;
+  letter-spacing:.14em;
+  font-weight:850;
+}
+.marquee-heading small{
+  font-size:8px;
+  letter-spacing:.11em;
+  font-weight:750;
+  color:#96999f;
+}
+.landing-marquee{
+  position:sticky!important;
+  top:82px!important;
+  z-index:900!important;
+  min-height:72px;
+  width:100%;
+  background:rgba(16,17,19,.90);
+  border-top:0;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  box-shadow:0 14px 35px rgba(16,17,19,.14);
+  backdrop-filter:blur(22px) saturate(135%);
+  -webkit-backdrop-filter:blur(22px) saturate(135%);
+  overflow:hidden;
+}
+.landing-marquee .marquee-set{
+  gap:12px;
+  padding:12px 20px;
+}
+.landing-marquee .marquee-platform{min-width:128px}
+.landing-marquee .marquee-swipe-hint{
+  display:none;
+}
+@media(max-width:650px){
+  .marquee-heading{
+    min-height:50px;
+    justify-content:flex-start;
+    padding:10px 16px;
+    gap:8px;
+  }
+  .marquee-heading span{font-size:9px}
+  .marquee-heading small{font-size:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .landing-marquee{top:70px!important;min-height:66px}
+  .landing-marquee .marquee-set{min-height:66px;padding:9px 14px;gap:8px}
+  .landing-marquee .marquee-platform{height:42px;min-width:108px;padding:0 12px;border-radius:13px;gap:8px}
+  .landing-marquee .marquee-platform img{width:23px!important;height:23px!important}
+  .landing-marquee .marquee-platform b{font-size:11px}
+  .landing-marquee .marquee-swipe-hint{display:flex;position:absolute;right:14px;top:50%;transform:translateY(-50%);z-index:3;pointer-events:none;align-items:center;font-size:8px;letter-spacing:.12em;color:rgba(255,255,255,.78);font-weight:850;background:rgba(16,17,19,.62);padding:7px 8px;border-radius:999px;backdrop-filter:blur(10px)}
+}

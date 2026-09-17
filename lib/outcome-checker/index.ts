@@ -74,7 +74,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract): Pr
       const prior = await store.snapshots.get(c.id, lookup);
       if (!prior) {
         await store.snapshots.upsert({ contractId: c.id, entityId: lookup, snapshot: { [field]: current } });
-        return { state: "passed", type: c.type, severity: c.severity, title: "Baseline captured", expected: "Existing business tags are preserved over time", observed: `Baseline captured: ${JSON.stringify(current)}`, evidence: [`Execution ${event.executionId} · status SUCCESS`, source, `OutcomeGuard captured the first known ${field} state for this record.`, "Future successful runs will be checked for state regressions."], summary: "OutcomeGuard established a read-only business-state baseline.", impact: "", recommendedAction: "" };
+        return { state: "passed", type: c.type, severity: c.severity, title: "Baseline captured", expected: "Existing business tags are preserved over time", observed: `Baseline captured: ${JSON.stringify(current)}`, evidence: [`Execution ${event.executionId} · status SUCCESS`, source, `Outcom captured the first known ${field} state for this record.`, "Future successful runs will be checked for state regressions."], summary: "Outcom established a read-only business-state baseline.", impact: "", recommendedAction: "" };
       }
       const previous = Array.isArray(prior.snapshot[field]) ? prior.snapshot[field].filter((x: unknown): x is string => typeof x === "string") : [];
       const disappeared = previous.filter((tag: string) => !current.includes(tag));
@@ -82,7 +82,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract): Pr
         return fail(c, "Workflow succeeded but business state regressed", `Existing tags must be preserved: ${disappeared.join(", ")}`, `Current tags: ${JSON.stringify(current)}`, "A previously observed customer state disappeared after a successful automation run.", event, [source, `Previous baseline: ${JSON.stringify(previous)}`, `Current state: ${JSON.stringify(current)}`, `Regression detected: ${disappeared.join(", ")}`]);
       }
       await store.snapshots.upsert({ contractId: c.id, entityId: lookup, snapshot: { [field]: current } });
-      return { state: "passed", type: c.type, severity: c.severity, title: "Business state preserved", expected: "Previously observed tags remain present", observed: `Current tags: ${JSON.stringify(current)}`, evidence: [`Execution ${event.executionId} · status SUCCESS`, source, `Compared current ${field} against OutcomeGuard's previous read-only baseline.`], summary: "OutcomeGuard found no business-state regression.", impact: "", recommendedAction: "" };
+      return { state: "passed", type: c.type, severity: c.severity, title: "Business state preserved", expected: "Previously observed tags remain present", observed: `Current tags: ${JSON.stringify(current)}`, evidence: [`Execution ${event.executionId} · status SUCCESS`, source, `Compared current ${field} against Outcom's previous read-only baseline.`], summary: "Outcom found no business-state regression.", impact: "", recommendedAction: "" };
     }
 
     const expected = cfg.expectedValue;
@@ -104,7 +104,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract): Pr
       expected: "Verification of downstream state",
       observed: "Verification error",
       evidence: [`Execution ${event.executionId} · status SUCCESS`, `Verification failed: ${error instanceof Error ? error.message : "Unknown adapter error"}`],
-      summary: "OutcomeGuard cannot determine the business outcome.",
+      summary: "Outcom cannot determine the business outcome.",
       impact: "Business outcome is unknown until verification succeeds.",
       recommendedAction: "Check the downstream connection, permissions, API health and retry verification.",
     };
@@ -126,7 +126,7 @@ export async function evaluateEvent(event: WorkflowEvent) {
         expected: "Successful execution before business-state verification",
         observed: `Execution ${event.executionId} reported FAILED`,
         evidence: [`Execution ${event.executionId} · ${new Date(event.timestamp).toISOString()}`, "Automation platform reported FAILED; downstream business outcome was not evaluated."],
-        summary: "The automation itself failed before OutcomeGuard could prove the business outcome.",
+        summary: "The automation itself failed before Outcom could prove the business outcome.",
         impact: "The expected business outcome is at risk.",
         recommendedAction: "Open the automation execution, fix the failed step, then re-run and verify the downstream state.",
       };
