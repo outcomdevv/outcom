@@ -17,14 +17,46 @@ const nav = [
   { href: "/settings", label: "Settings", icon: "⚙" },
 ];
 
+function BootstrapRecovery() {
+  return (
+    <html lang="en"><body>
+      <div className="outcom-error-page">
+        <div className="outcom-error-card">
+          <img src="/outcom-mascot.png" className="outcom-error-mascot" alt="Outcom mascot" />
+          <span className="auth-confirm-badge error">OUTCOM RECOVERY</span>
+          <h1>Outcom needs a reload.<br /><em>Your data is not being reset.</em></h1>
+          <p>Outcom could not load the workspace. This is usually caused by a missing or invalid Supabase environment variable, database migration, or expired session.</p>
+          <div className="outcom-error-actions">
+            <a className="auth-submit" href="/">Reload Outcom ↻</a>
+            <a className="auth-secondary" href="/auth/login">Sign in again</a>
+          </div>
+        </div>
+      </div>
+    </body></html>
+  );
+}
+
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
-  const user = await getUser();
+  let user;
+  try {
+    user = await getUser();
+  } catch (error) {
+    console.error("Outcom auth bootstrap failed", error);
+    return <BootstrapRecovery />;
+  }
   if (!user) return <html lang="en"><body>{children}</body></html>;
-  const workspace = await ensureWorkspace();
-  const store = workspace ? await getWorkspaceStore(workspace.workspaceId) : null;
-  const connections = store ? await store.connections.list() : [];
-  const workflows = store ? await store.workflows.list() : [];
-  const open = store ? (await store.incidents.list()).filter(i => i.status === "open") : [];
+
+  let workspace, store, connections = [], workflows = [], open = [];
+  try {
+    workspace = await ensureWorkspace();
+    store = workspace ? await getWorkspaceStore(workspace.workspaceId) : null;
+    connections = store ? await store.connections.list() : [];
+    workflows = store ? await store.workflows.list() : [];
+    open = store ? (await store.incidents.list()).filter(i => i.status === "open") : [];
+  } catch (error) {
+    console.error("Outcom workspace bootstrap failed", error);
+    return <BootstrapRecovery />;
+  }
   const connected = (p: string) => connections.some(c => c.provider === p);
   return (
     <html lang="en"><body>
