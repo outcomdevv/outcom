@@ -6,14 +6,18 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & { label: stri
 
 export default function PasswordInput({ label, ...props }: Props) {
   const [visible, setVisible] = useState(false);
+
   return (
     <label className="auth-password-field">
       <span className="auth-field-label">{label}</span>
-      <span className="auth-password-control" style={{ position: "relative", display: "block" }}>
+      <span
+        className="auth-password-control"
+        style={{ display: "flex", alignItems: "stretch", width: "100%", gap: 0 }}
+      >
         <input
           {...props}
           type={visible ? "text" : "password"}
-          style={{ width: "100%", paddingRight: 82 }}
+          style={{ flex: "1 1 auto", minWidth: 0, width: "auto", paddingRight: 12 }}
         />
         <button
           type="button"
@@ -22,11 +26,17 @@ export default function PasswordInput({ label, ...props }: Props) {
           aria-pressed={visible}
           onClick={() => setVisible((current) => !current)}
           style={{
-            position: "absolute", right: 7, top: "50%", transform: "translateY(-50%)",
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            minWidth: 62, height: 28, padding: "0 9px", border: "1px solid #cfd2d7",
-            borderRadius: 7, background: "#f4f5f6", color: "#17181b",
-            fontSize: 10, fontWeight: 800, cursor: "pointer", zIndex: 5
+            flex: "0 0 68px",
+            minWidth: 68,
+            marginLeft: 6,
+            border: "1px solid #cfd2d7",
+            borderRadius: 7,
+            background: "#f4f5f6",
+            color: "#17181b",
+            fontSize: 10,
+            fontWeight: 800,
+            cursor: "pointer",
+            minHeight: 42,
           }}
         >
           {visible ? "HIDE" : "SHOW"}
