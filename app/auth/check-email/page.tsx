@@ -35,11 +35,12 @@ export default function CheckEmailPage() {
         <h1>Check your email<br /><em>before signing in.</em></h1>
         <p>
           Your workspace request was received. Open the confirmation email from Outcom,
-          click the confirmation button, then return here and sign in.
+          click the confirmation button, and we will take you straight into your dashboard.
         </p>
         <div className="auth-notice" style={{ marginTop: 18 }}>
-          <strong>Important:</strong> You must confirm your email first. Signing in before
-          confirmation may show an invalid-credentials or unconfirmed-account message.
+          <strong>Why am I seeing this?</strong> Supabase is currently configured to require
+          email confirmation. If you want users to enter Outcom immediately after signup,
+          turn off <strong>Confirm email</strong> in Supabase → Authentication → Providers → Email.
         </div>
         <a className="auth-submit" href="https://mail.google.com/" target="_blank" rel="noreferrer">
           Open Gmail <span>↗</span>

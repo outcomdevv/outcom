@@ -65,3 +65,10 @@
 .auth-resend{display:block!important;margin-top:12px!important}
 .auth-resend form{display:grid!important;gap:9px!important}
 .auth-resend button{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center;justify-content:center;width:100%;min-height:43px;cursor:pointer}
+
+/* V43 auth polish: compact open/closed eye password control */
+.auth-password-control{position:relative;display:block;width:100%}
+.auth-password-control input{width:100%;padding-right:52px!important}
+.auth-password-toggle{position:absolute;right:7px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;justify-content:center;width:36px;height:34px;padding:0;border:0;border-radius:8px;background:transparent;color:#686c75;cursor:pointer;z-index:2}
+.auth-password-toggle:hover{background:#f0f1f3;color:#17181b;text-decoration:none}
+.auth-password-toggle:focus-visible{outline:2px solid currentColor;outline-offset:2px}

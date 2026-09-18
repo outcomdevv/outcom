@@ -41,6 +41,9 @@ export default function ConfirmedPage() {
         if (!active) return;
         setStatus("success");
         setMessage("Your email is confirmed. Your Outcom workspace is ready.");
+        window.setTimeout(() => {
+          if (active) router.replace("/");
+        }, 1400);
       } catch (error) {
         if (!active) return;
         setStatus("error");

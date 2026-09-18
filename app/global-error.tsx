@@ -1,4 +1,3 @@
-﻿"use client";
 export default function GlobalError() {
   return (
     <html lang="en">
@@ -22,7 +21,7 @@ export default function GlobalError() {
             </p>
             <div className="outcom-error-actions">
               <a className="auth-submit" href="/">
-                Reload Outcom â†»
+                Reload Outcom ↻
               </a>
               <a className="auth-secondary" href="/auth/login">
                 Sign in again
@@ -34,4 +33,3 @@ export default function GlobalError() {
     </html>
   );
 }
-
