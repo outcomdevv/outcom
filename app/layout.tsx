@@ -17,6 +17,11 @@ const nav = [
   { href: "/settings", label: "Settings", icon: "⚙" },
 ];
 
+type WorkspaceStore = Awaited<ReturnType<typeof getWorkspaceStore>>;
+type Connection = Awaited<ReturnType<WorkspaceStore["connections"]["list"]>>[number];
+type Workflow = Awaited<ReturnType<WorkspaceStore["workflows"]["list"]>>[number];
+type Incident = Awaited<ReturnType<WorkspaceStore["incidents"]["list"]>>[number];
+
 function BootstrapRecovery() {
   return (
     <html lang="en"><body>
@@ -46,7 +51,11 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   }
   if (!user) return <html lang="en"><body>{children}</body></html>;
 
-  let workspace, store, connections = [], workflows = [], open = [];
+  let workspace: Awaited<ReturnType<typeof ensureWorkspace>>;
+  let store: WorkspaceStore | null = null;
+  let connections: Connection[] = [];
+  let workflows: Workflow[] = [];
+  let open: Incident[] = [];
   try {
     workspace = await ensureWorkspace();
     store = workspace ? await getWorkspaceStore(workspace.workspaceId) : null;
