@@ -10,6 +10,7 @@ const suggestions = [
   "Show me what needs attention",
   "Open my workflows",
   "Connect n8n",
+  "What should I do first?",
   "What can you check?",
 ];
 

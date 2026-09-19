@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { IntegrationLogo } from "@/app/integrations";
 import { getWorkspaceStore } from "@/lib/db";
 import { getUser, ensureWorkspace } from "@/lib/auth";
 import "./globals.css";
@@ -17,13 +16,11 @@ const nav = [
   { href: "/", label: "Command Center", icon: "⌂" },
   { href: "/workflows", label: "Protected Workflows", icon: "◇" },
   { href: "/incidents", label: "Findings", icon: "!" },
-  { href: "/contracts", label: "Outcome Contracts", icon: "≡" },
   { href: "/connect", label: "Integrations", icon: "◎" },
   { href: "/settings", label: "Settings", icon: "⚙" },
 ];
 
 type WorkspaceStore = Awaited<ReturnType<typeof getWorkspaceStore>>;
-type Connection = Awaited<ReturnType<WorkspaceStore["connections"]["list"]>>[number];
 type Workflow = Awaited<ReturnType<WorkspaceStore["workflows"]["list"]>>[number];
 type Incident = Awaited<ReturnType<WorkspaceStore["incidents"]["list"]>>[number];
 
@@ -58,20 +55,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   let workspace: Awaited<ReturnType<typeof ensureWorkspace>>;
   let store: WorkspaceStore | null = null;
-  let connections: Connection[] = [];
   let workflows: Workflow[] = [];
   let open: Incident[] = [];
   try {
     workspace = await ensureWorkspace();
     store = workspace ? await getWorkspaceStore(workspace.workspaceId) : null;
-    connections = store ? await store.connections.list() : [];
     workflows = store ? await store.workflows.list() : [];
     open = store ? (await store.incidents.list()).filter(i => i.status === "open") : [];
   } catch (error) {
     console.error("Outcom workspace bootstrap failed", error);
     return <BootstrapRecovery />;
   }
-  const connected = (p: string) => connections.some(c => c.provider === p);
   return (
     <html lang="en"><body>
       <div className="app-shell">
@@ -80,11 +74,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <div className="workspace-switcher"><span className="workspace-avatar">{(workspace?.workspace?.name || "O").slice(0,1).toUpperCase()}</span><div><b>{workspace?.workspace?.name || "Outcom Workspace"}</b><small>{user.email}</small></div><span>⌄</span></div>
           <div className="sidebar-section-label">Workspace</div>
           <nav className="sidebar-nav">{nav.map(item => <Link href={item.href} className="sidebar-link" key={item.href}><span className="sidebar-icon">{item.icon}</span><span>{item.label}</span>{item.label === "Findings" && open.length > 0 && <em className="nav-count">{open.length}</em>}</Link>)}</nav>
-          <div className="sidebar-section-label integration-label">Connected stack</div>
-          <div className="sidebar-integrations">{(["ghl","n8n","make","zapier"] as const).map(p => <span key={p}><IntegrationLogo name={p} size={17}/>{p === "ghl" ? "HighLevel" : p}<i className={`connection-dot ${connected(p) ? "on" : ""}`}/></span>)}</div>
           <div className="sidebar-spacer" />
-          <div className="sidebar-health"><div><span className="live-dot"/><b>Verification engine</b></div><small>{workflows.length} protected · {open.length} open findings</small></div>
-          <Link className="sidebar-connect" href="/connect">+ Connect stack</Link>
           <form action="/api/auth/signout" method="post"><button className="sidebar-signout">Sign out</button></form>
         </aside>
         <div className="app-main">

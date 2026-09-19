@@ -428,3 +428,44 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
 .theme-dark .operator-input-wrap{background:#111317}
 .theme-dark .operator-input-wrap input{color:#f4f4f5}
 .theme-dark .operator-suggestions button{background:#20242a;color:#e8eaf0}
+
+/* V53 — focused command center + clear brand lockup */
+.sidebar-brand .outcom-wordmark{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  padding:7px 11px 7px 7px;
+  border-radius:12px;
+  background:#fff;
+  color:#111214!important;
+  box-shadow:0 4px 16px rgba(0,0,0,.14);
+}
+.sidebar-brand .outcom-wordmark img{
+  width:31px;
+  height:31px;
+  object-fit:contain;
+  background:#fff;
+  border-radius:8px;
+}
+.sidebar-brand .outcom-wordmark span{color:#111214!important;letter-spacing:-.075em}
+/* Keep the workspace focused: the advanced contract area remains reachable by URL,
+   but it does not compete with the primary operating loop in the sidebar. */
+.sidebar-nav .sidebar-link[href="/contracts"]{display:none!important}
+/* Avoid the floating operator covering primary controls on narrow screens. */
+@media(max-width:720px){.operator-fab{bottom:18px;right:18px}.operator-panel{max-height:calc(100dvh - 28px)}}
+
+/* V53 mobile/header brand treatment: the mark stays readable in both themes. */
+.mobile-wordmark{
+  background:#fff;
+  color:#111214!important;
+  border-radius:10px;
+  padding:4px 8px 4px 4px;
+  box-shadow:0 3px 12px rgba(0,0,0,.12);
+}
+.mobile-wordmark img{width:25px!important;height:25px!important;background:#fff;border-radius:6px}
+.mobile-wordmark span{color:#111214!important}
+/* Wider, calmer operating surface: less artificial whitespace at desktop widths. */
+@media(min-width:1100px){.page{max-width:none;padding-left:clamp(28px,2.8vw,48px);padding-right:clamp(28px,2.8vw,48px)}.command-hero{grid-template-columns:minmax(0,1.1fr) minmax(380px,.9fr);gap:28px}}
+/* Keep the dashboard about action, not vanity metrics. */
+.executive-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+@media(max-width:720px){.executive-metrics{grid-template-columns:1fr 1fr!important}}
