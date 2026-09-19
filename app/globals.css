@@ -408,3 +408,23 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
 .theme-dark .v19-connector p,.theme-dark .v19-help,.theme-dark .v19-section-head p{color:#a4a8b0}.theme-dark .v19-form input,.theme-dark .v19-business-actions input{background:#0f1114;color:var(--ink);border-color:#3a3f47}
 .theme-dark .outcom-loading{background:var(--bg);color:var(--ink)}
 @media(prefers-reduced-motion:reduce){.outcom-loading-orb,.loading-dots{animation:none}}
+
+
+/* V52 — transparent wordmark and more capable Operator surface */
+.outcom-wordmark{display:inline-flex;align-items:center;gap:9px;text-decoration:none;color:var(--ink,#17181b);font-weight:900;letter-spacing:-.095em;font-size:25px;line-height:1}
+.outcom-wordmark img{width:35px;height:35px;object-fit:contain;display:block}
+.outcom-wordmark span{display:block}
+.mobile-wordmark{font-size:22px}
+.mobile-wordmark img{width:30px;height:30px}
+.sidebar-brand{padding-left:2px!important}
+.operator-panel{width:min(560px,calc(100vw - 28px));}
+.operator-header{background:rgba(255,255,255,.96)}
+.operator-title strong{font-size:14px}
+.operator-message{max-width:92%;font-size:12px}
+.operator-message span{white-space:pre-wrap}
+.operator-suggestions button{font-size:10px}
+.theme-dark .outcom-wordmark{color:#f4f4f5}
+.theme-dark .operator-header{background:#1b1e23}
+.theme-dark .operator-input-wrap{background:#111317}
+.theme-dark .operator-input-wrap input{color:#f4f4f5}
+.theme-dark .operator-suggestions button{background:#20242a;color:#e8eaf0}
