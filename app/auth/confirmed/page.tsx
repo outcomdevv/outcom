@@ -15,6 +15,10 @@ export default function ConfirmedPage() {
     const finish = async () => {
       try {
         const supabase = createSupabaseBrowserClient();
+        const query = new URLSearchParams(window.location.search);
+        const queryError = query.get("error");
+        if (queryError) throw new Error(queryError);
+
         const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
         const accessToken = hash.get("access_token");
         const refreshToken = hash.get("refresh_token");
