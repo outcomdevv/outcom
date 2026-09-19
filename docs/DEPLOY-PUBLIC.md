@@ -92,3 +92,8 @@ The worker calls the protected observer endpoint every five minutes.
 10. Reproduce a known silent failure and capture the evidence chain.
 
 The demo should prove the product's core value—not merely that the integrations connect.
+
+
+## If Vercel shows `permission denied for table workspaces`
+
+Run `supabase/migrations/002_service_role_privileges.sql` once in the **same Supabase project** used by Vercel, then redeploy. The server-side key must be configured in Vercel as `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`; never expose either key as a `NEXT_PUBLIC_*` variable.
