@@ -383,3 +383,28 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
   .landing-marquee .marquee-platform b{font-size:11px}
   .landing-marquee .marquee-swipe-hint{display:flex;position:absolute;right:14px;top:50%;transform:translateY(-50%);z-index:3;pointer-events:none;align-items:center;font-size:8px;letter-spacing:.12em;color:rgba(255,255,255,.78);font-weight:850;background:rgba(16,17,19,.62);padding:7px 8px;border-radius:999px;backdrop-filter:blur(10px)}
 }
+
+/* V51 — wider workspace, theme switcher, and mascot loading state */
+.page{width:100%;max-width:1500px;padding-left:clamp(24px,3.2vw,56px);padding-right:clamp(24px,3.2vw,56px)}
+.topbar{padding-left:clamp(22px,3vw,48px);padding-right:clamp(22px,3vw,48px)}
+.theme-toggle{display:inline-flex;align-items:center;gap:6px;border:1px solid #dfe0e3;background:#fff;color:#4f5258;border-radius:999px;padding:7px 10px;font-size:10px;font-weight:750;cursor:pointer}
+.theme-toggle span{font-size:14px;line-height:1}.theme-toggle:hover{background:#f2f2f4}
+.outcom-loading{min-height:70vh;display:grid;place-items:center;align-content:center;gap:10px;text-align:center;color:var(--ink);background:var(--bg)}
+.outcom-loading-orb{width:92px;height:92px;border:1px solid #dcdde5;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 30% 25%,#fff,#eeedff);box-shadow:0 18px 55px rgba(78,65,190,.12);animation:outcom-loading-float 2s ease-in-out infinite}
+.outcom-loading-orb img{width:62%;height:62%;object-fit:contain}.outcom-loading strong{font-size:16px;letter-spacing:-.03em}.outcom-loading small{font-size:11px;color:var(--muted)}.loading-dots{display:inline-block;width:22px;text-align:left;overflow:hidden;animation:loading-dots 1.2s steps(4,end) infinite}
+@keyframes outcom-loading-float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+@keyframes loading-dots{0%{width:0}100%{width:22px}}
+@media(max-width:900px){.app-shell{grid-template-columns:205px minmax(0,1fr)}.page{padding-top:28px}.topbar-status b{display:none}.theme-toggle b{display:none}}
+
+.theme-dark{--bg:#0d0f12;--paper:#17191d;--ink:#f3f4f6;--muted:#a4a8b0;--line:#30343b;--soft:#22262c;--shadow:0 12px 36px rgba(0,0,0,.24)}
+.theme-dark body{background:var(--bg);color:var(--ink)}
+.theme-dark .topbar{background:rgba(13,15,18,.88);border-color:#2b2f35}.theme-dark .theme-toggle{background:#20242a;color:#f3f4f6;border-color:#3a3f47}.theme-dark .theme-toggle:hover{background:#2a2f36}
+.theme-dark .page-intro,.theme-dark .section-heading-row>a,.theme-dark .topbar-breadcrumb,.theme-dark .topbar-status{color:#a4a8b0}
+.theme-dark .metric-card,.theme-dark .finding-card,.theme-dark .workflow-table,.theme-dark .workflow-table-row,.theme-dark .connect-section,.theme-dark .setup-card-v2,.theme-dark .endpoint-card,.theme-dark .surface,.theme-dark .section,.theme-dark .settings-card,.theme-dark .operator-panel,.theme-dark .operator-header,.theme-dark .operator-message.assistant span,.theme-dark .operator-input-wrap,.theme-dark .operator-suggestions button{background:#17191d;color:var(--ink);border-color:#30343b}
+.theme-dark .workflow-table-head{background:#20242a;color:#a4a8b0}.theme-dark .workflow-table-row{border-color:#30343b}.theme-dark .workflow-table-row:hover{background:#20242a}.theme-dark .workflow-primary{color:var(--ink)}
+.theme-dark .empty-state,.theme-dark .data-list,.theme-dark .data-row,.theme-dark .form-card,.theme-dark input,.theme-dark select,.theme-dark textarea{background:#17191d;color:var(--ink);border-color:#3a3f47}
+.theme-dark input::placeholder,.theme-dark textarea::placeholder{color:#777e89}.theme-dark .secondary-cta{color:#c0c4cc}.theme-dark .primary-cta{background:#f3f4f6;color:#111214}.theme-dark .primary-cta:hover{background:#dfe2e8}
+.theme-dark .v19-section,.theme-dark .v19-connector,.theme-dark .v20-manual-panel{background:#17191d;border-color:#30343b;color:var(--ink)}
+.theme-dark .v19-connector p,.theme-dark .v19-help,.theme-dark .v19-section-head p{color:#a4a8b0}.theme-dark .v19-form input,.theme-dark .v19-business-actions input{background:#0f1114;color:var(--ink);border-color:#3a3f47}
+.theme-dark .outcom-loading{background:var(--bg);color:var(--ink)}
+@media(prefers-reduced-motion:reduce){.outcom-loading-orb,.loading-dots{animation:none}}

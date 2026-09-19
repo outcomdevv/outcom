@@ -6,6 +6,7 @@ import { getUser, ensureWorkspace } from "@/lib/auth";
 import "./globals.css";
 import "./final.css";
 import OperatorAssistant from "@/app/assistant";
+import ThemeToggle from "@/app/theme-toggle";
 
 // This layout reads Supabase auth cookies and must never be statically prerendered.
 export const dynamic = "force-dynamic";
@@ -87,7 +88,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <form action="/api/auth/signout" method="post"><button className="sidebar-signout">Sign out</button></form>
         </aside>
         <div className="app-main">
-          <header className="topbar"><div className="mobile-brand"><img className="outcom-logo outcom-logo-mobile" src="/outcom-logo.png" alt="Outcom" /></div><div className="topbar-breadcrumb">{workspace?.workspace?.name || "Workspace"}<span>/</span><strong>Business outcome assurance</strong></div><div className="topbar-status"><span className="live-dot"/>{open.length ? `${open.length} finding${open.length===1?"":"s"} need attention` : "All protected outcomes healthy"}</div><Link className="topbar-connect" href="/connect">Connect stack <b>↗</b></Link></header>
+          <header className="topbar"><div className="mobile-brand"><img className="outcom-logo outcom-logo-mobile" src="/outcom-logo.png" alt="Outcom" /></div><div className="topbar-breadcrumb">{workspace?.workspace?.name || "Workspace"}<span>/</span><strong>Business outcome assurance</strong></div><div className="topbar-status"><ThemeToggle /><span className="live-dot"/>{open.length ? `${open.length} finding${open.length===1?"":"s"} need attention` : "All protected outcomes healthy"}</div><Link className="topbar-connect" href="/connect">Connect stack <b>↗</b></Link></header>
           <main className="page">{children}</main>
         </div>
       </div>

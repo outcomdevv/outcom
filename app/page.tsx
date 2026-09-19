@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getWorkspaceStore } from "@/lib/db";import { getUser } from "@/lib/auth";
 import { IncidentCard, EmptyState } from "@/app/ui";
 import { IntegrationLogo } from "@/app/integrations";
+import ThemeToggle from "@/app/theme-toggle";
 export const dynamic="force-dynamic";
 export default async function Home(){const user=await getUser();if(!user)return <Landing/>;const store=await getWorkspaceStore();const workflows=await store.workflows.list();const incidents=await store.incidents.list();const connections=await store.connections.list();const open=incidents.filter(i=>i.status==="open");const attention=new Set(open.map(i=>i.workflowId));const healthy=Math.max(workflows.length-attention.size,0);const protectedCount=workflows.length;return <div className="command-center">
 <section className="command-hero"><div><span className="section-kicker"><i/> OUTCOM COMMAND CENTER</span><h1>Know when automation<br/><em>looks successful but isn't.</em></h1><p>Outcom sits outside your automation stack and verifies the business state that actually matters. Built for agencies running critical workflows across clients.</p><div className="hero-cta-row"><Link className="primary-cta" href="/connect">Connect your stack <span>↗</span></Link><Link className="secondary-cta" href="/workflows">View protected workflows</Link></div></div><div className="hero-proof-card"><div className="proof-card-top"><span>OUTCOME ASSURANCE</span><b><i/> READ-ONLY</b></div><div className="proof-line"><div><IntegrationLogo name="n8n" size={21}/><strong>Automation execution</strong></div><span className="pass">SUCCESS ✓</span></div><div className="proof-gap">but the business state says…</div><div className="proof-line light"><div><IntegrationLogo name="ghl" size={21}/><strong>Customer record</strong></div><span className="fail">MISMATCH ✕</span></div><div className="proof-result"><span>OUTCOM</span><strong>Execution is not proof.</strong><small>execution → entity → downstream state → evidence</small></div></div></section>
@@ -17,7 +18,7 @@ function Landing(){return <div className="landing-page">
     <div className="landing-nav-center">
       <a href="#why">Why Outcom</a><a href="#how">How it works</a><a href="#stack">Stack</a><a href="#proof">Proof</a>
     </div>
-    <div className="landing-nav-actions"><Link className="landing-nav-link" href="/auth/login">Sign in</Link><Link className="landing-nav-cta" href="/auth/signup">Request access <span>↗</span></Link></div>
+    <div className="landing-nav-actions"><ThemeToggle /><Link className="landing-nav-link" href="/auth/login">Sign in</Link><Link className="landing-nav-cta" href="/auth/signup">Request access <span>↗</span></Link></div>
   </nav>
 
   <main id="top">

@@ -208,6 +208,8 @@ export default function ConnectClient() {
       <section className="v19-section">
         <div className="v19-section-head"><div><span className="v19-index">01</span><h2>Connect your automation</h2><p>Use the easiest supported auth for your environment. After connection, Outcom handles discovery and verification.</p></div><div className="v19-readonly"><b>READ-ONLY</b><span>We do not edit your automations.</span></div></div>
 
+        <div className="v51-connection-guide"><strong>Start simple.</strong><span>You do not need to connect every platform. Connect one automation source (n8n, Make, or Zapier), then connect HighLevel only if it holds the business state you want Outcom to verify.</span><b>Recommended path: 1 automation source → 1 system of truth → 1 protected workflow.</b></div>
+
         <div className="v22-auth-map"><span><b>n8n</b> API key + instance URL</span><span><b>HighLevel</b> OAuth 2.0</span><span><b>Make</b> OAuth 2.0</span><span><b>Zapier</b> OAuth 2.0</span></div>
 
         <div className="v23-connection-strip">{connectionStatuses.map(([label, value]) => <div key={String(label)} className={`v23-connection-status ${value ? "on" : "off"}`}><span>{value ? "✓" : "○"}</span><div><b>{label}</b><small>{value ? `Connected · ${value.accountName}` : "Not connected"}</small></div></div>)}</div>

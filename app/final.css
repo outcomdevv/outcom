@@ -100,3 +100,13 @@
 .auth-resend-button:disabled{opacity:.55;cursor:not-allowed}
 .auth-delivery-note{font-size:8px!important;line-height:1.55!important;color:#a0a3a9!important;text-align:center;margin:14px 0 0!important}
 @media(max-width:520px){.auth-check-card{padding:27px 20px 23px}.auth-check-card h1{font-size:32px}}
+
+/* V51 — reduce integration cognitive load */
+.v51-connection-guide{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 18px;padding:15px 17px;border:1px solid #dfe3e7;border-radius:14px;background:linear-gradient(135deg,#f7f9fb,#fff);color:#30343b}
+.v51-connection-guide strong{font-size:12px;grid-row:span 2}.v51-connection-guide span{font-size:11px;color:#737982;line-height:1.55}.v51-connection-guide>b{font-size:10px;color:#2f8a57;letter-spacing:.01em}
+.theme-dark .v51-connection-guide{background:#20242a;border-color:#3a3f47;color:#f3f4f6}.theme-dark .v51-connection-guide span{color:#a4a8b0}
+@media(max-width:650px){.v51-connection-guide{grid-template-columns:1fr;gap:5px}.v51-connection-guide strong{grid-row:auto}}
+
+/* Theme overrides loaded after the product surface stylesheet. */
+.theme-dark .landing-page{background:#0d0f12;color:#f3f4f6}.theme-dark .landing-nav{background:rgba(13,15,18,.88);border-color:#30343b}.theme-dark .landing-nav a{color:#e8eaf0}.theme-dark .landing-lede,.theme-dark .landing-section-intro p{color:#a4a8b0}.theme-dark .landing-feature:not(.dark),.theme-dark .landing-final{background:#17191d;border-color:#30343b;color:#f3f4f6}.theme-dark .landing-feature:not(.dark) p,.theme-dark .landing-final p{color:#a4a8b0}.theme-dark .landing-footer{background:#0d0f12;color:#e8eaf0}.theme-dark .landing-footer p{color:#a4a8b0}.theme-dark .landing-marquee-wrap{background:#0d0f12}.theme-dark .marquee-heading{color:#a4a8b0}
+.theme-dark .v19-connect-hero,.theme-dark .v19-section,.theme-dark .v19-connector,.theme-dark .v20-manual-panel{color:#f3f4f6}.theme-dark .v19-connect-hero p{color:#a4a8b0}.theme-dark .v19-connection-status,.theme-dark .v19-auth-map{background:#20242a;border-color:#3a3f47;color:#e8eaf0}
