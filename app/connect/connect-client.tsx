@@ -24,6 +24,8 @@ export default function ConnectClient() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [oauth, setOauth] = useState<OAuthStatus>({ ghl: false, zapier: false, make: false });
   const [platform, setPlatform] = useState<Platform>("n8n");
+  const [step, setStep] = useState<1 | 2>(1);
+  const [outcome, setOutcome] = useState("");
   const [name, setName] = useState("");
   const [workflowId, setWorkflowId] = useState("");
   const [created, setCreated] = useState(false);
@@ -184,100 +186,79 @@ export default function ConnectClient() {
   const error = params.get("error");
   const connected = params.get("connected");
 
+  const activeConnection = platform === "n8n" ? n8n : platform === "zapier" ? zapier : make;
+  const platformName = platform === "n8n" ? "n8n" : platform === "zapier" ? "Zapier" : "Make";
+
   return (
-    <div className="connect-page v19-connect">
-      <header className="v19-connect-hero">
+    <div className="connect-page v51-simple-connect">
+      <header className="simple-connect-hero">
         <div>
-          <div className="breadcrumb">Workspace <span>/</span> Connect stack</div>
-          <div className="v19-eyebrow"><span className="v19-dot"/> BUSINESS OUTCOME VERIFICATION</div>
-          <h1>Connect once.<br/><em>We prove the outcome.</em></h1>
-          <p>Connect the tools you already use. Outcom stays read-only, observes the automation from outside, and checks whether the downstream business state actually ended up right.</p>
+          <div className="breadcrumb">Workspace <span>/</span> Connect</div>
+          <div className="simple-eyebrow"><span className="v19-dot" /> OUTCOME VERIFICATION</div>
+          <h1>Protect one workflow.<br /><em>Know what actually happened.</em></h1>
+          <p>Connect one automation, tell Outcom what success means, and let us verify the business result. No need to connect your entire stack.</p>
         </div>
-        <div className="v19-edge-card">
-          <span className="v19-edge-kicker">THE DIFFERENCE</span>
-          <div className="v19-fake-success"><b>n8n / Make / Zapier</b><span>Execution: <strong>SUCCESS</strong></span></div>
-          <div className="v19-arrow">↓</div>
-          <div className="v19-proof"><span>Outcom</span><strong>Was the business result actually correct?</strong><small>Execution → entity → downstream state → proof</small></div>
-          <div className="v19-no-node">NO HTTP REQUEST NODE · NO CUSTOM ASSERTION</div>
+        <div className="simple-hero-card">
+          <span className="simple-card-kicker">THE SIMPLE PATH</span>
+          <div><b>1.</b> Connect an automation</div>
+          <div><b>2.</b> Choose the outcome</div>
+          <div><b>3.</b> Protect the workflow</div>
+          <small>Read-only wherever supported.</small>
         </div>
       </header>
 
-      {error && <div className="v19-alert"><strong>Connection setup needed</strong><span>{error === "zapier_oauth_not_configured" ? "Zapier is waiting for the Outcom developer to finish the one-time OAuth app setup. End users will not need a Zapier API key after that." : error.replaceAll("_", " ")}</span></div>}
-      {connected && <div className="v19-success">✓ {connected === "ghl" ? "HighLevel" : connected[0].toUpperCase() + connected.slice(1)} connected. Your workspace can now discover data.</div>}
+      {error && <div className="simple-alert"><b>Connection notice</b><span>{error === "zapier_oauth_not_configured" ? "Zapier OAuth still needs developer setup." : error.replaceAll("_", " ")}</span></div>}
+      {connected && <div className="simple-success">✓ {connected === "ghl" ? "HighLevel" : connected[0].toUpperCase() + connected.slice(1)} connected.</div>}
 
-      <section className="v19-section">
-        <div className="v19-section-head"><div><span className="v19-index">01</span><h2>Connect your automation</h2><p>Use the easiest supported auth for your environment. After connection, Outcom handles discovery and verification.</p></div><div className="v19-readonly"><b>READ-ONLY</b><span>We do not edit your automations.</span></div></div>
-
-        <div className="v51-connection-guide"><strong>Start simple.</strong><span>You do not need to connect every platform. Connect one automation source (n8n, Make, or Zapier), then connect HighLevel only if it holds the business state you want Outcom to verify.</span><b>Recommended path: 1 automation source → 1 system of truth → 1 protected workflow.</b></div>
-
-        <div className="v22-auth-map"><span><b>n8n</b> API key + instance URL</span><span><b>HighLevel</b> OAuth 2.0</span><span><b>Make</b> OAuth 2.0</span><span><b>Zapier</b> OAuth 2.0</span></div>
-
-        <div className="v23-connection-strip">{connectionStatuses.map(([label, value]) => <div key={String(label)} className={`v23-connection-status ${value ? "on" : "off"}`}><span>{value ? "✓" : "○"}</span><div><b>{label}</b><small>{value ? `Connected · ${value.accountName}` : "Not connected"}</small></div></div>)}</div>
-
-        <div className="v19-connect-grid">
-          <article className={`v19-connector ${n8n ? "is-connected" : ""}`}>
-            <div className="v19-connector-top"><div className="v19-logo"><IntegrationLogo name="n8n" size={34}/></div><span className={`v19-status ${n8n ? "on" : ""}`}>{n8n ? "CONNECTED" : "API ACCESS"}</span></div>
-            <h3>n8n</h3>
-            <p>{n8n ? `Connected to ${n8n.accountName}.` : "n8n does not expose a generic third-party 'log in with n8n' flow for its API. Use a read-only API key for the instance."}</p>
-            {!n8n && <div className="v19-form"><input value={n8nBaseUrl} onChange={e => setN8nBaseUrl(e.target.value)} placeholder="Your n8n URL · https://…"/><input type="password" value={n8nApiKey} onChange={e => setN8nApiKey(e.target.value)} placeholder="Paste n8n API key"/></div>}
-            <div className="v19-actions">{n8n ? <button className="v19-button" onClick={discoverN8n}>{loadingDiscovery ? "Finding…" : "Find workflows"}</button> : <button className="v19-button dark" disabled={n8nConnecting || !n8nBaseUrl.trim() || !n8nApiKey.trim()} onClick={connectN8n}>{n8nConnecting ? "Checking access…" : "Connect n8n"}</button>}</div>
-            {n8nMessage && <small className={`v19-message ${n8nMessage.startsWith("Connected") || n8nMessage.startsWith("Protected") ? "ok" : ""}`}>{n8nMessage}</small>}
-            {!n8n && <small className="v19-help">One-time setup: n8n → Settings → API → create a key. Outcom stores it encrypted and only reads workflows/executions.</small>}
-          </article>
-
-          <article className={`v19-connector ${zapier ? "is-connected" : ""}`}>
-            <div className="v19-connector-top"><div className="v19-logo"><IntegrationLogo name="zapier" size={34}/></div><span className={`v19-status ${zapier ? "on" : ""}`}>{zapier ? "CONNECTED" : oauth.zapier ? "ONE-CLICK" : "SETUP"}</span></div>
-            <h3>Zapier</h3>
-            <p>{zapier ? zapier.accountName : "The end user should only click 'Continue with Zapier' and approve access. No API key should be copied."}</p>
-            <div className="v19-actions">
-              {zapier ? <button className="v19-button" onClick={() => discover("zapier")}>{loadingDiscovery ? "Discovering…" : "Discover all Zaps"}</button> : <button className="v19-button dark" onClick={() => oauthConnect("zapier")} disabled={!oauth.zapier}>Continue with Zapier ↗</button>}
-            </div>
-            {!zapier && <small className={`v19-help ${oauth.zapier ? "v19-help-ok" : ""}`}>{oauth.zapier ? "Ready. Zapier handles the login and consent screen." : "OAuth is the correct user connection. The one-time blocker is Zapier's public-integration approval, which is required before Zapier issues Client ID/Secret and redirect-URI access."}</small>}
-          </article>
-
-          <article className={`v19-connector ${make ? "is-connected" : ""}`}>
-            <div className="v19-connector-top"><div className="v19-logo"><IntegrationLogo name="make" size={34}/></div><span className={`v19-status ${make ? "on" : ""}`}>{make ? "CONNECTED" : oauth.make ? "ONE-CLICK" : "SETUP"}</span></div>
-            <h3>Make</h3>
-            <p>{make ? make.accountName : "Connect with Make OAuth for one-click read-only access. Design partners can also use a scoped API token."}</p>
-            {!make && !oauth.make && <div className="v19-manual-note">Manual fallback is available for design-partner testing.</div>}
-            <div className="v19-actions">{make ? <button className="v19-button" onClick={() => discover("make")}>{loadingDiscovery ? "Discovering…" : "Discover scenarios"}</button> : oauth.make ? <button className="v19-button dark" onClick={() => oauthConnect("make")}>Continue with Make ↗</button> : <button className="v19-button" onClick={() => { setMakeTeamId(""); setMakeToken(""); document.getElementById("make-manual")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>Use manual setup</button>}</div>
-            {makeMessage && <small className={`v19-message ${makeMessage.startsWith("✓") ? "ok" : ""}`}>{makeMessage}</small>}
-            {!make && <small className="v19-help">{oauth.make ? "Ready. Make handles the login and consent screen; no token or Team ID is exposed to the user." : "Manual test mode uses a read-only Make API token with scenarios:read plus the numeric Team ID. We verify actual scenario access before saving the connection."}</small>}
-          </article>
+      <section className="simple-flow-card">
+        <div className="simple-stepper">
+          <button className={step === 1 ? "active" : "done"} onClick={() => setStep(1)}><span>1</span> Connect automation</button>
+          <div className="simple-step-line" />
+          <button className={step === 2 ? "active" : ""} onClick={() => setStep(2)}><span>2</span> Define success</button>
         </div>
-        {makeMessage && !make && <div className={`v19-message v23-global-make-message ${makeMessage.startsWith("✓") ? "ok" : ""}`}>{makeMessage}</div>}
-        {!make && !oauth.make && <div id="make-manual" className="v20-manual-panel"><div><b>Design-partner manual setup</b><span>For this test path, enter the numeric Team ID and a token with <b>scenarios:read</b>. The token is never shown again after saving.</span></div><div className="v19-form v20-manual-grid"><input value={makeTeamId} onChange={e => setMakeTeamId(e.target.value.replace(/[^0-9]/g, ""))} inputMode="numeric" placeholder="Make Team ID · e.g. 123456"/><input type="password" value={makeToken} onChange={e => setMakeToken(e.target.value)} placeholder="Make API token · scenarios:read"/><button className="v19-button dark" disabled={makeConnecting || !makeTeamId.trim() || !makeToken.trim()} onClick={connectMakeDirect}>{makeConnecting ? "Verifying access…" : "Connect & verify"}</button></div></div>}
-      </section>
 
-      <section className="v19-section v19-business-system">
-        <div className="v19-section-head"><div><span className="v19-index">02</span><h2>Connect the system that holds the truth</h2><p>The automation tells us it ran. Your business system tells us whether the result is actually there.</p></div></div>
-        <article className={`v19-connector wide ${ghl ? "is-connected" : ""}`}>
-          <div className="v19-business-left"><div className="v19-logo"><IntegrationLogo name="ghl" size={34}/></div><div><h3>HighLevel</h3><p>{ghl ? ghl.accountName : "Read-only downstream verification for contacts, tags and business state."}</p></div></div>
-          <div className="v19-business-actions">
-            {ghl ? <span className="v19-connected-label">✓ Connected · read-only</span> : oauth.ghl ? <button className="v19-button" onClick={() => oauthConnect("ghl")}>Connect with HighLevel ↗</button> : <><input value={ghlLocationId} onChange={e => setGhlLocationId(e.target.value)} placeholder="Location ID"/><input type="password" value={ghlPit} onChange={e => setGhlPit(e.target.value)} placeholder="Private Integration Token"/><button className="v19-button dark" disabled={ghlConnecting || !ghlLocationId.trim() || !ghlPit.trim()} onClick={connectGhlDirect}>{ghlConnecting ? "Connecting…" : "Connect HighLevel"}</button></>}
+        {step === 1 && <div className="simple-step-content">
+          <div className="simple-section-title"><span>STEP 01</span><h2>Where does your automation run?</h2><p>Choose one platform. You can add another later.</p></div>
+          <div className="simple-platform-grid">
+            {platforms.map((item) => {
+              const connectedHere = item.id === "n8n" ? n8n : item.id === "zapier" ? zapier : make;
+              return <button key={item.id} className={`simple-platform ${platform === item.id ? "selected" : ""}`} onClick={() => setPlatform(item.id)}>
+                <IntegrationLogo name={item.id} size={34} />
+                <span><b>{item.name}</b><small>{connectedHere ? "Connected" : item.id === "n8n" ? "Connect with URL + key" : "One-click OAuth"}</small></span>
+                <strong>{platform === item.id ? "✓" : "→"}</strong>
+              </button>;
+            })}
           </div>
-          {ghlMessage && <small className="v19-message">{ghlMessage}</small>}
-        </article>
+
+          <div className="simple-selected-panel">
+            <div className="simple-selected-heading"><div><span>SELECTED PLATFORM</span><h3>{platformName}</h3></div>{activeConnection && <b className="simple-connected-pill">CONNECTED</b>}</div>
+            {platform === "n8n" && !n8n && <div className="simple-form-grid"><input value={n8nBaseUrl} onChange={e => setN8nBaseUrl(e.target.value)} placeholder="n8n instance URL" /><input type="password" value={n8nApiKey} onChange={e => setN8nApiKey(e.target.value)} placeholder="n8n API key" /><button className="simple-primary" disabled={n8nConnecting || !n8nBaseUrl.trim() || !n8nApiKey.trim()} onClick={connectN8n}>{n8nConnecting ? "Checking access…" : "Connect n8n"}</button></div>}
+            {platform === "n8n" && n8n && <button className="simple-primary" onClick={discoverN8n}>{loadingDiscovery ? "Finding workflows…" : "Find my workflows →"}</button>}
+            {platform === "zapier" && !zapier && <div><p className="simple-help">You will be redirected to Zapier to approve read-only access. No API key needed.</p><button className="simple-primary" disabled={!oauth.zapier} onClick={() => oauthConnect("zapier")}>{oauth.zapier ? "Continue with Zapier ↗" : "Zapier connection unavailable"}</button></div>}
+            {platform === "zapier" && zapier && <button className="simple-primary" onClick={() => discover("zapier")}>{loadingDiscovery ? "Finding Zaps…" : "Find my Zaps →"}</button>}
+            {platform === "make" && !make && <div><p className="simple-help">You will be redirected to Make to approve read-only access. No token needed when OAuth is enabled.</p>{oauth.make ? <button className="simple-primary" onClick={() => oauthConnect("make")}>Continue with Make ↗</button> : <p className="simple-help">Make OAuth is not enabled for this deployment yet. Use the advanced connection settings when available.</p>}</div>}
+            {platform === "make" && make && <button className="simple-primary" onClick={() => discover("make")}>{loadingDiscovery ? "Finding scenarios…" : "Find my scenarios →"}</button>}
+            {(n8nMessage || makeMessage || testResult) && <p className="simple-inline-message">{n8nMessage || makeMessage || testResult}</p>}
+          </div>
+          <div className="simple-bottom-row"><span>Only one automation source is required.</span><button className="simple-secondary" onClick={() => setStep(2)}>Next: define success →</button></div>
+        </div>}
+
+        {step === 2 && <div className="simple-step-content">
+          <div className="simple-section-title"><span>STEP 02</span><h2>What should success look like?</h2><p>Pick the business result Outcom should verify after your automation runs.</p></div>
+          <div className="simple-outcome-grid">
+            {["A contact was created", "A contact was updated", "A tag was added", "A deal moved", "A payment was received", "A record exists"].map(item => <button key={item} className={outcome === item ? "chosen" : ""} onClick={() => setOutcome(item)}>{item}<span>{outcome === item ? "✓" : "＋"}</span></button>)}
+          </div>
+          <label className="simple-custom-label">Or describe your own expected outcome<input value={outcome} onChange={e => setOutcome(e.target.value)} placeholder="e.g. A new lead exists in HighLevel" /></label>
+          <div className="simple-bottom-row"><button className="simple-secondary" onClick={() => setStep(1)}>← Back</button><button className="simple-primary" disabled={!outcome.trim()} onClick={() => { setName(outcome.trim()); setStep(1); }}>Save outcome and continue →</button></div>
+          {outcome && <div className="simple-outcome-preview"><span>EXPECTED OUTCOME</span><b>{outcome}</b><small>Next, choose a discovered workflow and click Protect.</small></div>}
+        </div>}
       </section>
 
-      {discoveryLoaded && <section className="v19-section">
-        <div className="v19-section-head"><div><span className="v19-index">03</span><h2>{discoveryTotal === 0 ? "No automations found." : "Your automations are here."}</h2><p>{discoveryTotal === 0 ? "This account currently has no workflows visible to Outcom with the granted read-only access." : `Outcom discovered ${discoveryTotal} workflow${discoveryTotal === 1 ? "" : "s"}${discoveryPages > 1 ? ` across ${discoveryPages} API pages` : ""}. No API key was required.`}</p></div><div className="v19-readonly"><b>{discoveryTotal ?? 0}</b><span>workflows discovered</span></div></div>
-        {discovered.length > 0 && <div className="v19-discovery-list">{discovered.map(d => <button key={`${d.platform}:${d.id}`} className="v19-discovery" onClick={() => protectWorkflow(d.id, d.name, d.platform as Platform)}><span className="v19-discovery-icon"><IntegrationLogo name={d.platform === "n8n" ? "n8n" : d.platform === "zapier" ? "zapier" : "make"} size={22}/></span><span><b>{d.name}</b><small>{d.platform} · {d.enabled ? "Active" : "Paused"}{d.steps != null ? ` · ${d.steps} steps` : ""}</small></span><strong>{d.platform === "n8n" ? "Protect →" : "Discovered ✓"}</strong></button>)}</div>}
-        {discoveryTotal != null && discoveryTotal > discovered.length && <small className="v19-help">The provider reported {discoveryTotal} workflows, but this UI currently renders the first {discovered.length}. The API sync itself is paginated and fetched all pages.</small>}
-      </section>}
+      {discoveryLoaded && <section className="simple-results-card"><div className="simple-section-title"><span>YOUR AUTOMATIONS</span><h2>{discoveryTotal === 0 ? "No automations found" : "Choose a workflow to protect"}</h2><p>{discoveryTotal === 0 ? "No workflows were visible with the current connection." : `${discoveryTotal} workflow${discoveryTotal === 1 ? "" : "s"} found.`}</p></div>{discovered.length > 0 && <div className="simple-discovery-list">{discovered.map(d => <button key={`${d.platform}:${d.id}`} onClick={() => protectWorkflow(d.id, d.name, d.platform as Platform)}><IntegrationLogo name={d.platform === "n8n" ? "n8n" : d.platform === "zapier" ? "zapier" : "make"} size={24}/><span><b>{d.name}</b><small>{d.platform} · {d.enabled ? "Active" : "Paused"}</small></span><strong>Protect →</strong></button>)}</div>}</section>}
 
-      {created && <section className="v19-section v19-protect-section">
-        <div className="v19-section-head"><div><span className="v19-index">04</span><h2>Protection is on.</h2><p>{platform === "n8n" ? "Outcom is observing the automation from outside the workflow. No HTTP Request node. No custom assertion." : "This workflow is registered. Observer coverage will depend on the platform adapter available for this workspace."}</p></div><span className="v19-live">● PROTECTED</span></div>
-        {platform === "n8n" && <div className="v19-proof-grid"><div><span>01</span><b>Observe</b><small>Native execution history</small></div><div><span>02</span><b>Correlate</b><small>Execution → business entity</small></div><div><span>03</span><b>Verify</b><small>Actual downstream state</small></div><div><span>04</span><b>Prove</b><small>Evidence + impact + action</small></div></div>}
-        {platform === "n8n" && <div className="v19-actions"><button className="v19-button" onClick={syncN8n}>Sync native executions</button><a className="v19-button dark" href="/incidents">View proof →</a>{testResult && <span className="v19-message">{testResult}</span>}</div>}
-      </section>}
+      {created && <section className="simple-protected-card"><span className="simple-connected-pill">● PROTECTED</span><h2>Protection is on.</h2><p>{platform === "n8n" ? "Outcom is observing this workflow and checking its downstream result." : "This workflow is registered. Coverage depends on the available platform adapter."}</p><div className="simple-bottom-row"><button className="simple-secondary" onClick={syncN8n}>Sync now</button><a className="simple-primary" href="/incidents">View proof →</a></div></section>}
 
-      <section className="v19-edge-strip">
-        <div><span className="v19-edge-kicker">WHY OUTCOM</span><h2>Green execution is not proof of a correct business outcome.</h2><p>Native automation logs answer <b>“Did the steps execute?”</b> Outcom answers <b>“Did the business state end up correct?”</b></p></div>
-        <div className="v19-edge-list"><div><b>01</b><span>External observer</span><small>Works without changing the workflow.</small></div><div><b>02</b><span>Outcome inference</span><small>Reads topology instead of asking builders to write assertions.</small></div><div><b>03</b><span>State memory</span><small>Catches regressions like a tag silently disappearing later.</small></div><div><b>04</b><span>Evidence graph</span><small>Shows execution → entity → state → impact.</small></div></div>
-      </section>
-
-      <div className="v19-footnote"><span>Read-only by design.</span><span>Inference is conservative: if Outcom cannot prove the expected outcome, it reports <b>UNKNOWN</b> instead of inventing one.</span></div>
+      <div className="simple-footer-note"><b>Outcom is not another dashboard.</b><span>Connect one workflow. Define one expected result. Investigate only when reality differs.</span></div>
     </div>
   );
 }
