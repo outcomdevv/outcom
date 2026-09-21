@@ -196,3 +196,28 @@
 .theme-dark .simple-form-grid input,.theme-dark .simple-custom-label input{background:#111419;border-color:#3a414c;color:#f3f4f6}
 .theme-dark .simple-platform,.theme-dark .simple-outcome-grid button,.theme-dark .simple-discovery-list button{border-color:#3a414c}
 .theme-dark .simple-platform.selected,.theme-dark .simple-outcome-grid button.chosen{border-color:#f3f4f6}
+
+/* V55: explicit connection instructions and business-system setup */
+.connection-setup-block{display:flex;flex-direction:column;gap:14px}
+.setup-instructions{padding:16px 18px;border:1px solid var(--line,#dfe2e6);border-radius:13px;background:var(--panel,#fff);color:inherit}
+.setup-instructions>b{display:block;font-size:13px;margin-bottom:8px}
+.setup-instructions ol{margin:0 0 10px 18px;padding:0;color:#697586;font-size:12px;line-height:1.8}
+.setup-instructions strong{color:inherit}
+.setup-instructions code{font-size:11px;overflow-wrap:anywhere}
+.setup-instructions a{font-size:12px;font-weight:750;color:inherit;text-decoration:underline}
+.simple-help{margin:0}
+.advanced-connection{border:1px solid var(--line,#dfe2e6);border-radius:12px;padding:12px 14px}
+.advanced-connection summary{cursor:pointer;font-size:12px;font-weight:800}
+.simple-form-grid-stack{grid-template-columns:1fr 1fr}
+.simple-form-grid-stack input:nth-child(3){grid-column:1/-1}
+.simple-form-grid-stack button{grid-column:1/-1}
+.business-system-card{margin-top:24px;padding:28px;border:1px solid var(--line,#dfe2e6);border-radius:20px;background:var(--panel,#fff);color:inherit}
+.business-system-panel{margin-top:18px;padding:20px;border:1px solid var(--line,#dfe2e6);border-radius:16px;background:var(--soft,#f5f6f7)}
+.business-system-heading{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+.business-system-heading h3{margin:0 0 4px;font-size:24px}
+.business-system-heading p{margin:0;color:#7c8794;font-size:12px}
+.business-system-heading .simple-connected-pill{margin-left:auto}
+.ghl-form-grid{grid-template-columns:1fr 1fr auto}
+.theme-dark .setup-instructions{background:#20242a;border-color:#3a3f47}
+.theme-dark .business-system-card,.theme-dark .business-system-panel{background:#17191d;border-color:#3a3f47}
+@media(max-width:800px){.simple-form-grid-stack,.ghl-form-grid{grid-template-columns:1fr}.simple-form-grid-stack input:nth-child(3),.simple-form-grid-stack button{grid-column:auto}.business-system-heading{align-items:flex-start;flex-wrap:wrap}.business-system-heading .simple-connected-pill{margin-left:0}}
