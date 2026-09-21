@@ -469,3 +469,18 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
 /* Keep the dashboard about action, not vanity metrics. */
 .executive-metrics{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 @media(max-width:720px){.executive-metrics{grid-template-columns:1fr 1fr!important}}
+
+
+/* V58 — reduce cognitive load and make connection states honest */
+.simple-platform-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.simple-platform{min-height:104px;align-items:flex-start}
+.simple-platform span{min-width:0}
+.simple-platform span b{font-size:14px;color:inherit}
+.simple-platform small{line-height:1.35}
+.simple-unavailable{display:flex;flex-direction:column;gap:5px;padding:15px 17px;border:1px solid var(--line,#dfe2e6);border-radius:12px;background:var(--soft,#f5f6f7);color:inherit;font-size:12px;line-height:1.5}
+.simple-unavailable strong{font-size:13px}
+.simple-unavailable span{color:#697586}
+.theme-dark .simple-unavailable{background:#20242a;border-color:#3a414c}
+.theme-dark .simple-unavailable span{color:#aab5c4}
+@media(max-width:1000px){.simple-platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:800px){.simple-platform-grid{grid-template-columns:1fr}}

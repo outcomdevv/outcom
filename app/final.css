@@ -221,3 +221,8 @@
 .theme-dark .setup-instructions{background:#20242a;border-color:#3a3f47}
 .theme-dark .business-system-card,.theme-dark .business-system-panel{background:#17191d;border-color:#3a3f47}
 @media(max-width:800px){.simple-form-grid-stack,.ghl-form-grid{grid-template-columns:1fr}.simple-form-grid-stack input:nth-child(3),.simple-form-grid-stack button{grid-column:auto}.business-system-heading{align-items:flex-start;flex-wrap:wrap}.business-system-heading .simple-connected-pill{margin-left:0}}
+
+/* V56 — n8n-first launch scope */
+.mvp-scope-note{margin:14px 0 0;padding:12px 14px;border:1px solid var(--line,#dfe2e6);border-radius:12px;background:var(--soft,#f5f6f7);color:#697586;font-size:12px;line-height:1.55}
+.mvp-scope-note strong{color:inherit}
+.theme-dark .mvp-scope-note{background:#20242a;border-color:#3a414c;color:#b8c0cc}

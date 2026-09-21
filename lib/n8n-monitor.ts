@@ -154,28 +154,28 @@ export function executionToOutcomeEvent(execution: any, workflow: N8nWorkflowDet
   };
 }
 
-export async function protectN8nWorkflow(externalWorkflowId: string, workspaceId?: string) {
+export async function protectN8nWorkflow(externalWorkflowId: string, workspaceId?: string, expectedOutcome?: string) {
   const workflow = await getN8nWorkflow(externalWorkflowId, workspaceId);
   const analysis = analyzeN8nWorkflow(workflow);
   if (!analysis.protections.length) return { protected: false as const, analysis };
   const store = await getWorkspaceStore(workspaceId);
   const localId = `n8n:${workflow.id}`;
   const existing = await store.workflows.get(localId);
-  const local = existing || await store.workflows.create({ id: localId, name: workflow.name, platform: "n8n", description: "Auto-protected by Outcom · native execution observer" });
+  const local = existing || await store.workflows.create({ id: localId, name: workflow.name, platform: "n8n", description: expectedOutcome ? `Auto-protected by Outcom · ${expectedOutcome}` : "Auto-protected by Outcom · native execution observer" });
   const created: any[] = [];
   for (const protection of analysis.protections) {
     const existingContracts = await store.contracts.list(local.id);
     const existingContract = existingContracts.find((c) => c.configuration?.sourceNode === protection.nodeId && c.configuration?.auto === true && c.type === "record_exists");
     if (!existingContract && protection.entity === "contact" && protection.operation !== "delete") {
-      created.push(await store.contracts.create({ workflowId: local.id, name: `${protection.nodeName}: downstream contact exists`, type: "record_exists", system: "ghl", entity: "contact", configuration: { auto: true, sourceNode: protection.nodeId, sourceNodeName: protection.nodeName, lookup: { field: "id", valueFrom: "event.data.target_record_id" } }, severity: "high", enabled: true }));
+      created.push(await store.contracts.create({ workflowId: local.id, name: `${protection.nodeName}: downstream contact exists`, type: "record_exists", system: "ghl", entity: "contact", configuration: { auto: true, expectedOutcome: expectedOutcome || null, sourceNode: protection.nodeId, sourceNodeName: protection.nodeName, lookup: { field: "id", valueFrom: "event.data.target_record_id" } }, severity: "high", enabled: true }));
     }
     if (protection.tagsConfigured?.length) {
       const existingContracts2 = await store.contracts.list(local.id);
       const existingInvariant = existingContracts2.find((c) => c.configuration?.sourceNode === protection.nodeId && c.configuration?.mode === "preserve_tags");
-      if (!existingInvariant) created.push(await store.contracts.create({ workflowId: local.id, name: `${protection.nodeName}: existing tags must not disappear`, type: "state_invariant", system: "ghl", entity: "contact", configuration: { auto: true, mode: "preserve_tags", sourceNode: protection.nodeId, field: "tags", lookup: { field: "id", valueFrom: "event.data.target_record_id" } }, severity: "high", enabled: true }));
+      if (!existingInvariant) created.push(await store.contracts.create({ workflowId: local.id, name: `${protection.nodeName}: existing tags must not disappear`, type: "state_invariant", system: "ghl", entity: "contact", configuration: { auto: true, expectedOutcome: expectedOutcome || null, mode: "preserve_tags", sourceNode: protection.nodeId, field: "tags", lookup: { field: "id", valueFrom: "event.data.target_record_id" } }, severity: "high", enabled: true }));
     }
   }
-  await store.monitors.upsert({ workflowId: local.id, provider: "n8n", externalId: workflow.id, mode: "native_observer", metadata: { nodeCount: workflow.nodes.length, lastAnalysis: analysis } });
+  await store.monitors.upsert({ workflowId: local.id, provider: "n8n", externalId: workflow.id, mode: "native_observer", metadata: { nodeCount: workflow.nodes.length, lastAnalysis: analysis, expectedOutcome: expectedOutcome || null } });
   return { protected: true as const, workflow: local, analysis, contracts: await store.contracts.list(local.id), createdContracts: created };
 }
 

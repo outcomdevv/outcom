@@ -4,16 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IntegrationLogo } from "@/app/integrations";
 
-type Platform = "n8n" | "zapier" | "make";
+type Platform = "n8n" | "zapier" | "make" | "ghl";
 type Provider = "ghl" | Platform;
 type Connection = { provider: Provider; accountName: string; email?: string | null; expiresAt?: string | null };
 type Discovered = { id: string; name: string; enabled: boolean; updatedAt: string | null; url: string | null; platform: string; lastSuccessfulRun?: string | null; steps?: number | null };
 type OAuthStatus = { ghl: boolean; zapier: boolean; make: boolean };
 
-const platforms = [
-  { id: "n8n" as const, name: "n8n", description: "Native observer. No workflow-side node required." },
-  { id: "zapier" as const, name: "Zapier", description: "Connect your account, then discover Zaps." },
-  { id: "make" as const, name: "Make", description: "Connect your account, then discover scenarios." },
+const platforms: Array<{ id: Platform; name: string; description: string }> = [
+  { id: "n8n", name: "n8n", description: "URL + API key · ready now" },
+  { id: "zapier", name: "Zapier", description: "OAuth connection · deployment setup" },
+  { id: "make", name: "Make", description: "OAuth or paid API token" },
+  { id: "ghl", name: "HighLevel", description: "Location ID + private token" },
 ];
 
 const iso = () => new Date().toISOString();
@@ -54,8 +55,7 @@ export default function ConnectClient() {
   const zapier = connections.find((x) => x.provider === "zapier");
   const make = connections.find((x) => x.provider === "make");
   const selected = useMemo(() => platforms.find((p) => p.id === platform)!, [platform]);
-  const connectionStatuses: Array<[string, Connection | undefined]> = [["HighLevel", ghl], ["n8n", n8n], ["Make", make], ["Zapier", zapier]];
-
+  
   async function loadConnections() {
     const r = await fetch("/api/connections", { cache: "no-store" });
     if (r.ok) setConnections((await r.json()).connections || []);
@@ -140,37 +140,35 @@ export default function ConnectClient() {
   }
 
   async function protectWorkflow(id: string, workflowName: string, sourcePlatform: Platform) {
-    setPlatform(sourcePlatform); setName(workflowName); setWorkflowId(sourcePlatform === "n8n" ? id : `${sourcePlatform}_${id}`);
-    if (sourcePlatform === "make") {
-      setN8nMessage("Reading scenario topology and inferring the outcome…");
-      const r = await fetch("/api/make/protect", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ scenarioId: id }) });
-      const j = await r.json().catch(() => ({}));
-      if (r.ok && j.protected) { setCreated(true); setN8nMessage(`Protected natively · ${j.createdContracts?.length || 0} outcome checks inferred`); router.refresh(); }
-      else setN8nMessage(j.error || j.reason || "Outcom could not safely infer a business outcome from this Make scenario.");
-      return;
-    }
-    if (sourcePlatform === "zapier") {
-      setTestResult("Zapier is connected and discovered. Outcom will not claim an outcome verdict until native run-history access is available through the selected Zapier API path.");
-      return;
-    }
-    setN8nMessage("Reading workflow topology and inferring the outcome…");
-    const r = await fetch("/api/n8n/protect", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ workflowId: id }) });
+    setPlatform("n8n");
+    setName(workflowName);
+    setWorkflowId(id);
+    setN8nMessage("Reading workflow topology and preparing the first outcome check…");
+    const r = await fetch("/api/n8n/protect", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ workflowId: id, expectedOutcome: outcome.trim() }),
+    });
     const j = await r.json();
-    if (r.ok && j.protected) { setCreated(true); setN8nMessage(`Protected natively · ${j.createdContracts?.length || 0} checks inferred`); router.refresh(); }
-    else setN8nMessage(j.error || j.analysis?.recommendation || "Outcom could not infer a safe protection plan.");
+    if (r.ok && j.protected) {
+      setCreated(true);
+      setN8nMessage(`Protected · ${j.createdContracts?.length || 0} outcome checks created`);
+      router.refresh();
+    } else {
+      setN8nMessage(j.error || j.analysis?.recommendation || "Outcom could not safely infer a business outcome from this workflow.");
+    }
   }
 
   async function createWorkflow() {
-    if (!name.trim()) return;
-    if (platform === "n8n") {
-      if (!workflowId.trim()) { setN8nMessage("Choose a discovered n8n workflow first."); return; }
-      await protectWorkflow(workflowId.trim(), name.trim(), "n8n");
+    if (!name.trim()) {
+      setN8nMessage("Choose an expected outcome first.");
       return;
     }
-    const id = workflowId.trim() || `workflow_${crypto.randomUUID()}`;
-    const r = await fetch("/api/workflows", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ id, name: name.trim(), platform, description: `Protected ${selected.name} workflow` }) });
-    const j = await r.json();
-    if (r.ok) { setWorkflowId(j.workflow.id); setCreated(true); router.refresh(); }
+    if (!workflowId.trim()) {
+      setN8nMessage("Choose a discovered n8n workflow first.");
+      return;
+    }
+    await protectWorkflow(workflowId.trim(), name.trim(), "n8n");
   }
 
   async function syncN8n() {
@@ -186,8 +184,8 @@ export default function ConnectClient() {
   const error = params.get("error");
   const connected = params.get("connected");
 
-  const activeConnection = platform === "n8n" ? n8n : platform === "zapier" ? zapier : make;
-  const platformName = platform === "n8n" ? "n8n" : platform === "zapier" ? "Zapier" : "Make";
+  const activeConnection = connections.find((x) => x.provider === platform);
+  const platformName = platforms.find((x) => x.id === platform)?.name || platform;
 
   return (
     <div className="connect-page v51-simple-connect">
@@ -207,7 +205,7 @@ export default function ConnectClient() {
         </div>
       </header>
 
-      {error && <div className="simple-alert"><b>Connection notice</b><span>{error === "zapier_oauth_not_configured" ? "Zapier OAuth still needs developer setup." : error.replaceAll("_", " ")}</span></div>}
+      {error && <div className="simple-alert"><b>Connection notice</b><span>{error === "zapier_oauth_not_configured" ? "That connection is not part of the current MVP." : error.replaceAll("_", " ")}</span></div>}
       {connected && <div className="simple-success">✓ {connected === "ghl" ? "HighLevel" : connected[0].toUpperCase() + connected.slice(1)} connected.</div>}
 
       <section className="simple-flow-card">
@@ -218,17 +216,18 @@ export default function ConnectClient() {
         </div>
 
         {step === 1 && <div className="simple-step-content">
-          <div className="simple-section-title"><span>STEP 01</span><h2>Where does your automation run?</h2><p>Choose one platform. You can add another later.</p></div>
+          <div className="simple-section-title"><span>STEP 01</span><h2>Where does your automation run?</h2><p>Choose the platform your workflow uses. Outcom keeps the connection read-only wherever the provider supports it.</p></div>
           <div className="simple-platform-grid">
             {platforms.map((item) => {
-              const connectedHere = item.id === "n8n" ? n8n : item.id === "zapier" ? zapier : make;
+              const connectedHere = connections.find((x) => x.provider === item.id);
               return <button key={item.id} className={`simple-platform ${platform === item.id ? "selected" : ""}`} onClick={() => setPlatform(item.id)}>
                 <IntegrationLogo name={item.id} size={34} />
-                <span><b>{item.name}</b><small>{connectedHere ? "Connected" : item.id === "n8n" ? "Connect with URL + key" : "One-click OAuth"}</small></span>
+                <span><b>{item.name}</b><small>{connectedHere ? "Connected" : item.description}</small></span>
                 <strong>{platform === item.id ? "✓" : "→"}</strong>
               </button>;
             })}
           </div>
+          <div className="mvp-scope-note"><strong>Start here:</strong> Connect one automation source first. n8n is ready for direct connection. Zapier and Make require provider OAuth to be configured for this Outcom deployment. HighLevel is optional and is only needed when it holds the business result you want to verify.</div>
 
           <div className="simple-selected-panel">
             <div className="simple-selected-heading"><div><span>SELECTED PLATFORM</span><h3>{platformName}</h3></div>{activeConnection && <b className="simple-connected-pill">CONNECTED</b>}</div>
@@ -238,10 +237,9 @@ export default function ConnectClient() {
               <p className="simple-help">Not your n8n email or password. Outcom needs the instance URL and an API key.</p>
             </div>}
             {platform === "n8n" && n8n && <button className="simple-primary" onClick={discoverN8n}>{loadingDiscovery ? "Finding workflows…" : "Find my workflows →"}</button>}
-            {platform === "zapier" && !zapier && <div className="connection-setup-block"><div className="setup-instructions"><b>How Zapier connects</b><ol><li>Click Continue with Zapier.</li><li>Sign in to your Zapier account if asked.</li><li>Approve Outcom's requested access, then return here.</li></ol><p>No email, password, API key, or copied token is required in Outcom. This uses OAuth.</p><a href="https://zapier.com/app/connections" target="_blank" rel="noreferrer">Open Zapier App Connections ↗</a></div><button className="simple-primary" disabled={!oauth.zapier} onClick={() => oauthConnect("zapier")}>{oauth.zapier ? "Continue with Zapier ↗" : "Zapier OAuth is not enabled yet"}</button>{!oauth.zapier && <p className="simple-help">This deployment still needs the Outcom Zapier OAuth client ID, secret, redirect URL, and approved scopes. Do not ask users to paste Zapier credentials.</p>}</div>}
-            {platform === "zapier" && zapier && <button className="simple-primary" onClick={() => discover("zapier")}>{loadingDiscovery ? "Finding Zaps…" : "Find my Zaps →"}</button>}
-            {platform === "make" && !make && <div className="connection-setup-block"><div className="setup-instructions"><b>Recommended: OAuth</b><ol><li>Click Continue with Make.</li><li>Sign in to Make and approve read-only access.</li><li>Return to Outcom to discover your scenarios.</li></ol><a href="https://www.make.com/en/api-documentation" target="_blank" rel="noreferrer">Open Make API documentation ↗</a></div>{oauth.make && <button className="simple-primary" onClick={() => oauthConnect("make")}>Continue with Make ↗</button>} {!oauth.make && <p className="simple-help">Make OAuth is not enabled on this deployment yet. You can use the manual API-token setup below.</p>}<details className="advanced-connection"><summary>Advanced setup · API token</summary><div className="setup-instructions"><b>Copy these values from Make</b><ol><li>Make → profile/avatar → <strong>Profile → API</strong>.</li><li>Create an API token with <strong>scenarios:read</strong>.</li><li>Open your Make team and copy the numeric <strong>Team ID</strong> from the team URL or team settings.</li><li>Choose the API zone used by your Make account, such as <code>https://eu1.make.com/api/v2</code>.</li></ol><a href="https://developers.make.com/api-documentation/authentication/create-authentication-token" target="_blank" rel="noreferrer">How to create a Make API token ↗</a></div><div className="simple-form-grid simple-form-grid-stack"><input value={makeTeamId} onChange={e => setMakeTeamId(e.target.value)} placeholder="Numeric Team ID · e.g. 12345" /><input type="password" value={makeToken} onChange={e => setMakeToken(e.target.value)} placeholder="Make API token" /><input value={makeApiBase} onChange={e => setMakeApiBase(e.target.value)} placeholder="API base URL · optional" /><button className="simple-primary" disabled={makeConnecting || !makeTeamId.trim() || !makeToken.trim()} onClick={connectMakeDirect}>{makeConnecting ? "Checking access…" : "Connect with API token"}</button></div></details></div>}
-            {platform === "make" && make && <button className="simple-primary" onClick={() => discover("make")}>{loadingDiscovery ? "Finding scenarios…" : "Find my scenarios →"}</button>}
+            {platform === "zapier" && <div className="connection-setup-block"><div className="setup-instructions"><b>How Zapier connection works</b><ol><li>Outcom must first have a Zapier OAuth app configured by the product owner.</li><li>When enabled, click <strong>Connect with Zapier</strong> and approve read-only access in the Zapier window.</li><li>After approval, Outcom can discover the Zaps available to the connected account.</li></ol><a href="https://zapier.com/app/assets/connections" target="_blank" rel="noreferrer">Open your Zapier account ↗</a></div>{oauth.zapier ? <button className="simple-primary" onClick={() => oauthConnect("zapier")}>Connect with Zapier ↗</button> : <div className="simple-unavailable"><strong>Not enabled on this deployment yet.</strong><span>This is not an input problem. The Outcom server needs Zapier OAuth credentials before a real connection button can work.</span></div>}</div>}
+            {platform === "make" && <div className="connection-setup-block"><div className="setup-instructions"><b>How Make connection works</b><ol><li>The simplest production route is Make OAuth, which requires Outcom's Make client credentials to be configured.</li><li>When enabled, click <strong>Connect with Make</strong> and approve access.</li><li>The advanced API route requires a Make API token with <strong>scenarios:read</strong> plus the numeric <strong>Team ID</strong>. API access may require a paid Make plan.</li></ol><a href="https://developers.make.com/api-documentation/authentication" target="_blank" rel="noreferrer">Open Make authentication docs ↗</a></div>{oauth.make ? <button className="simple-primary" onClick={() => oauthConnect("make")}>Connect with Make ↗</button> : <div className="simple-unavailable"><strong>OAuth is not enabled on this deployment yet.</strong><span>Do not paste your Make email or password here. A real connection needs Make OAuth credentials or the advanced API-token route.</span></div>}</div>}
+            {platform === "ghl" && <div className="connection-setup-block"><div className="setup-instructions"><b>Connect HighLevel as the system of truth</b><ol><li>Open the HighLevel sub-account you want Outcom to inspect.</li><li>Go to <strong>Settings → Private Integrations</strong>.</li><li>Create a read-only integration and copy the token.</li><li>Copy the sub-account's <strong>Location ID</strong>.</li></ol><a href="https://marketplace.gohighlevel.com/docs/Authorization/PrivateIntegrationsToken/" target="_blank" rel="noreferrer">Open HighLevel instructions ↗</a></div><div className="simple-form-grid ghl-form-grid"><input value={ghlLocationId} onChange={e => setGhlLocationId(e.target.value)} placeholder="Location ID · e.g. abc123…" /><input type="password" value={ghlPit} onChange={e => setGhlPit(e.target.value)} placeholder="Private Integration Token" /><button className="simple-primary" disabled={ghlConnecting || !ghlLocationId.trim() || !ghlPit.trim()} onClick={connectGhlDirect}>{ghlConnecting ? "Checking access…" : "Connect HighLevel"}</button></div><p className="simple-help">This is not your HighLevel login password. For a public multi-client product, OAuth should replace manual tokens.</p></div>}
             {(n8nMessage || makeMessage || testResult) && <p className="simple-inline-message">{n8nMessage || makeMessage || testResult}</p>}
           </div>
           <div className="simple-bottom-row"><span>Only one automation source is required.</span><button className="simple-secondary" onClick={() => setStep(2)}>Next: define success →</button></div>
@@ -261,15 +259,6 @@ export default function ConnectClient() {
       {discoveryLoaded && <section className="simple-results-card"><div className="simple-section-title"><span>YOUR AUTOMATIONS</span><h2>{discoveryTotal === 0 ? "No automations found" : "Choose a workflow to protect"}</h2><p>{discoveryTotal === 0 ? "No workflows were visible with the current connection." : `${discoveryTotal} workflow${discoveryTotal === 1 ? "" : "s"} found.`}</p></div>{discovered.length > 0 && <div className="simple-discovery-list">{discovered.map(d => <button key={`${d.platform}:${d.id}`} onClick={() => protectWorkflow(d.id, d.name, d.platform as Platform)}><IntegrationLogo name={d.platform === "n8n" ? "n8n" : d.platform === "zapier" ? "zapier" : "make"} size={24}/><span><b>{d.name}</b><small>{d.platform} · {d.enabled ? "Active" : "Paused"}</small></span><strong>Protect →</strong></button>)}</div>}</section>}
 
       {created && <section className="simple-protected-card"><span className="simple-connected-pill">● PROTECTED</span><h2>Protection is on.</h2><p>{platform === "n8n" ? "Outcom is observing this workflow and checking its downstream result." : "This workflow is registered. Coverage depends on the available platform adapter."}</p><div className="simple-bottom-row"><button className="simple-secondary" onClick={syncN8n}>Sync now</button><a className="simple-primary" href="/incidents">View proof →</a></div></section>}
-
-      <section className="business-system-card">
-        <div className="simple-section-title"><span>OPTIONAL · SYSTEM OF TRUTH</span><h2>Where should we verify the result?</h2><p>Connect the system that contains the real business state. For example, Outcom can check whether a lead, tag, opportunity, or appointment actually exists in GoHighLevel.</p></div>
-        <div className="business-system-panel"><div className="business-system-heading"><IntegrationLogo name="ghl" size={42}/><div><h3>GoHighLevel</h3><p>System of truth · read-only verification</p></div>{ghl && <b className="simple-connected-pill">CONNECTED</b>}</div>
-          {!ghl && <div className="connection-setup-block"><div className="setup-instructions"><b>Recommended for a quick test: Private Integration Token</b><ol><li>Open your GoHighLevel account.</li><li>Go to <strong>Settings → Private Integrations</strong> at the agency or sub-account level.</li><li>Create an integration with only the read permissions Outcom needs.</li><li>Copy the generated token immediately; it may only be shown once.</li><li>Copy the numeric <strong>Location ID</strong> of the sub-account you want Outcom to inspect.</li></ol><a href="https://marketplace.gohighlevel.com/docs/Authorization/PrivateIntegrationsToken/" target="_blank" rel="noreferrer">Open HighLevel Private Integration instructions ↗</a></div><div className="simple-form-grid ghl-form-grid"><input value={ghlLocationId} onChange={e => setGhlLocationId(e.target.value)} placeholder="Location ID · sub-account ID" /><input type="password" value={ghlPit} onChange={e => setGhlPit(e.target.value)} placeholder="Private Integration Token" /><button className="simple-primary" disabled={ghlConnecting || !ghlLocationId.trim() || !ghlPit.trim()} onClick={connectGhlDirect}>{ghlConnecting ? "Checking access…" : "Connect HighLevel"}</button></div><p className="simple-help">For a public multi-client product, use HighLevel OAuth instead of asking every client to paste a token.</p>{oauth.ghl && <button className="simple-secondary" onClick={() => oauthConnect("ghl")}>Connect with HighLevel OAuth ↗</button>}</div>}
-          {ghl && <p className="simple-help">Connected. Outcom can use this location as the business system to verify expected outcomes.</p>}
-          {ghlMessage && <p className="simple-inline-message">{ghlMessage}</p>}
-        </div>
-      </section>
 
       <div className="simple-footer-note"><b>Outcom is not another dashboard.</b><span>Connect one workflow. Define one expected result. Investigate only when reality differs.</span></div>
     </div>
