@@ -97,3 +97,24 @@ The demo should prove the product's core value—not merely that the integration
 ## If Vercel shows `permission denied for table workspaces`
 
 Run `supabase/migrations/002_service_role_privileges.sql` once in the **same Supabase project** used by Vercel, then redeploy. The server-side key must be configured in Vercel as `SUPABASE_SECRET_KEY` or `SUPABASE_SERVICE_ROLE_KEY`; never expose either key as a `NEXT_PUBLIC_*` variable.
+
+## G. V59 real integration requirements
+
+Run the new migration:
+
+```text
+supabase/migrations/003_real_integration_webhooks.sql
+```
+
+`NEXT_PUBLIC_APP_URL` must be the final production URL. V59 uses it for the private Zapier/Make inbound webhook URLs.
+
+`OUTCOM_TOKEN_ENCRYPTION_KEY` must be present in Vercel because V59 encrypts provider credentials and webhook URL tokens at rest.
+
+### Provider paths
+
+- **n8n:** Settings → n8n API → create API key → paste instance URL + key into Outcom. The n8n API uses the `X-N8N-API-KEY` header.
+- **HighLevel:** use a scoped Private Integration Token + Location ID for a design-partner/internal connection. Use OAuth for a public multi-client app.
+- **Make:** use a Make API token with the required read scopes for native discovery, or use the Outcom webhook path and add an HTTP → Make a request module to the scenario.
+- **Zapier:** use Outcom OAuth when the Zapier app credentials are configured, or use Webhooks by Zapier → POST with the private Outcom URL generated for the protected Zap.
+
+Do not use Make's Custom webhook module for the Outcom inbound direction: that module receives data *into Make*. Outcom needs Make to send the scenario result *out to Outcom*, so use Make's HTTP request module instead.

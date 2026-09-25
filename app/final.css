@@ -317,3 +317,23 @@
   .v51-simple-connect{max-width:1280px;padding-left:34px;padding-right:34px}
   .simple-flow-card{padding:34px}
 }
+
+/* V59 real integration bridge */
+.webhook-register{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:14px}
+.webhook-register input{min-width:0}
+.webhook-live-card{margin:14px 0 0;border:1px solid #cfd2d6;border-radius:16px;background:#fff;padding:16px;display:grid;gap:12px}
+.webhook-live-card>div:first-child{display:grid;gap:3px}
+.webhook-live-card>div:first-child span{font-size:8px;letter-spacing:.12em;font-weight:800;color:#6f747a}
+.webhook-live-card>div:first-child b{font-size:16px;letter-spacing:-.03em}
+.webhook-live-card>div:first-child small{font-size:10px;color:#7d8187}
+.webhook-url-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.webhook-url-row code{display:block;min-width:0;background:#17181b;color:#fff;border-radius:10px;padding:10px;font-size:9px;line-height:1.5;word-break:break-all}
+.webhook-instructions{display:grid;gap:8px}
+.webhook-instructions>b{font-size:10px}
+.webhook-instructions pre{margin:0;max-height:260px;overflow:auto;background:#17181b;color:#f5f6f7;border-radius:10px;padding:12px;font-size:9px;line-height:1.5}
+.webhook-instructions small{font-size:9px;color:#777b81;line-height:1.5}
+.webhook-test-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.webhook-test-row>span{font-size:9px;color:#7d8187}
+.theme-dark .webhook-live-card{background:#1a1b1f;border-color:#36383d;color:#f4f5f7}
+.theme-dark .webhook-register input{background:#202126!important;color:#fff!important;border-color:#3a3c42!important}
+@media(max-width:760px){.webhook-register,.webhook-url-row{grid-template-columns:1fr}.webhook-test-row{align-items:stretch;flex-direction:column}.webhook-test-row button{width:100%}}

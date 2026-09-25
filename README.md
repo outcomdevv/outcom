@@ -242,3 +242,30 @@ Evidence graph
 ```
 
 That is the core proof required before positioning Outcom at the $500–$1,000/month agency tier.
+
+## V59 real integrations
+
+V59 turns the Connect page into working provider paths instead of placeholder connection copy:
+
+- **n8n:** native REST API connection, workflow discovery, workflow protection, and execution sync. n8n documents API-key authentication through `X-N8N-API-KEY`; API availability depends on the n8n plan. 
+- **HighLevel:** read-only Private Integration Token connection for a specific Location, with OAuth available for public deployments.
+- **Make:** native API-token connection/discovery when API access is available, plus an outbound HTTP webhook bridge that does not require Outcom to receive a Make webhook.
+- **Zapier:** OAuth discovery when Outcom has Zapier credentials configured, plus a webhook-first path that creates a private Outcom POST URL for a specific Zap.
+
+### Inbound webhook contract
+
+Zapier and Make can send a final JSON POST to the generated Outcom URL. The URL token is the credential. The recommended payload is:
+
+```json
+{
+  "execution_id": "unique-run-id",
+  "timestamp": "2026-09-25T00:00:00.000Z",
+  "status": "success",
+  "target_record_id": "highlevel-contact-id",
+  "data": {
+    "target_record_id": "highlevel-contact-id"
+  }
+}
+```
+
+Outcom deduplicates by execution ID, records the execution event, and runs the configured Outcome Contract against the downstream HighLevel state. Test requests use `{ "test": true }` and do not create an execution finding.

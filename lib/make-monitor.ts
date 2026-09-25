@@ -121,7 +121,8 @@ export async function protectMakeScenario(externalScenarioId: string, workspaceI
 export async function syncMakeWorkflow(localWorkflowId: string, workspaceId?: string) {
   const ctx = await makeConnection(workspaceId);
   const monitor = await ctx.store.monitors.getByWorkflow(localWorkflowId);
-  if (!monitor || monitor.provider !== "make") throw new Error("Workflow is not protected by native Make observation.");
+  if (!monitor || monitor.provider !== "make") throw new Error("Workflow is not protected by Make observation.");
+  if (monitor.mode !== "native_observer") return { imported: 0, workflow: monitor.externalId, executionsChecked: 0, skipped: true, reason: "inbound_webhook" };
   const scenarioId = String(monitor.externalId);
   const logsPayload = await getMake(`/scenarios/${encodeURIComponent(scenarioId)}/logs?pg[limit]=10`, ctx);
   const logs = Array.isArray(logsPayload?.scenarioLogs) ? logsPayload.scenarioLogs : [];
