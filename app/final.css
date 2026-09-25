@@ -226,3 +226,94 @@
 .mvp-scope-note{margin:14px 0 0;padding:12px 14px;border:1px solid var(--line,#dfe2e6);border-radius:12px;background:var(--soft,#f5f6f7);color:#697586;font-size:12px;line-height:1.55}
 .mvp-scope-note strong{color:inherit}
 .theme-dark .mvp-scope-note{background:#20242a;border-color:#3a414c;color:#b8c0cc}
+
+/* V58 — dark-mode contrast hardening + connection clarity */
+.theme-dark .simple-hero-card,
+.theme-dark .simple-flow-card,
+.theme-dark .simple-results-card,
+.theme-dark .simple-protected-card,
+.theme-dark .business-system-card,
+.theme-dark .business-system-panel,
+.theme-dark .setup-instructions,
+.theme-dark .simple-selected-panel,
+.theme-dark .simple-outcome-preview{
+  background:#17191d;
+  border-color:#353a43;
+  color:#f3f4f6;
+  box-shadow:none;
+}
+.theme-dark .simple-hero-card>div{border-color:#353a43;color:#e8ebf0}
+.theme-dark .simple-hero-card b{color:#f3f4f6}
+.theme-dark .simple-hero-card small{color:#aab3c0}
+.theme-dark .simple-eyebrow,
+.theme-dark .simple-section-title>span,
+.theme-dark .simple-card-kicker{color:#9aa5b5}
+.theme-dark .simple-connect-hero h1 em{color:#8f96a3}
+.theme-dark .simple-connect-hero p,
+.theme-dark .simple-section-title p{color:#b8c1cd}
+.theme-dark .simple-step-line{background:#353a43}
+.theme-dark .simple-stepper button span{border-color:#4a505a;background:#1d2025;color:#cbd1da}
+.theme-dark .simple-stepper button.active span{background:#f3f4f6;color:#111214;border-color:#f3f4f6}
+.theme-dark .simple-platform{background:#14161a;border-color:#353a43}
+.theme-dark .simple-platform:hover{background:#1b1e23;border-color:#515864}
+.theme-dark .simple-platform.selected{background:#1c2026;border-color:#f3f4f6;box-shadow:0 0 0 1px #f3f4f6}
+.theme-dark .simple-platform strong{color:#f1f3f6}
+.theme-dark .simple-platform small{color:#aab4c2}
+.theme-dark .simple-selected-heading span{color:#9ca7b5}
+.theme-dark .simple-selected-heading h3{color:#f3f4f6}
+.theme-dark .simple-connected-pill{color:#8be0aa;background:#173724}
+.theme-dark .simple-form-grid input,
+.theme-dark .simple-custom-label input{background:#0f1115;color:#f3f4f6;border-color:#424852}
+.theme-dark .simple-form-grid input:focus,
+.theme-dark .simple-custom-label input:focus{border-color:#7b8492;outline:2px solid rgba(123,132,146,.18);outline-offset:0}
+.theme-dark .simple-primary{background:#f3f4f6;color:#111214;border-color:#f3f4f6}
+.theme-dark .simple-primary:hover{background:#fff}
+.theme-dark .simple-secondary{background:#20242a;color:#edf0f4;border-color:#424852}
+.theme-dark .simple-secondary:hover{background:#292e35}
+.theme-dark .simple-help,
+.theme-dark .simple-inline-message,
+.theme-dark .simple-protected-card p,
+.theme-dark .simple-footer-note,
+.theme-dark .simple-footer-note span{color:#aab5c4}
+.theme-dark .simple-outcome-grid button,
+.theme-dark .simple-discovery-list button{background:#14161a;border-color:#3a414b;color:#e8edf4}
+.theme-dark .simple-outcome-grid button:hover,
+.theme-dark .simple-discovery-list button:hover{background:#1d2127;border-color:#545c68}
+.theme-dark .simple-outcome-grid button.chosen{background:#20242a;border-color:#f3f4f6}
+.theme-dark .simple-outcome-grid button strong{color:#fff}
+.theme-dark .simple-outcome-preview span{color:#9ca7b5}
+.theme-dark .simple-outcome-preview b{color:#f3f4f6}
+.theme-dark .simple-outcome-preview small{color:#aab5c4}
+.theme-dark .connection-setup-block{color:#f3f4f6}
+.theme-dark .setup-instructions>b{color:#f3f4f6}
+.theme-dark .setup-instructions ol{color:#aeb8c5}
+.theme-dark .setup-instructions strong{color:#f0f2f5}
+.theme-dark .setup-instructions a{color:#dce2ea}
+.theme-dark .setup-instructions code{color:#d9dee7;background:#101216;border:1px solid #303640;padding:2px 5px;border-radius:5px}
+.theme-dark .mvp-scope-note{background:#1a1e24!important;border-color:#353b45!important;color:#c8d0db!important}
+.theme-dark .mvp-scope-note strong{color:#fff!important}
+.theme-dark .business-system-heading h3{color:#f3f4f6}
+.theme-dark .business-system-heading p{color:#aab5c4}
+.theme-dark .simple-alert{background:#332316;color:#ffc58e;border-color:#6b4528}
+.theme-dark .simple-success{background:#173222;color:#9be2b5;border-color:#2c6540}
+.theme-dark .advanced-connection{border-color:#353a43;background:#14161a;color:#e8edf4}
+.theme-dark .advanced-connection summary{color:#e8edf4}
+.theme-dark .simple-footer-note{border-color:#353a43}
+.theme-dark .breadcrumb{color:#8e98a5}
+.theme-dark .breadcrumb span{color:#555d68}
+
+/* Keep the Outcom lockup readable on every dark surface. The mascot mark keeps its white eye ring. */
+.sidebar-brand .outcom-wordmark,
+.mobile-wordmark{background:#fff!important;color:#111214!important}
+.sidebar-brand .outcom-wordmark img,
+.mobile-wordmark img{background:#fff!important}
+.theme-dark .sidebar-brand .outcom-wordmark,
+.theme-dark .mobile-wordmark{background:#fff!important;color:#111214!important}
+.theme-dark .sidebar-brand .outcom-wordmark span,
+.theme-dark .mobile-wordmark span{color:#111214!important}
+
+/* V58: make the setup UI breathe on wide monitors without creating another dashboard. */
+@media(min-width:1200px){
+  .v51-simple-connect{max-width:1280px;padding-left:34px;padding-right:34px}
+  .simple-flow-card{padding:34px}
+}
