@@ -12,6 +12,15 @@ type Discovered = { id: string; name: string; enabled: boolean; updatedAt: strin
 type OAuthStatus = { ghl: boolean; zapier: boolean; make: boolean };
 type WebhookInfo = { provider: "zapier" | "make"; url: string; workflow: { id: string; name: string }; lastReceivedAt?: string | null; sample: Record<string, unknown> };
 
+type OutcomeType = "record_exists" | "state_invariant" | "output_count";
+type OutcomeSelection = { id: string; label: string; description: string; type: OutcomeType };
+
+const outcomeOptions: OutcomeSelection[] = [
+  { id: "contact-exists", label: "A contact / record exists", description: "Verify the downstream record can actually be found.", type: "record_exists" },
+  { id: "tags-preserved", label: "Existing contact tags are preserved", description: "Compare the current tags with Outcom's read-only baseline.", type: "state_invariant" },
+  { id: "output-produced", label: "At least one output was produced", description: "Verify the execution reported at least one downstream output.", type: "output_count" },
+];
+
 const platforms: Array<{ id: Platform; name: string; description: string }> = [
   { id: "n8n", name: "n8n", description: "Instance URL + API key · not your password" },
   { id: "zapier", name: "Zapier", description: "OAuth when configured · no password or API key" },
@@ -29,6 +38,7 @@ export default function ConnectClient() {
   const [platform, setPlatform] = useState<Platform>("n8n");
   const [step, setStep] = useState<1 | 2>(1);
   const [outcome, setOutcome] = useState("");
+  const [selectedOutcomes, setSelectedOutcomes] = useState<OutcomeSelection[]>([]);
   const [name, setName] = useState("");
   const [workflowId, setWorkflowId] = useState("");
   const [created, setCreated] = useState(false);
@@ -219,8 +229,8 @@ export default function ConnectClient() {
   }
 
   async function protectWorkflow(id: string, workflowName: string, sourcePlatform: Platform) {
-    if (!outcome.trim()) {
-      setTestResult("Define the expected business outcome first (Step 2), then protect the workflow.");
+    if (!selectedOutcomes.length) {
+      setTestResult("Choose at least one business outcome first (Step 2), then protect the workflow.");
       setStep(2);
       return;
     }
@@ -233,7 +243,7 @@ export default function ConnectClient() {
       const r = await fetch("/api/n8n/protect", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ workflowId: id, expectedOutcome: outcome.trim() }),
+        body: JSON.stringify({ workflowId: id, expectedOutcome: outcome.trim(), expectedOutcomes: selectedOutcomes }),
       });
       const j = await r.json();
       if (r.ok && j.protected) {
@@ -249,7 +259,7 @@ export default function ConnectClient() {
     const r = await fetch("/api/integrations/protect", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ provider: sourcePlatform, externalId: id, name: workflowName, expectedOutcome: outcome.trim() }),
+      body: JSON.stringify({ provider: sourcePlatform, externalId: id, name: workflowName, expectedOutcome: outcome.trim(), expectedOutcomes: selectedOutcomes }),
     });
     const j = await r.json();
     if (r.ok && j.protected) {
@@ -319,12 +329,12 @@ export default function ConnectClient() {
           <div className="breadcrumb">Workspace <span>/</span> Connect</div>
           <div className="simple-eyebrow"><span className="v19-dot" /> OUTCOME VERIFICATION</div>
           <h1>Protect one workflow.<br /><em>Know what actually happened.</em></h1>
-          <p>Connect one automation, tell Outcom what success means, and let us verify the business result. No need to connect your entire stack.</p>
+          <p>Connect one automation, tell Outcom which business results matter, and let us verify them after the run. No need to connect your entire stack.</p>
         </div>
         <div className="simple-hero-card">
           <span className="simple-card-kicker">THE SIMPLE PATH</span>
           <div><b>1.</b> Connect an automation</div>
-          <div><b>2.</b> Choose the outcome</div>
+          <div><b>2.</b> Choose the outcomes</div>
           <div><b>3.</b> Protect the workflow</div>
           <small>Read-only wherever supported.</small>
         </div>
@@ -337,7 +347,7 @@ export default function ConnectClient() {
         <div className="simple-stepper">
           <button className={step === 1 ? "active" : "done"} onClick={() => setStep(1)}><span>1</span> Connect automation</button>
           <div className="simple-step-line" />
-          <button className={step === 2 ? "active" : ""} onClick={() => setStep(2)}><span>2</span> Define success</button>
+          <button className={step === 2 ? "active" : ""} onClick={() => setStep(2)}><span>2</span> Choose outcomes</button>
         </div>
 
         {step === 1 && <div className="simple-step-content">
@@ -367,17 +377,27 @@ export default function ConnectClient() {
             {platform === "ghl" && <div className="connection-setup-block"><div className="setup-instructions"><b>Connect HighLevel as your source of truth</b><ol><li>Open the relevant HighLevel sub-account.</li><li>Go to <strong>Settings → Private Integrations</strong>.</li><li>Create a read-only integration and copy the token.</li><li>Copy the sub-account's Location ID.</li></ol><a href="https://marketplace.gohighlevel.com/docs/Authorization/PrivateIntegrationsToken/" target="_blank" rel="noreferrer">Open HighLevel instructions ↗</a></div><p className="simple-help">HighLevel is used to verify the business result after an automation runs. Connect your automation source first, then connect HighLevel below.</p></div>}
             {(n8nMessage || makeMessage || testResult) && <p className="simple-inline-message">{n8nMessage || makeMessage || testResult}</p>}
           </div>
-          <div className="simple-bottom-row"><span>Only one automation source is required.</span><button className="simple-secondary" onClick={() => setStep(2)}>Next: define success →</button></div>
+          <div className="simple-bottom-row"><span>Only one automation source is required.</span><button className="simple-secondary" onClick={() => setStep(2)}>Next: choose outcomes →</button></div>
         </div>}
 
         {step === 2 && <div className="simple-step-content">
-          <div className="simple-section-title"><span>STEP 02</span><h2>What should success look like?</h2><p>Pick the business result Outcom should verify after your automation runs.</p></div>
+          <div className="simple-section-title"><span>STEP 02</span><h2>What should happen after the automation runs?</h2><p>Select one or more business outcomes. Outcom will create a separate verification check for each selected outcome.</p></div>
           <div className="simple-outcome-grid">
-            {["A contact was created", "A contact was updated", "A tag was added", "A deal moved", "A payment was received", "A record exists"].map(item => <button key={item} className={outcome === item ? "chosen" : ""} onClick={() => setOutcome(item)}>{item}<span>{outcome === item ? "✓" : "＋"}</span></button>)}
+            {outcomeOptions.map(item => {
+              const chosen = selectedOutcomes.some(x => x.id === item.id);
+              return <button type="button" key={item.id} className={chosen ? "chosen" : ""} onClick={() => {
+                const next = chosen ? selectedOutcomes.filter(x => x.id !== item.id) : [...selectedOutcomes, item];
+                setSelectedOutcomes(next);
+                setOutcome(next.map(x => x.label).join(" + "));
+              }}>
+                <span><b>{item.label}</b><small>{item.description}</small></span><strong>{chosen ? "✓" : "＋"}</strong>
+              </button>;
+            })}
           </div>
-          <label className="simple-custom-label">Or describe your own expected outcome<input value={outcome} onChange={e => setOutcome(e.target.value)} placeholder="e.g. A new lead exists in HighLevel" /></label>
-          <div className="simple-bottom-row"><button className="simple-secondary" onClick={() => setStep(1)}>← Back</button><button className="simple-primary" disabled={!outcome.trim()} onClick={() => { setName(outcome.trim()); setStep(1); }}>Save outcome and continue →</button></div>
-          {outcome && <div className="simple-outcome-preview"><span>EXPECTED OUTCOME</span><b>{outcome}</b><small>Next, choose a discovered workflow and click Protect.</small></div>}
+          <div className="simple-outcome-selection"><span>SELECTED CHECKS</span>{selectedOutcomes.length ? selectedOutcomes.map(item => <div key={item.id}>✓ {item.label}</div>) : <small>No outcome selected yet.</small>}</div>
+          <div className="simple-outcome-note"><b>Why this matters</b><span>Zapier can report that a task ran successfully. These checks tell Outcom what business state must be true afterward.</span></div>
+          <div className="simple-bottom-row"><button className="simple-secondary" onClick={() => setStep(1)}>← Back</button><button className="simple-primary" disabled={!selectedOutcomes.length} onClick={() => { setName(selectedOutcomes.map(x => x.label).join(" + ")); setStep(1); }}>Save checks and continue →</button></div>
+          {selectedOutcomes.length > 0 && <div className="simple-outcome-preview"><span>{selectedOutcomes.length} OUTCOME CHECK{selectedOutcomes.length === 1 ? "" : "S"}</span><b>{selectedOutcomes.map(x => x.label).join(" · ")}</b><small>Next, choose a workflow and protect it.</small></div>}
         </div>}
       </section>
 
@@ -396,7 +416,7 @@ export default function ConnectClient() {
         </div>
       </section>
 
-      <div className="simple-footer-note"><b>Outcom is not another dashboard.</b><span>Connect one workflow. Define one expected result. Investigate only when reality differs.</span></div>
+      <div className="simple-footer-note"><b>Outcom is not another dashboard.</b><span>Connect one workflow. Define the business results that matter. Investigate only when reality differs.</span></div>
     </div>
   );
 }
