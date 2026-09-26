@@ -1,1 +1,43 @@
-import {NextResponse} from "next/server";import {getWorkspaceStore} from "@/lib/db";export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){const s=await getWorkspaceStore();const id=(await params).id,w=await s.workflows.get(id);return w?NextResponse.json({workflow:w,contracts:await s.contracts.list(id),events:await s.events.list(id),incidents:await s.incidents.list(id)}):NextResponse.json({error:"Workflow not found"},{status:404})}
+﻿import { NextResponse } from "next/server";
+import { getWorkspaceStore } from "@/lib/db";
+
+function workflowIdCandidates(rawId: string) {
+  const decoded = decodeURIComponent(rawId);
+  const candidates = [decoded];
+
+  const dotToColon = decoded.replace(/^([^.:/]+)\.(.+)$/, "$1:$2");
+  const colonToDot = decoded.replace(/^([^.:/]+):(.+)$/, "$1.$2");
+
+  if (dotToColon !== decoded) candidates.push(dotToColon);
+  if (colonToDot !== decoded) candidates.push(colonToDot);
+
+  return [...new Set(candidates)];
+}
+
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const s = await getWorkspaceStore();
+  const rawId = (await params).id;
+
+  let workflow = null;
+  for (const candidate of workflowIdCandidates(rawId)) {
+    workflow = await s.workflows.get(candidate);
+    if (workflow) break;
+  }
+
+  if (!workflow) {
+    return NextResponse.json(
+      { error: "Workflow not found" },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json({
+    workflow,
+    contracts: await s.contracts.list(workflow.id),
+    events: await s.events.list(workflow.id),
+    incidents: await s.incidents.list(workflow.id),
+  });
+}
