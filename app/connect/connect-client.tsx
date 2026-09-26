@@ -16,6 +16,8 @@ type OutcomeType = "record_exists" | "state_invariant" | "output_count";
 type OutcomeSelection = { id: string; label: string; description: string; type: OutcomeType };
 type OutcomeConfig = { label: string; type: OutcomeType; system: string; entity: string; valueFrom?: string; field?: string; operator?: string; expectedValue?: string; expectedCount?: number };
 
+const DRAFT_KEY = "outcom-protection-draft-v69";
+
 const outcomeOptions: OutcomeSelection[] = [
   { id: "contact-exists", label: "A contact / record exists", description: "Verify the downstream record can actually be found.", type: "record_exists" },
   { id: "tags-preserved", label: "Existing contact tags are preserved", description: "Compare the current tags with Outcom's read-only baseline.", type: "state_invariant" },
@@ -41,6 +43,8 @@ export default function ConnectClient() {
   const [outcome, setOutcome] = useState("");
   const [selectedOutcomes, setSelectedOutcomes] = useState<OutcomeSelection[]>([]);
   const [outcomeConfigs, setOutcomeConfigs] = useState<Record<string, OutcomeConfig>>({});
+  const [customOutcomeText, setCustomOutcomeText] = useState("");
+  const [draftHydrated, setDraftHydrated] = useState(false);
   const [name, setName] = useState("");
   const [workflowId, setWorkflowId] = useState("");
   const [created, setCreated] = useState(false);
@@ -93,6 +97,43 @@ export default function ConnectClient() {
     loadConnections();
     loadOAuthStatus();
   }, [params]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        if (draft.platform) setPlatform(draft.platform);
+        if (draft.step >= 1 && draft.step <= 3) setStep(draft.step);
+        if (typeof draft.name === "string") setName(draft.name);
+        if (typeof draft.zapierName === "string") setZapierName(draft.zapierName);
+        if (typeof draft.makeWebhookName === "string") setMakeWebhookName(draft.makeWebhookName);
+        if (typeof draft.workflowId === "string") setWorkflowId(draft.workflowId);
+        if (Array.isArray(draft.selectedOutcomes)) setSelectedOutcomes(draft.selectedOutcomes);
+        if (draft.outcomeConfigs && typeof draft.outcomeConfigs === "object") setOutcomeConfigs(draft.outcomeConfigs);
+        if (typeof draft.customOutcomeText === "string") setCustomOutcomeText(draft.customOutcomeText);
+        if (typeof draft.outcome === "string") setOutcome(draft.outcome);
+        if (typeof draft.n8nBaseUrl === "string") setN8nBaseUrl(draft.n8nBaseUrl);
+        if (typeof draft.ghlLocationId === "string") setGhlLocationId(draft.ghlLocationId);
+        if (typeof draft.makeTeamId === "string") setMakeTeamId(draft.makeTeamId);
+        if (typeof draft.makeApiBase === "string") setMakeApiBase(draft.makeApiBase);
+      }
+    } catch {
+      // Ignore malformed local drafts.
+    } finally {
+      setDraftHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated) return;
+    const draft = {
+      platform, step, name, zapierName, makeWebhookName, workflowId,
+      selectedOutcomes, outcomeConfigs, customOutcomeText, outcome,
+      n8nBaseUrl, ghlLocationId, makeTeamId, makeApiBase,
+    };
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  }, [draftHydrated, platform, step, name, zapierName, makeWebhookName, workflowId, selectedOutcomes, outcomeConfigs, customOutcomeText, outcome, n8nBaseUrl, ghlLocationId, makeTeamId, makeApiBase]);
 
   useEffect(() => {
     const provider = params.get("connected");
@@ -280,13 +321,42 @@ export default function ConnectClient() {
     }
   }
 
+  function addCustomOutcome() {
+    const label = customOutcomeText.trim();
+    if (!label) return;
+    if (selectedOutcomes.length >= 10) {
+      setTestResult("You can add up to 10 outcome checks per protection.");
+      return;
+    }
+    const id = `custom-${crypto.randomUUID()}`;
+    const item: OutcomeSelection = {
+      id,
+      label,
+      description: "Custom business-state requirement.",
+      type: "state_invariant",
+    };
+    setSelectedOutcomes((current) => [...current, item]);
+    setOutcome((current) => [current, label].filter(Boolean).join(" + "));
+    setOutcomeConfigs((current) => ({
+      ...current,
+      [id]: {
+        label, type: "state_invariant", system: "ghl", entity: "contact",
+        valueFrom: "event.data.target_record_id", field: "status", operator: "equals", expectedValue: "",
+      },
+    }));
+    setCustomOutcomeText("");
+  }
+
   async function finishProtection() {
     const workflowName = zapierName.trim();
     if (!workflowName) { setTestResult("Give this protected automation a name first."); setStep(1); return; }
     if (!selectedOutcomes.length) { setTestResult("Choose at least one business outcome first."); setStep(2); return; }
     const missing = selectedOutcomes.find((item) => {
       const cfg = outcomeConfigs[item.id];
-      return !cfg?.label?.trim() || (item.type !== "output_count" && !cfg.valueFrom?.trim());
+      if (!cfg?.label?.trim()) return true;
+      if (item.type !== "output_count" && !cfg.valueFrom?.trim()) return true;
+      if (item.id.startsWith("custom-") && (!cfg.field?.trim() || !cfg.expectedValue?.trim())) return true;
+      return false;
     });
     if (missing) { setTestResult(`Finish the ${missing.label} details first.`); return; }
     setZapierCreating(true);
@@ -373,12 +443,12 @@ export default function ConnectClient() {
               <p className="simple-help">Not your n8n email or password. Outcom needs only the n8n instance URL and an API key. n8n documents that API keys are full-access unless scoped keys are available on Enterprise, so use a dedicated key for Outcom.</p>
             </div>}
             {platform === "n8n" && n8n && <button className="simple-primary" onClick={discoverN8n}>{loadingDiscovery ? <LoadingScreen inline message="Finding workflows" /> : "Find my workflows →"}</button>}
-            {platform === "zapier" && <div className="connection-setup-block"><div className="setup-instructions"><b>Zapier: add the Outcom observer</b><ol><li>Choose the Zap you want to protect, then create an Outcom observer below.</li><li>Copy the private observer URL Outcom gives you.</li><li>In your existing Zap, add one final <strong>Webhooks by Zapier → POST</strong> step and paste the observer URL.</li><li>Set the payload to JSON. Outcom shows the exact payload below.</li></ol><a href="https://help.zapier.com/hc/en-us/articles/8496326446989-How-to-get-started-with-Webhooks-by-Zapier" target="_blank" rel="noreferrer">Open Zapier webhook instructions ↗</a></div>{oauth.zapier && <button className="simple-primary" onClick={() => oauthConnect("zapier")}>Connect with Zapier OAuth ↗</button>}<div className="webhook-register"><input value={zapierName} onChange={e => setZapierName(e.target.value)} placeholder="Automation name · e.g. CRM Lead Sync" /></div><div className="webhook-setup-actions"><span><b>Target:</b> one final POST step in your existing Zap</span><a className="simple-secondary" href="https://zapier.com/app/home" target="_blank" rel="noreferrer">Open Zapier ↗</a></div><p className="simple-help">You never give Outcom your Zapier password or API key. The only manual step is adding the final POST action inside the Zap. Once it runs, Outcom receives the execution event and verifies the expected outcome.</p></div>}
+            {platform === "zapier" && <div className="connection-setup-block"><div className="setup-instructions"><b>Protect an existing Zap</b><p className="compact-instruction">Name it now. After you define the outcomes, Outcom creates the private observer URL.</p></div>{oauth.zapier && <button className="simple-secondary" onClick={() => oauthConnect("zapier")}>Connect with Zapier OAuth ↗</button>}<div className="webhook-register"><input value={zapierName} onChange={e => setZapierName(e.target.value)} placeholder="Automation name · e.g. CRM Lead Sync" /></div></div>}
             {platform === "make" && <div className="connection-setup-block"><div className="setup-instructions"><b>Make: native API or webhook mode</b><ol><li><strong>Native API:</strong> connect a Make API token + Team ID when API access is available, then Outcom can discover scenarios and inspect runs.</li><li><strong>Webhook mode:</strong> Outcom gives the scenario a private POST URL. Add <strong>HTTP → Make a request</strong> near the end of the scenario and send the run result to that URL.</li><li>Do not use Make <strong>Custom webhook</strong> for this direction: that module receives data into Make; Outcom needs the scenario to send data out to Outcom.</li></ol><a href="https://apps.make.com/http" target="_blank" rel="noreferrer">Open Make HTTP instructions ↗</a></div>{oauth.make && <button className="simple-primary" onClick={() => oauthConnect("make")}>Connect with Make OAuth ↗</button>}{!make && <><div className="simple-form-grid make-form-grid"><input value={makeApiBase} onChange={e => setMakeApiBase(e.target.value)} placeholder="API base · e.g. https://eu1.make.com/api/v2" /><input value={makeTeamId} onChange={e => setMakeTeamId(e.target.value)} placeholder="Numeric Team ID" /><input type="password" value={makeToken} onChange={e => setMakeToken(e.target.value)} placeholder="Make API token · scenarios:read" /><button className="simple-primary" disabled={makeConnecting || !makeTeamId.trim() || !makeToken.trim()} onClick={connectMakeDirect}>{makeConnecting ? <LoadingScreen inline message="Connecting Make" /> : "Connect Make API"}</button></div><div className="webhook-register"><input value={makeWebhookName} onChange={e => setMakeWebhookName(e.target.value)} placeholder="Scenario name · e.g. Lead → HighLevel" /><button className="simple-secondary" disabled={makeWebhookCreating || !makeWebhookName.trim()} onClick={createMakeWebhookWorkflow}>{makeWebhookCreating ? <LoadingScreen inline message="Preparing Make webhook" /> : "Create Make webhook →"}</button></div><p className="simple-help">Use the API path for native discovery, or skip API access entirely and use webhook mode.</p></>}</div>}
             {platform === "ghl" && <div className="connection-setup-block"><div className="setup-instructions"><b>Connect HighLevel as your source of truth</b><ol><li>Open the relevant HighLevel sub-account.</li><li>Go to <strong>Settings → Private Integrations</strong>.</li><li>Create a read-only integration and copy the token.</li><li>Copy the sub-account's Location ID.</li></ol><a href="https://marketplace.gohighlevel.com/docs/Authorization/PrivateIntegrationsToken/" target="_blank" rel="noreferrer">Open HighLevel instructions ↗</a></div><p className="simple-help">HighLevel is used to verify the business result after an automation runs. Connect your automation source first, then connect HighLevel below.</p></div>}
             {(n8nMessage || makeMessage || testResult) && <p className="simple-inline-message">{n8nMessage || makeMessage || testResult}</p>}
           </div>
-          <div className="simple-bottom-row"><span>Name it now. Outcom creates the observer only after you finish the outcome checks.</span><button className="simple-primary" disabled={!zapierName.trim()} onClick={() => setStep(2)}>Next: choose outcomes →</button></div>
+          <div className="simple-bottom-row"><span>We save your progress automatically.</span><button className="simple-primary" disabled={!zapierName.trim()} onClick={() => setStep(2)}>Next: choose outcomes →</button></div>
         </div>}
 
         {step === 2 && <div className="simple-step-content">
@@ -400,6 +470,11 @@ export default function ConnectClient() {
                 <span><b>{item.label}</b><small>{item.description}</small></span><strong>{chosen ? "✓" : "＋"}</strong>
               </button>;
             })}
+          </div>
+          <div className="simple-custom-outcome">
+            <div><b>Add your own outcome</b><span>Describe the business result you want Outcom to verify.</span></div>
+            <div className="simple-custom-row"><input value={customOutcomeText} onChange={e => setCustomOutcomeText(e.target.value)} onKeyDown={e => { if (e.key === "Enter") addCustomOutcome(); }} placeholder='e.g. Lead status equals "Qualified"' /><button type="button" className="simple-secondary" onClick={addCustomOutcome} disabled={!customOutcomeText.trim() || selectedOutcomes.length >= 10}>＋ Add</button></div>
+            <small>{selectedOutcomes.length}/10 checks selected</small>
           </div>
           <div className="simple-outcome-selection"><span>SELECTED CHECKS</span>{selectedOutcomes.length ? selectedOutcomes.map(item => <div key={item.id}>✓ {item.label}</div>) : <small>No outcome selected yet.</small>}</div>
           <div className="simple-outcome-note"><b>These are verification rules, not Zapier actions.</b><span>Outcom uses them after the automation runs to decide whether the downstream business result is actually true.</span></div>
