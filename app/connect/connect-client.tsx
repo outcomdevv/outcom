@@ -54,6 +54,7 @@ export default function ConnectClient() {
   const [webhookInfo, setWebhookInfo] = useState<WebhookInfo | null>(null);
   const [webhookLoading, setWebhookLoading] = useState(false);
   const [webhookRotating, setWebhookRotating] = useState(false);
+  const [webhookChecking, setWebhookChecking] = useState(false);
   const [zapierName, setZapierName] = useState("");
   const [zapierCreating, setZapierCreating] = useState(false);
   const [makeWebhookName, setMakeWebhookName] = useState("");
@@ -161,11 +162,43 @@ export default function ConnectClient() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Could not create webhook endpoint");
       setWebhookInfo(j);
+      setTestResult("Observer ready. Add the final POST step in Zapier, then run the Zap once.");
     } catch (e) {
       setTestResult(e instanceof Error ? e.message : "Could not create webhook endpoint");
     } finally {
       setWebhookLoading(false);
     }
+  }
+
+  async function refreshWebhookStatus() {
+    if (!webhookInfo) return false;
+    setWebhookChecking(true);
+    try {
+      const r = await fetch(
+        `/api/webhooks/status?provider=${encodeURIComponent(webhookInfo.provider)}&workflowId=${encodeURIComponent(webhookInfo.workflow.id)}`,
+        { cache: "no-store" }
+      );
+      if (!r.ok) return false;
+      const j = await r.json();
+      if (j.lastReceivedAt) {
+        setWebhookInfo((current) => current ? { ...current, lastReceivedAt: j.lastReceivedAt } : current);
+        return true;
+      }
+      return false;
+    } finally {
+      setWebhookChecking(false);
+    }
+  }
+
+  async function waitForWebhookEvent() {
+    for (let attempt = 0; attempt < 15; attempt += 1) {
+      if (await refreshWebhookStatus()) {
+        setTestResult("✓ Outcom received an execution event. Observer is connected.");
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    setTestResult("No execution event yet. Run the Zap once, then use “Check now”.");
   }
 
   async function rotateWebhook() {
@@ -329,7 +362,7 @@ export default function ConnectClient() {
               <p className="simple-help">Not your n8n email or password. Outcom needs only the n8n instance URL and an API key. n8n documents that API keys are full-access unless scoped keys are available on Enterprise, so use a dedicated key for Outcom.</p>
             </div>}
             {platform === "n8n" && n8n && <button className="simple-primary" onClick={discoverN8n}>{loadingDiscovery ? <LoadingScreen inline message="Finding workflows" /> : "Find my workflows →"}</button>}
-            {platform === "zapier" && <div className="connection-setup-block"><div className="setup-instructions"><b>Zapier: fastest setup = private webhook</b><ol><li>Name the Zap and click <strong>Create Zap webhook</strong> below.</li><li>Copy the private Outcom URL it gives you.</li><li>In your existing Zap, add one final <strong>Webhooks by Zapier → POST</strong> step and paste that URL.</li><li>Set the payload to JSON. Outcom shows the exact payload below.</li></ol><a href="https://help.zapier.com/hc/en-us/articles/8496326446989-How-to-get-started-with-Webhooks-by-Zapier" target="_blank" rel="noreferrer">Open Zapier webhook instructions ↗</a></div>{oauth.zapier && <button className="simple-primary" onClick={() => oauthConnect("zapier")}>Connect with Zapier OAuth ↗</button>}<div className="webhook-register"><input value={zapierName} onChange={e => setZapierName(e.target.value)} placeholder="Zap name · e.g. New lead → HighLevel" /><button className="simple-secondary" disabled={zapierCreating || !zapierName.trim()} onClick={createZapierWebhookWorkflow}>{zapierCreating ? <LoadingScreen inline message="Preparing Zap webhook" /> : "Create Zap webhook →"}</button></div><div className="webhook-setup-actions"><span><b>Target:</b> one final POST step in your existing Zap</span><a className="simple-secondary" href="https://zapier.com/app/home" target="_blank" rel="noreferrer">Open Zapier ↗</a></div><p className="simple-help">You never give Outcom your Zapier password or API key. The only manual step is adding the final POST action inside the Zap. Once it runs, Outcom receives the execution event and verifies the expected outcome.</p></div>}
+            {platform === "zapier" && <div className="connection-setup-block"><div className="setup-instructions"><b>Zapier: add the Outcom observer</b><ol><li>Choose the Zap you want to protect, then create an Outcom observer below.</li><li>Copy the private observer URL Outcom gives you.</li><li>In your existing Zap, add one final <strong>Webhooks by Zapier → POST</strong> step and paste the observer URL.</li><li>Set the payload to JSON. Outcom shows the exact payload below.</li></ol><a href="https://help.zapier.com/hc/en-us/articles/8496326446989-How-to-get-started-with-Webhooks-by-Zapier" target="_blank" rel="noreferrer">Open Zapier webhook instructions ↗</a></div>{oauth.zapier && <button className="simple-primary" onClick={() => oauthConnect("zapier")}>Connect with Zapier OAuth ↗</button>}<div className="webhook-register"><input value={zapierName} onChange={e => setZapierName(e.target.value)} placeholder="Zap name · e.g. New lead → HighLevel" /><button className="simple-secondary" disabled={zapierCreating || !zapierName.trim()} onClick={createZapierWebhookWorkflow}>{zapierCreating ? <LoadingScreen inline message="Preparing Zap webhook" /> : "Create Outcom observer →"}</button></div><div className="webhook-setup-actions"><span><b>Target:</b> one final POST step in your existing Zap</span><a className="simple-secondary" href="https://zapier.com/app/home" target="_blank" rel="noreferrer">Open Zapier ↗</a></div><p className="simple-help">You never give Outcom your Zapier password or API key. The only manual step is adding the final POST action inside the Zap. Once it runs, Outcom receives the execution event and verifies the expected outcome.</p></div>}
             {platform === "make" && <div className="connection-setup-block"><div className="setup-instructions"><b>Make: native API or webhook mode</b><ol><li><strong>Native API:</strong> connect a Make API token + Team ID when API access is available, then Outcom can discover scenarios and inspect runs.</li><li><strong>Webhook mode:</strong> Outcom gives the scenario a private POST URL. Add <strong>HTTP → Make a request</strong> near the end of the scenario and send the run result to that URL.</li><li>Do not use Make <strong>Custom webhook</strong> for this direction: that module receives data into Make; Outcom needs the scenario to send data out to Outcom.</li></ol><a href="https://apps.make.com/http" target="_blank" rel="noreferrer">Open Make HTTP instructions ↗</a></div>{oauth.make && <button className="simple-primary" onClick={() => oauthConnect("make")}>Connect with Make OAuth ↗</button>}{!make && <><div className="simple-form-grid make-form-grid"><input value={makeApiBase} onChange={e => setMakeApiBase(e.target.value)} placeholder="API base · e.g. https://eu1.make.com/api/v2" /><input value={makeTeamId} onChange={e => setMakeTeamId(e.target.value)} placeholder="Numeric Team ID" /><input type="password" value={makeToken} onChange={e => setMakeToken(e.target.value)} placeholder="Make API token · scenarios:read" /><button className="simple-primary" disabled={makeConnecting || !makeTeamId.trim() || !makeToken.trim()} onClick={connectMakeDirect}>{makeConnecting ? <LoadingScreen inline message="Connecting Make" /> : "Connect Make API"}</button></div><div className="webhook-register"><input value={makeWebhookName} onChange={e => setMakeWebhookName(e.target.value)} placeholder="Scenario name · e.g. Lead → HighLevel" /><button className="simple-secondary" disabled={makeWebhookCreating || !makeWebhookName.trim()} onClick={createMakeWebhookWorkflow}>{makeWebhookCreating ? <LoadingScreen inline message="Preparing Make webhook" /> : "Create Make webhook →"}</button></div><p className="simple-help">Use the API path for native discovery, or skip API access entirely and use webhook mode.</p></>}</div>}
             {platform === "ghl" && <div className="connection-setup-block"><div className="setup-instructions"><b>Connect HighLevel as your source of truth</b><ol><li>Open the relevant HighLevel sub-account.</li><li>Go to <strong>Settings → Private Integrations</strong>.</li><li>Create a read-only integration and copy the token.</li><li>Copy the sub-account's Location ID.</li></ol><a href="https://marketplace.gohighlevel.com/docs/Authorization/PrivateIntegrationsToken/" target="_blank" rel="noreferrer">Open HighLevel instructions ↗</a></div><p className="simple-help">HighLevel is used to verify the business result after an automation runs. Connect your automation source first, then connect HighLevel below.</p></div>}
             {(n8nMessage || makeMessage || testResult) && <p className="simple-inline-message">{n8nMessage || makeMessage || testResult}</p>}
@@ -348,7 +381,7 @@ export default function ConnectClient() {
         </div>}
       </section>
 
-      {webhookInfo && <section className="webhook-live-card"><div><span>LIVE INBOUND ENDPOINT</span><b>{webhookInfo.workflow.name}</b><small>{webhookInfo.provider} → Outcom</small></div><div className="webhook-url-row"><code>{webhookInfo.url}</code><div className="webhook-url-actions"><button className="simple-secondary" onClick={() => navigator.clipboard?.writeText(webhookInfo.url)}>Copy URL</button><button className="simple-secondary" onClick={rotateWebhook} disabled={webhookRotating}>{webhookRotating ? <LoadingScreen inline message="Rotating" /> : "Rotate URL"}</button></div></div><div className="webhook-instructions"><b>Send this JSON as the final step</b><pre>{JSON.stringify(webhookInfo.sample, null, 2)}</pre><small>Map <code>target_record_id</code> to the HighLevel/contact ID created or updated by the automation. Add a unique <code>execution_id</code> when the provider exposes one.</small></div><div className="webhook-test-row"><button className="simple-primary" onClick={async () => { const executionId = `test-${Date.now()}`; setTestResult(null); const r = await fetch(webhookInfo.url, { method: "POST", headers: { "content-type": "application/json", "x-outcom-execution-id": executionId }, body: JSON.stringify({ test: true, data: { test: true }, execution_id: executionId }) }); const j = await r.json().catch(() => ({})); setTestResult(r.ok ? "Test request reached Outcom successfully." : (j.error || "Webhook test failed")); }}>{testResult === null ? "Send test webhook" : "Send test webhook"}</button>{webhookLoading && <LoadingScreen inline message="Preparing endpoint" />}{webhookInfo.lastReceivedAt && <span>Last received {new Date(webhookInfo.lastReceivedAt).toLocaleString()}</span>}</div></section>}
+      {webhookInfo && <section className="webhook-live-card"><div><span>LIVE INBOUND ENDPOINT</span><b>{webhookInfo.workflow.name}</b><small>{webhookInfo.provider} → Outcom</small></div><div className="webhook-url-row"><code>{webhookInfo.url}</code><div className="webhook-url-actions"><button className="simple-secondary" onClick={() => navigator.clipboard?.writeText(webhookInfo.url)}>Copy URL</button><button className="simple-secondary" onClick={rotateWebhook} disabled={webhookRotating}>{webhookRotating ? <LoadingScreen inline message="Rotating" /> : "Rotate URL"}</button></div></div><div className="webhook-instructions"><b>Send this JSON as the final step</b><pre>{JSON.stringify(webhookInfo.sample, null, 2)}</pre><small>Map <code>target_record_id</code> to the HighLevel/contact ID created or updated by the automation. Add a unique <code>execution_id</code> when the provider exposes one.</small></div><div className="webhook-observer-status"><span className={webhookInfo.lastReceivedAt ? "observer-dot live" : "observer-dot"} />{webhookInfo.lastReceivedAt ? <><b>Observer connected</b><span>Last execution received {new Date(webhookInfo.lastReceivedAt).toLocaleString()}</span></> : <><b>Waiting for first execution</b><span>Add the POST step in Zapier and run the Zap once.</span></>}</div><div className="webhook-test-row"><button className="simple-primary" onClick={async () => { const executionId = `test-${Date.now()}`; setTestResult(null); const r = await fetch(webhookInfo.url, { method: "POST", headers: { "content-type": "application/json", "x-outcom-execution-id": executionId }, body: JSON.stringify({ test: true, data: { test: true }, execution_id: executionId }) }); const j = await r.json().catch(() => ({})); setTestResult(r.ok ? "Test request reached Outcom successfully." : (j.error || "Webhook test failed")); }}>{testResult === null ? "Send test webhook" : "Send test webhook"}</button><button className="simple-secondary" onClick={waitForWebhookEvent} disabled={webhookChecking}>{webhookChecking ? <LoadingScreen inline message="Checking" /> : "Check for execution"}</button>{webhookLoading && <LoadingScreen inline message="Preparing endpoint" />}</div></section>}
 
       {discoveryLoaded && <section className="simple-results-card"><div className="simple-section-title"><span>YOUR AUTOMATIONS</span><h2>{discoveryTotal === 0 ? "No automations found" : "Choose a workflow to protect"}</h2><p>{discoveryTotal === 0 ? "No workflows were visible with the current connection." : `${discoveryTotal} workflow${discoveryTotal === 1 ? "" : "s"} found.`}</p></div>{discovered.length > 0 && <div className="simple-discovery-list">{discovered.map(d => <button key={`${d.platform}:${d.id}`} onClick={() => protectWorkflow(d.id, d.name, d.platform as Platform)}><IntegrationLogo name={d.platform === "n8n" ? "n8n" : d.platform === "zapier" ? "zapier" : "make"} size={24}/><span><b>{d.name}</b><small>{d.platform} · {d.enabled ? "Active" : "Paused"}</small></span><strong>Protect →</strong></button>)}</div>}</section>}
 

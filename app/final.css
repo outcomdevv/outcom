@@ -347,3 +347,13 @@
 .webhook-setup-actions span{min-width:0}.webhook-setup-actions b{color:#454b55}.webhook-setup-actions a{white-space:nowrap;padding:8px 10px}
 .theme-dark .webhook-setup-actions{background:#202126;border-color:#3a3c42;color:#aab5c4}.theme-dark .webhook-setup-actions b{color:#f3f4f6}
 @media(max-width:760px){.webhook-setup-actions{align-items:stretch;flex-direction:column}.webhook-setup-actions a{width:100%}}
+
+
+/* V65 — Zapier observer onboarding */
+.webhook-observer-status{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:11px 13px;border:1px solid #dfe2e6;border-radius:10px;background:#fafbfc;font-size:10px;color:#7b8490}
+.webhook-observer-status b{color:#333941;font-size:11px}
+.webhook-observer-status span:last-child{color:#858e99}
+.observer-dot{width:7px;height:7px;border-radius:50%;background:#b6bbc2;display:inline-block;flex:none}
+.observer-dot.live{background:#35a866;box-shadow:0 0 0 3px rgba(53,168,102,.12)}
+.theme-dark .webhook-observer-status{background:#202126;border-color:#3a3c42;color:#aab5c4}
+.theme-dark .webhook-observer-status b{color:#f4f5f7}
