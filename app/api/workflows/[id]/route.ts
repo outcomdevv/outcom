@@ -21,7 +21,7 @@ export async function GET(
   const s = await getWorkspaceStore();
   const rawId = (await params).id;
 
-  let workflow: Awaited<ReturnType<typeof store.workflows.get>> = null;
+  let workflow: Awaited<ReturnType<typeof s.workflows.get>> = null;
   for (const candidate of workflowIdCandidates(rawId)) {
     workflow = await s.workflows.get(candidate);
     if (workflow) break;
