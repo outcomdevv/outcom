@@ -21,7 +21,7 @@ export async function GET(
   const s = await getWorkspaceStore();
   const rawId = (await params).id;
 
-  let workflow = null;
+  let workflow: Awaited<ReturnType<typeof store.workflows.get>> = null;
   for (const candidate of workflowIdCandidates(rawId)) {
     workflow = await s.workflows.get(candidate);
     if (workflow) break;
@@ -41,3 +41,4 @@ export async function GET(
     incidents: await s.incidents.list(workflow.id),
   });
 }
+
