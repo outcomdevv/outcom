@@ -45,7 +45,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract): Pr
     const cfg: any = c.configuration;
 
     if (c.type === "output_count") {
-      const actual = Number(event.data.output_count ?? 0);
+      const actual = Number(value(event, cfg.valueFrom ?? "event.data.output_count") ?? 0);
       const op = cfg.expected?.operator ?? "greater_than";
       const n = Number(cfg.expected?.value ?? 0);
       const passed = op === "greater_than" ? actual > n : actual === n;
