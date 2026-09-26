@@ -1,8 +1,8 @@
-import crypto from "node:crypto";
+﻿import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import { getWorkspaceStore } from "@/lib/db";
 import { getInboundWebhookByToken, touchInboundWebhook } from "@/lib/webhooks";
-import { evaluateEvent } from "@/lib/outcome-checker";
+import { evaluateEvent } from "@/lib/outcome-checker";`r`n`r`nexport const runtime = "nodejs";`r`nexport const dynamic = "force-dynamic";
 
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -95,3 +95,4 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     return NextResponse.json({ error: error instanceof Error ? error.message : "Webhook processing failed." }, { status: 400 });
   }
 }
+
