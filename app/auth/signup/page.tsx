@@ -1,6 +1,6 @@
-import Link from "next/link";
-import PasswordInput from "@/app/auth/password-input";
+import SignupForm from "@/app/auth/signup/form";
 
-export default function Signup({searchParams}:{searchParams:Promise<{error?:string}>}){return <div className="auth-page"><div className="auth-card"><img src="/outcom-logo.png" className="auth-logo" alt="Outcom"/><span className="auth-kicker">DESIGN PARTNER ACCESS</span><h1>Your automation fleet,<br/><em>under proof.</em></h1><p>Create a workspace. Your workflows, connections, findings and outcome history belong to your account.</p><AuthForm searchParams={searchParams}/></div></div>}
-
-async function AuthForm({searchParams}:{searchParams:Promise<{error?:string}>}){const p=await searchParams;return <><form action="/api/auth/signup" method="post"><label>Email<input name="email" type="email" required autoComplete="email"/></label><PasswordInput label="Password" name="password" minLength={8} required autoComplete="new-password"/><small className="auth-field-hint">Use at least 8 characters.</small>{p.error&&<div className="auth-error">{p.error}</div>}<button className="auth-submit">Create workspace <span>↗</span></button></form><div className="auth-divider"><span>Already have an account?</span></div><Link className="auth-secondary" href="/auth/login">Sign in</Link></>}
+export default async function Signup({searchParams}:{searchParams:Promise<{error?:string}>}){
+  const p=await searchParams;
+  return <div className="auth-page"><div className="auth-card"><img src="/outcom-logo.png" className="auth-logo" alt="Outcom"/><span className="auth-kicker">DESIGN PARTNER ACCESS</span><h1>Your automation fleet,<br/><em>under proof.</em></h1><p>Create a workspace. Your workflows, connections, findings and outcome history belong to your account.</p><SignupForm error={p.error}/></div></div>
+}

@@ -6,6 +6,8 @@ import "./globals.css";
 import "./final.css";
 import OperatorAssistant from "@/app/assistant";
 import ThemeToggle from "@/app/theme-toggle";
+import NavigationLoading from "@/app/navigation-loading";
+import SignOutButton from "@/app/signout-button";
 
 // This layout reads Supabase auth cookies and must never be statically prerendered.
 export const dynamic = "force-dynamic";
@@ -51,7 +53,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     console.error("Outcom auth bootstrap failed", error);
     return <BootstrapRecovery />;
   }
-  if (!user) return <html lang="en"><body>{children}</body></html>;
+  if (!user) return <html lang="en"><body><NavigationLoading />{children}</body></html>;
 
   let workspace: Awaited<ReturnType<typeof ensureWorkspace>>;
   let store: WorkspaceStore | null = null;
@@ -68,6 +70,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   }
   return (
     <html lang="en"><body>
+      <NavigationLoading />
       <div className="app-shell">
         <aside className="sidebar">
           <div className="sidebar-brand"><a className="outcom-wordmark" href="/"><img src="/outcom-mark.png" alt="" /><span>OUTCOM</span></a></div>
@@ -75,7 +78,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <div className="sidebar-section-label">Workspace</div>
           <nav className="sidebar-nav">{nav.map(item => <Link href={item.href} className="sidebar-link" key={item.href}><span className="sidebar-icon">{item.icon}</span><span>{item.label}</span>{item.label === "Findings" && open.length > 0 && <em className="nav-count">{open.length}</em>}</Link>)}</nav>
           <div className="sidebar-spacer" />
-          <form action="/api/auth/signout" method="post"><button className="sidebar-signout">Sign out</button></form>
+          <SignOutButton />
         </aside>
         <div className="app-main">
           <header className="topbar"><div className="mobile-brand"><a className="outcom-wordmark mobile-wordmark" href="/"><img src="/outcom-mark.png" alt="" /><span>OUTCOM</span></a></div><div className="topbar-breadcrumb">{workspace?.workspace?.name || "Workspace"}<span>/</span><strong>Business outcome assurance</strong></div><div className="topbar-status"><ThemeToggle /><span className="live-dot"/>{open.length ? `${open.length} finding${open.length===1?"":"s"} need attention` : "All protected outcomes healthy"}</div><Link className="topbar-connect" href="/connect">Connect stack <b>↗</b></Link></header>

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
         status: "success",
         target_record_id: "the-created-or-updated-highlevel-contact-id",
         data: { source: provider, target_record_id: "the-created-or-updated-highlevel-contact-id" },
-        metadata: { outcom: "v59" },
+        metadata: { outcom: "v60" },
       },
     });
   } catch (error) {

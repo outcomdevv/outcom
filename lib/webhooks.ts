@@ -4,7 +4,35 @@ import { encryptSecret, decryptSecret } from "@/lib/oauth";
 
 export type InboundProvider = "zapier" | "make";
 
-const appBaseUrl = () => (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
+const DEFAULT_PRODUCTION_URL = "https://outcom-six.vercel.app";
+
+function normalizeBaseUrl(value: string) {
+  return value.replace(/\/$/, "");
+}
+
+function isLocalUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "0.0.0.0";
+  } catch {
+    return false;
+  }
+}
+
+function appBaseUrl() {
+  const configured = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+  if (configured && !(process.env.VERCEL_ENV === "production" && isLocalUrl(configured))) {
+    return normalizeBaseUrl(configured);
+  }
+
+  const production = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
+  if (production) return `https://${production.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
+
+  const deployment = process.env.VERCEL_URL;
+  if (process.env.VERCEL_ENV === "production" && deployment) return `https://${deployment.replace(/^https?:\/\//, "").replace(/\/$/, "")}`;
+  if (process.env.VERCEL_ENV === "production") return DEFAULT_PRODUCTION_URL;
+  return "http://localhost:3000";
+}
 const hashToken = (token: string) => crypto.createHash("sha256").update(token, "utf8").digest("hex");
 const newToken = () => crypto.randomBytes(32).toString("base64url");
 

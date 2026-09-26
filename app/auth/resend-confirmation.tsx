@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { createClient } from "@supabase/supabase-js";
+import LoadingScreen from "@/app/loading-screen";
 
 export default function ResendConfirmation() {
   const [email, setEmail] = useState("");
@@ -39,7 +40,7 @@ export default function ResendConfirmation() {
           <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" placeholder="you@example.com" />
         </label>
         <button className="auth-secondary" type="submit" disabled={state === "loading"}>
-          {state === "loading" ? "Sending…" : "Resend confirmation email"}
+          {state === "loading" ? <LoadingScreen inline message="Sending" /> : "Resend confirmation email"}
         </button>
       </form>
       {message && <div role="status" className={state === "error" ? "auth-error" : "auth-notice"}>{message}</div>}
