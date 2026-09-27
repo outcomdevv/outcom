@@ -7,9 +7,9 @@ import type { CheckResult, OutcomeContract, WorkflowEvent } from "@/lib/contract
 const value = (event: WorkflowEvent, path: string) =>
   path.replace(/^event\.data\./, "").split(".").reduce<any>((v, k) => v?.[k], event.data);
 
-const adapterFor = async (system: string): Promise<DownstreamAdapter> => {
+const adapterFor = async (system: string, workspaceId?: string): Promise<DownstreamAdapter> => {
   if (system === "mock_crm") return new MockCRMAdapter();
-  if (system === "ghl") return ghlAdapter();
+  if (system === "ghl") return ghlAdapter(workspaceId);
   throw new Error(`Unsupported downstream system: ${system}`);
 };
 
@@ -40,7 +40,7 @@ const fail = (
   recommendedAction: "Inspect the downstream write step, compare the execution input/output with the expected state, then retry or repair the affected record.",
 });
 
-export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract): Promise<CheckResult> {
+export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, workspaceId?: string): Promise<CheckResult> {
   try {
     const cfg: any = c.configuration;
 
@@ -55,7 +55,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract): Pr
     }
 
     const lookup = String(value(event, cfg.lookup?.valueFrom ?? "event.data.contact_id") ?? "");
-    const adapter = await adapterFor(c.system);
+    const adapter = await adapterFor(c.system, workspaceId ?? event.metadata.workspace_id as string | undefined);
     const record = await adapter.getRecord(lookup);
     const source = `Downstream: ${c.system} · record ${lookup}`;
 
@@ -111,7 +111,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract): Pr
   }
 }
 
-export async function evaluateEvent(event: WorkflowEvent) {
+export async function evaluateEvent(event: WorkflowEvent, workspaceId?: string) {
   const store = await getWorkspaceStore();
   const contracts = (await store.contracts.list(event.workflowId)).filter((c) => c.enabled);
   const results: CheckResult[] = [];
@@ -131,11 +131,19 @@ export async function evaluateEvent(event: WorkflowEvent) {
         recommendedAction: "Open the automation execution, fix the failed step, then re-run and verify the downstream state.",
       };
     } else {
-      r = await checkOutcome(event, c);
+      r = await checkOutcome(event, c, workspaceId);
     }
     results.push(r);
-    if (r.state !== "passed" && !(await store.incidents.getFor(event.id, c.id))) {
-      await store.incidents.create({ workflowId: event.workflowId, eventId: event.id, contractId: c.id, type: event.status !== "success" ? "technical_failure" : r.state === "failed" ? "silent_failure" : "verification_error", severity: r.severity, title: r.title, summary: r.summary, expected: r.expected, observed: r.observed, evidence: r.evidence, impact: r.impact, recommendedAction: r.recommendedAction });
+    const existingIncident = await store.incidents.getFor(event.id, c.id);
+    if (r.state !== "passed") {
+      const incidentType = event.status !== "success" ? "technical_failure" : r.state === "failed" ? "silent_failure" : "verification_error";
+      if (!existingIncident) {
+        await store.incidents.create({ workflowId: event.workflowId, eventId: event.id, contractId: c.id, type: incidentType, severity: r.severity, title: r.title, summary: r.summary, expected: r.expected, observed: r.observed, evidence: r.evidence, impact: r.impact, recommendedAction: r.recommendedAction });
+      } else if (existingIncident.status === "resolved") {
+        await store.incidents.reopen(existingIncident.id, { title: r.title, summary: r.summary, expected: r.expected, observed: r.observed, evidence: r.evidence, impact: r.impact, recommendedAction: r.recommendedAction });
+      }
+    } else if (existingIncident?.status === "open") {
+      await store.incidents.resolve(existingIncident.id);
     }
   }
   return results;

@@ -481,3 +481,5 @@ html{scroll-behavior:smooth;scroll-padding-top:88px}
 .auth-submit .outcom-loading-mini-orb{border-color:rgba(255,255,255,.28);background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.9),rgba(115,88,232,.38))}
 .theme-dark .outcom-navigation-loading .outcom-loading{background:#17191d;color:#f3f4f6;border-color:#30343b}
 @media(prefers-reduced-motion:reduce){.outcom-loading-mini-orb{animation:none}}
+
+.event-verify-control{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.event-verify-control small{width:100%;font-size:11px;opacity:.7;text-align:right}.text-button{border:0;background:transparent;padding:0;color:inherit;text-decoration:underline;cursor:pointer;font:inherit;opacity:.75}.text-button:disabled{cursor:wait;opacity:.45}

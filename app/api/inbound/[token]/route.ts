@@ -81,6 +81,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       data: {
         ...body,
         ...data,
+        workspace_id: endpoint.workspace_id,
         output_count: Number.isFinite(inferredOutputCount) ? inferredOutputCount : 0,
         ...(targetRecordId ? { target_record_id: targetRecordId, contact_id: targetRecordId } : {}),
       },
@@ -91,7 +92,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
         received_at: new Date().toISOString(),
       },
     });
-    const results = await evaluateEvent(event);
+    const results = await evaluateEvent(event, endpoint.workspace_id);
     await touchInboundWebhook(endpoint.id, endpoint.workspace_id);
     return NextResponse.json({ ok: true, duplicate: false, eventId: event.id, executionId, status, results }, { status: 201 });
   } catch (error) {

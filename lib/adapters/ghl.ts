@@ -12,5 +12,5 @@ export class GHLAdapter implements DownstreamAdapter{
  async getTags(id:string){const record=await this.getContactRaw(id),tags=record?.tags;return Array.isArray(tags)?tags.filter((tag):tag is string=>typeof tag==="string"):null}
  async getStatus(id:string){const record=await this.getContactRaw(id),status=record?.status;return typeof status==="string"?status:null}
 }
-export async function ghlAdapter(){const token=await getValidAccessToken("ghl");if(token)return new GHLAdapter(token);throw new Error("HighLevel is not connected");}
-export async function ghlConfigured(){const {getWorkspaceStore}=await import("@/lib/db");const store=await getWorkspaceStore();return Boolean(await store.connections.latest("ghl"))}
+export async function ghlAdapter(workspaceId?: string){const token=await getValidAccessToken("ghl", workspaceId);if(token)return new GHLAdapter(token);throw new Error("HighLevel is not connected");}
+export async function ghlConfigured(workspaceId?: string){const {getWorkspaceStore}=await import("@/lib/db");const store=await getWorkspaceStore(workspaceId);return Boolean(await store.connections.latest("ghl"))}
