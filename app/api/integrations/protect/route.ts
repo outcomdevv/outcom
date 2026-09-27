@@ -57,7 +57,15 @@ export async function POST(request: Request) {
       } else if (type === "state_invariant") {
         createdContracts.push(await store.contracts.create({
           workflowId: workflow.id, name: label, type: "state_invariant", system: "ghl", entity: "contact",
-          configuration: { mode: "preserve_tags", inbound_webhook: true, expectedOutcome: label, field: item.field || "tags", lookup: { field: "id", valueFrom: item.valueFrom || "event.data.target_record_id" } },
+          configuration: {
+            mode: item.expectedValue?.trim() ? "field_condition" : "preserve_tags",
+            inbound_webhook: true,
+            expectedOutcome: label,
+            field: item.field || "tags",
+            operator: item.operator || "contains",
+            expectedValue: typeof item.expectedValue === "string" ? item.expectedValue : "",
+            lookup: { field: "id", valueFrom: item.valueFrom || "event.data.target_record_id" },
+          },
           severity: "high", enabled: true,
         }));
       } else {

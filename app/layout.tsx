@@ -13,7 +13,7 @@ import SignOutButton from "@/app/signout-button";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const metadata = { title: "Outcom — Business Outcome Assurance", description: "Verify what your automation actually accomplished.", icons: { icon: "/outcom-mark.png", apple: "/outcom-mark.png" } };
+export const metadata = { title: "Outcom — Business Outcome Assurance", description: "Verify what your automation actually accomplished.", icons: { icon: "/outcom-favicon-v71.png", apple: "/outcom-apple-v71.png" } };
 const nav = [
   { href: "/", label: "Command Center", icon: "⌂" },
   { href: "/workflows", label: "Protected Workflows", icon: "◇" },
