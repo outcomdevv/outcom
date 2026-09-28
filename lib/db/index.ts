@@ -2,23 +2,14 @@ import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { requireWorkspace } from "@/lib/auth";
 import type { Incident, OutcomeContract, Workflow, WorkflowEvent } from "@/lib/contracts/types";
 import type { OAuthProvider } from "@/lib/oauth";
-
 const id = (prefix: string) => `${prefix}_${crypto.randomUUID()}`;
 const asRecord = (value: unknown) => (value && typeof value === "object" ? value as Record<string, unknown> : {});
 const workflow = (r: any): Workflow => ({ id: r.id, name: r.name, platform: r.platform, description: r.description ?? "", createdAt: r.created_at, updatedAt: r.updated_at });
 const contract = (r: any): OutcomeContract => ({ id: r.id, workflowId: r.workflow_id, name: r.name, type: r.type, system: r.system, entity: r.entity, configuration: asRecord(r.configuration), severity: r.severity, enabled: Boolean(r.enabled), createdAt: r.created_at, updatedAt: r.updated_at });
 const event = (r: any): WorkflowEvent => ({ id: r.id, workflowId: r.workflow_id, executionId: r.execution_id, timestamp: r.timestamp, platform: r.platform, status: r.status, data: asRecord(r.data), metadata: asRecord(r.metadata), createdAt: r.created_at });
 const incident = (r: any): Incident => ({ id: r.id, workflowId: r.workflow_id, eventId: r.event_id, contractId: r.contract_id, type: r.type, severity: r.severity, status: r.status, title: r.title, summary: r.summary, expected: r.expected, observed: r.observed, evidence: Array.isArray(r.evidence) ? r.evidence : [], impact: r.impact, recommendedAction: r.recommended_action, detectedAt: r.detected_at, resolvedAt: r.resolved_at, createdAt: r.created_at });
-
 export async function getWorkspaceStore(workspaceId?: string) {
-  const ctx = workspaceId ? null : await requireWorkspace();
-  const wid = workspaceId || ctx!.workspaceId;
-  // The public schema is intentionally accessed through a dynamic table helper.
-  // Keep the Supabase client as any here so TypeScript does not lose the query-builder
-  // methods when the table name is dynamic; runtime access is still constrained by wid.
-  const db: any = createSupabaseServiceClient();
-  const scopedSelect = (table: string, columns = "*") => db.from(table).select(columns).eq("workspace_id", wid);
-
+  const ctx = workspaceId ? null : await requireWorkspace(); const wid = workspaceId || ctx!.workspaceId; const db: any = createSupabaseServiceClient(); const scopedSelect = (table: string, columns = "*") => db.from(table).select(columns).eq("workspace_id", wid);
   return {
     workspaceId: wid,
     workflows: {
@@ -58,6 +49,7 @@ export async function getWorkspaceStore(workspaceId?: string) {
       async latest(provider: string) { const { data, error } = await scopedSelect("connections").eq("provider", provider).order("updated_at", { ascending: false }).limit(1).maybeSingle(); if (error) throw error; return data ? { id: data.id, provider: data.provider, accountId: data.account_id, accountName: data.account_name, email: data.email, accessToken: data.access_token, refreshToken: data.refresh_token, expiresAt: data.expires_at, metadata: asRecord(data.metadata), createdAt: data.created_at, updatedAt: data.updated_at } : null; },
       async upsert(v: { provider: string; accountId: string; accountName: string; email?: string | null; accessToken: string; refreshToken?: string | null; expiresAt?: string | null; metadata?: Record<string, unknown> }) { const existing = await this.latest(v.provider); const connectionId = existing?.accountId === v.accountId ? existing.id : id("connection"); const row = { workspace_id: wid, id: connectionId, provider: v.provider, account_id: v.accountId, account_name: v.accountName, email: v.email ?? null, access_token: v.accessToken, refresh_token: v.refreshToken ?? null, expires_at: v.expiresAt ?? null, metadata: v.metadata ?? {}, updated_at: new Date().toISOString() }; const { data, error } = await db.from("connections").upsert(row, { onConflict: "workspace_id,provider,account_id" }).select().single(); if (error) throw error; return { id: data.id, provider: data.provider, accountId: data.account_id, accountName: data.account_name, email: data.email, expiresAt: data.expires_at, metadata: asRecord(data.metadata), createdAt: data.created_at, updatedAt: data.updated_at }; },
       async updateTokens(connectionId: string, v: { accessToken: string; refreshToken: string | null; expiresAt: string | null }) { const { error } = await db.from("connections").update({ access_token: v.accessToken, refresh_token: v.refreshToken, expires_at: v.expiresAt, updated_at: new Date().toISOString() }).eq("workspace_id", wid).eq("id", connectionId); if (error) throw error; return this.list(); },
+      async updateMetadata(connectionId: string, metadata: Record<string, unknown>) { const { error } = await db.from("connections").update({ metadata, updated_at: new Date().toISOString() }).eq("workspace_id", wid).eq("id", connectionId); if (error) throw error; return this.list(); },
     },
     monitors: {
       async list() { const { data, error } = await scopedSelect("monitors").order("updated_at", { ascending: false }); if (error) throw error; return (data ?? []).map((r: any) => ({ workspaceId: r.workspace_id, workflowId: r.workflow_id, provider: r.provider, externalId: r.external_id, mode: r.mode, metadata: asRecord(r.metadata), createdAt: r.created_at, updatedAt: r.updated_at })); },
@@ -79,7 +71,4 @@ export async function getWorkspaceStore(workspaceId?: string) {
     },
   };
 }
-
-export const store = {
-  async get() { return getWorkspaceStore(); },
-};
+export const store = { async get() { return getWorkspaceStore(); } };
