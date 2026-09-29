@@ -17,6 +17,7 @@ const nav = [
   { href: "/contracts", label: "Protected Outcomes", icon: "✓" },
   { href: "/reliability", label: "Reliability", icon: "◒" },
   { href: "/incidents", label: "Findings", icon: "!" },
+  { href: "/evidence", label: "Evidence Graph", icon: "⌁" },
   { href: "/connect", label: "Integrations", icon: "◎" },
   { href: "/settings", label: "Settings", icon: "⚙" },
 ];
