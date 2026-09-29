@@ -29,13 +29,9 @@ const systems = [
 ];
 
 function SystemLogo({ id }: { id: string }) {
-  if (id === "google_sheets") return <span className={styles.brandLogo} aria-label="Google Sheets"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6z" fill="none" stroke="currentColor" strokeWidth="1.8"/><path d="M14 2v5h5" fill="none" stroke="currentColor" strokeWidth="1.8"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg></span>;
-  if (id === "ghl") return <span className={`${styles.brandLogo} ${styles.highLevelLogo}`} aria-label="HighLevel">HL</span>;
-  if (id === "outcom_records") return <span className={`${styles.brandLogo} ${styles.outcomLogo}`} aria-label="Outcom Records">O</span>;
-  if (id === "hubspot") return <span className={`${styles.brandLogo} ${styles.hubspotLogo}`} aria-label="HubSpot">HS</span>;
-  if (id === "shopify") return <span className={`${styles.brandLogo} ${styles.shopifyLogo}`} aria-label="Shopify">S</span>;
-  if (id === "stripe") return <span className={`${styles.brandLogo} ${styles.stripeLogo}`} aria-label="Stripe">S</span>;
-  return null;
+  const src = id === "google_sheets" ? "/brands/google-sheets.svg" : id === "ghl" ? "/brands/highlevel.svg" : id === "hubspot" ? "/brands/hubspot.svg" : id === "shopify" ? "/brands/shopify.svg" : id === "stripe" ? "/brands/stripe.svg" : "/outcom-mark.png";
+  const label = id === "google_sheets" ? "Google Sheets" : id === "ghl" ? "HighLevel" : id === "hubspot" ? "HubSpot" : id === "shopify" ? "Shopify" : id === "stripe" ? "Stripe" : "Outcom Records";
+  return <span className={styles.brandLogo} aria-label={label}><img src={src} alt="" /></span>;
 }
 
 export default function ContractsClient({ workflows, contracts: initialContracts, connections }: Props) {

@@ -74,7 +74,7 @@ export default function DemoPage() {
       </section>
 
       <section className="demo-actions surface">
-        <div className="section-heading"><span>RUN A SCENARIO</span><h2>What should Outcom see?</h2><p>These actions only touch your Outcom demo workspace.</p></div>
+        <div className="section-heading"><span>RUN A SCENARIO</span><h2>What should Outcom see?</h2><p>These actions only touch your Outcom demo workspace. The repair step changes mock business state — not a live automation.</p></div>
         <div className="demo-action-grid">
           <button type="button" onClick={() => run("silent_failure")} disabled={Boolean(loading)}>
             <span>01</span><strong>{loading === "silent_failure" ? "Running…" : "Simulate silent failure"}</strong><small>Zapier says SUCCESS · CRM record is missing</small>
@@ -83,7 +83,7 @@ export default function DemoPage() {
             <span>02</span><strong>{loading === "success" ? "Running…" : "Simulate verified success"}</strong><small>Zapier says SUCCESS · CRM record exists</small>
           </button>
           <button type="button" onClick={() => run("repair")} disabled={Boolean(loading) || !state || state.verified}>
-            <span>03</span><strong>{loading === "repair" ? "Repairing…" : "Repair + verify again"}</strong><small>Create the missing record, then re-check the same execution</small>
+            <span>03</span><strong>{loading === "repair" ? <><i className="demo-spinner" /> Repairing &amp; verifying…</> : "Repair demo state + verify"}</strong><small>{loading === "repair" ? "Updating the mock business record, then checking evidence…" : "Create the missing demo record, then re-check the same execution"}</small>
           </button>
         </div>
         {error && <div className="demo-error">{error}</div>}
@@ -104,8 +104,8 @@ export default function DemoPage() {
           <span>EVIDENCE</span>
           {state.evidence.map((line) => <p key={line}>• {line}</p>)}
         </div>
-        {!state.verified && <div className="demo-next-step"><strong>Next:</strong> click <b>Repair + verify again</b>. Outcom will create the missing business record and re-run verification against the same execution.</div>}
-        {state.verified && <div className="demo-next-step success"><strong>Proof:</strong> the same verification engine can now move from <b>FAIL → VERIFIED</b> after the business state is repaired.</div>}
+        {!state.verified && <div className="demo-next-step"><strong>Next:</strong> click <b>Repair demo state + verify</b>. This demo creates the missing mock business record and re-checks the same execution. <span className="demo-scope-note">It does not modify or rerun a live Zapier, Make, or n8n workflow.</span></div>}
+        {state.verified && <div className="demo-next-step success"><strong>Proof:</strong> the same verification engine can now move from <b>FAIL → VERIFIED</b> after the demo business state is repaired. <span className="demo-scope-note">No live automation was changed.</span></div>}
       </section>}
 
       <section className="demo-principle">
