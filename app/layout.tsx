@@ -14,7 +14,7 @@ export const metadata = { title: "Outcom — Business Outcome Assurance", descri
 const nav = [
   { href: "/", label: "Command Center", icon: "⌂" },
   { href: "/workflows", label: "Protected Workflows", icon: "◇" },
-  { href: "/contracts", label: "Outcome Contracts", icon: "✓" },
+  { href: "/contracts", label: "Protected Outcomes", icon: "✓" },
   { href: "/reliability", label: "Reliability", icon: "◒" },
   { href: "/incidents", label: "Findings", icon: "!" },
   { href: "/connect", label: "Integrations", icon: "◎" },

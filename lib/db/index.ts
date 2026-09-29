@@ -37,6 +37,14 @@ export async function getWorkspaceStore(workspaceId?: string) {
       async reopen(incidentId: string, v: Pick<Incident, "title" | "summary" | "expected" | "observed" | "evidence" | "impact" | "recommendedAction">) { const { data, error } = await db.from("incidents").update({ status: "open", resolved_at: null, title: v.title, summary: v.summary, expected: v.expected, observed: v.observed, evidence: v.evidence, impact: v.impact, recommended_action: v.recommendedAction, detected_at: new Date().toISOString() }).eq("workspace_id", wid).eq("id", incidentId).select().maybeSingle(); if (error) throw error; return data ? incident(data) : null; },
     },
     contacts: {
+      async list() {
+        const withTime = await scopedSelect("contacts", "id,name,tags,status,created_at,updated_at").order("created_at", { ascending: false });
+        if (!withTime.error) return withTime.data ?? [];
+        // Older workspaces may not have timestamp columns on contacts yet. Keep the record store usable.
+        const fallback = await scopedSelect("contacts", "id,name,tags,status").order("id", { ascending: true });
+        if (fallback.error) throw withTime.error;
+        return (fallback.data ?? []).map((r: any) => ({ ...r, created_at: null, updated_at: null }));
+      },
       async get(contactId: string) { const { data, error } = await scopedSelect("contacts").eq("id", contactId).maybeSingle(); if (error && error.code !== "42P01") throw error; return data ? data : null; },
       async upsert(v: { id: string; name?: string; tags?: string[]; status?: string }) { const current = await this.get(v.id); const row = { workspace_id: wid, id: v.id, name: v.name ?? current?.name ?? "Unknown", tags: v.tags ?? current?.tags ?? [], status: v.status ?? current?.status ?? "new" }; const { data, error } = await db.from("contacts").upsert(row, { onConflict: "workspace_id,id" }).select().single(); if (error) throw error; return data; },
     },

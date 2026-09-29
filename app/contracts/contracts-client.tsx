@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import styles from "./contracts.module.css";
 
 type Workflow = { id: string; name: string; platform: string; description: string };
-type Contract = { id: string; workflowId: string; name: string; type: string; system: string; entity: string; configuration: Record<string, unknown>; severity: string; enabled: boolean };
-type Connection = { provider: string; accountName: string; email?: string | null; metadata?: Record<string, unknown> };
+type Contract = { id: string; workflowId: string; name: string; type: string; system: string; entity: string; configuration: Record<string, unknown>; severity: string; enabled: boolean; createdAt?: string; updatedAt?: string };
+type Connection = { provider: string; accountName: string; email?: string | null; metadata?: Record<string, unknown>; createdAt?: string; updatedAt?: string };
 
 type Props = { workflows: Workflow[]; contracts: Contract[]; connections: Connection[] };
 
@@ -23,8 +23,20 @@ const systems = [
   { id: "outcom_records", title: "Outcom Records", detail: "Use Outcom as the source of truth when you do not have a CRM yet.", status: "ready" },
   { id: "google_sheets", title: "Google Sheets", detail: "Connect Google and verify rows in a spreadsheet.", status: "google" },
   { id: "ghl", title: "HighLevel", detail: "Read-only downstream verification for HighLevel contacts.", status: "connected" },
-  { id: "hubspot", title: "HubSpot", detail: "Adapter planned. Keep the contract ready for later.", status: "soon" },
+  { id: "hubspot", title: "HubSpot", detail: "Adapter planned. Keep the outcome ready for later.", status: "soon" },
+  { id: "shopify", title: "Shopify", detail: "Adapter planned. Verify orders and customer state later.", status: "soon" },
+  { id: "stripe", title: "Stripe", detail: "Adapter planned. Verify payments and customer state later.", status: "soon" },
 ];
+
+function SystemLogo({ id }: { id: string }) {
+  if (id === "google_sheets") return <span className={styles.brandLogo} aria-label="Google Sheets"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h8l4 4v16H6z" fill="none" stroke="currentColor" strokeWidth="1.8"/><path d="M14 2v5h5" fill="none" stroke="currentColor" strokeWidth="1.8"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg></span>;
+  if (id === "ghl") return <span className={`${styles.brandLogo} ${styles.highLevelLogo}`} aria-label="HighLevel">HL</span>;
+  if (id === "outcom_records") return <span className={`${styles.brandLogo} ${styles.outcomLogo}`} aria-label="Outcom Records">O</span>;
+  if (id === "hubspot") return <span className={`${styles.brandLogo} ${styles.hubspotLogo}`} aria-label="HubSpot">HS</span>;
+  if (id === "shopify") return <span className={`${styles.brandLogo} ${styles.shopifyLogo}`} aria-label="Shopify">S</span>;
+  if (id === "stripe") return <span className={`${styles.brandLogo} ${styles.stripeLogo}`} aria-label="Stripe">S</span>;
+  return null;
+}
 
 export default function ContractsClient({ workflows, contracts: initialContracts, connections }: Props) {
   const [contracts, setContracts] = useState(initialContracts);
@@ -117,7 +129,7 @@ export default function ContractsClient({ workflows, contracts: initialContracts
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not create outcome contract.");
       setContracts((current) => [data.contract, ...current]);
-      setMessage("✓ Outcome Contract protected. Outcom will verify the downstream business state after execution.");
+      setMessage("✓ Protected outcome saved. Outcom will check it after the automation runs.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not create outcome contract.");
     } finally {
@@ -128,11 +140,11 @@ export default function ContractsClient({ workflows, contracts: initialContracts
   return <div className={styles.page}>
     <div className={styles.hero}>
       <div>
-        <span className={styles.kicker}>OUTCOME CONTRACTS</span>
-        <h1>Tell Outcom what<br /><em>should actually happen.</em></h1>
-        <p>Choose the business system that holds the truth, describe the expected result in plain language, and let the existing verification engine turn it into an evidence-backed check.</p>
+        <span className={styles.kicker}>PROTECTED OUTCOMES</span>
+        <h1>Tell Outcom what<br /><em>must actually happen.</em></h1>
+        <p>A Protected Outcome is simply a promise: <b>after this automation runs, this real business result must exist.</b> Outcom checks the evidence for you.</p>
       </div>
-      <div className={styles.proof}><span>THE CONTRACT</span><b>Automation ran</b><i>↓</i><b>Business state changed</b><i>↓</i><strong>Outcom verifies the result</strong></div>
+      <div className={styles.proof}><span>WHAT PROTECTED OUTCOME MEANS</span><b>Automation runs</b><i>↓</i><b>The business result should happen</b><i>↓</i><strong>Outcom checks the evidence</strong></div>
     </div>
 
     <section className={styles.card}>
@@ -142,11 +154,11 @@ export default function ContractsClient({ workflows, contracts: initialContracts
     </section>
 
     <section className={styles.card}>
-      <div className={styles.sectionHead}><span>02</span><div><h2>Where does the business truth live?</h2><p>Outcom can verify a real system or provide a minimal native record store.</p></div></div>
+      <div className={styles.sectionHead}><span>02</span><div><h2>Where should the result appear?</h2><p>Choose the place that contains the real evidence. No CRM? Use Outcom Records.</p></div></div>
       <div className={styles.systemGrid}>{systems.map((s) => {
         const connected = s.id === "google_sheets" ? Boolean(google) : s.id === "ghl" ? Boolean(ghl) : s.status === "ready";
         const disabled = s.status === "soon";
-        return <button key={s.id} disabled={disabled} onClick={() => !disabled && setSystem(s.id)} className={`${styles.system} ${system === s.id ? styles.selected : ""} ${disabled ? styles.disabled : ""}`}><div className={styles.systemTop}><strong>{s.title}</strong><span>{disabled ? "SOON" : connected ? "CONNECTED" : s.id === "outcom_records" ? "READY" : "CONNECT"}</span></div><p>{s.detail}</p>{s.id === "google_sheets" && google && <small>{google.accountName}{google.email ? ` · ${google.email}` : ""}</small>}{s.id === "ghl" && ghl && <small>{ghl.accountName}</small>}</button>;
+        return <button key={s.id} disabled={disabled} onClick={() => !disabled && setSystem(s.id)} className={`${styles.system} ${system === s.id ? styles.selected : ""} ${disabled ? styles.disabled : ""}`}><div className={styles.systemTop}><div className={styles.systemIdentity}><SystemLogo id={s.id} /><strong>{s.title}</strong></div><span>{disabled ? "SOON" : connected ? "CONNECTED" : s.id === "outcom_records" ? "READY" : "CONNECT"}</span></div><p>{s.detail}</p>{s.id === "google_sheets" && google && <small>{google.accountName}{google.email ? ` · ${google.email}` : ""}</small>}{s.id === "ghl" && ghl && <small>{ghl.accountName}</small>}</button>;
       })}</div>
       {system === "google_sheets" && google && <div className={styles.googleConfig}>
         <div className={styles.googleConfigHead}><div><b>Configure the spreadsheet Outcom should verify</b><span>Outcom only reads the configured sheet during verification.</span></div><button className={styles.secondary} onClick={loadGoogleFiles} disabled={sheetsLoading}>{sheetsLoading ? "Loading…" : "Load my spreadsheets"}</button></div>
@@ -160,26 +172,25 @@ export default function ContractsClient({ workflows, contracts: initialContracts
     </section>
 
     <section className={styles.card}>
-      <div className={styles.sectionHead}><span>03</span><div><h2>What should happen?</h2><p>Start with business language. Technical lookup details stay underneath.</p></div></div>
+      <div className={styles.sectionHead}><span>03</span><div><h2>What should actually happen?</h2><p>This is the promise Outcom will check after each execution.</p></div></div>
       <div className={styles.templateGrid}>{templates.map((t) => <button key={t.id} onClick={() => chooseTemplate(t.id)} className={`${styles.template} ${template === t.id ? styles.selected : ""}`}><b>{t.title}</b><span>{t.description}</span></button>)}</div>
       <div className={styles.formGrid}>
-        <label>Contract name<input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. New lead should reach the CRM" /></label>
-        <label>Record identifier<input value={lookupField} onChange={(e) => setLookupField(e.target.value)} placeholder="id" /><small>Outcom currently correlates the execution with <code>event.data.target_record_id</code>.</small></label>
+        <label>Outcome name<input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. New lead should reach the CRM" /></label>
+        <details className={styles.advancedDetails}><summary>Advanced verification settings</summary><label>Record identifier<input value={lookupField} onChange={(e) => setLookupField(e.target.value)} placeholder="id" /><small>Used when Outcom needs a specific record from the execution payload.</small></label></details>
         {selectedTemplate.type === "state_invariant" && <>
           <label>Business field<select value={field} onChange={(e) => setField(e.target.value)}><option value="status">status</option><option value="tags">tags</option><option value="stage">stage</option></select></label>
           <label>Operator<select value={operator} onChange={(e) => setOperator(e.target.value)}><option value="equals">equals</option><option value="contains">contains</option><option value="not_equals">does not equal</option></select></label>
           <label className={styles.full}>Expected value<input value={expectedValue} onChange={(e) => setExpectedValue(e.target.value)} placeholder={field === "tags" ? "paid-customer" : "qualified"} /></label>
         </>}
       </div>
-      <div className={styles.advanced}><span>ADVANCED CONFIGURATION</span><p>System, entity, lookup path, operator and value are generated from this contract. Advanced controls will be exposed only when the simple template cannot express the outcome.</p></div>
       <div className={styles.footerAction}><div>{message && <span className={message.startsWith("✓") ? styles.success : styles.error}>{message}</span>}</div><button className={styles.primary} disabled={saving || !workflowId} onClick={createContract}>{saving ? "Protecting…" : "Protect this outcome →"}</button></div>
     </section>
 
     <section className={styles.existing}>
-      <div className={styles.sectionHead}><span>04</span><div><h2>Protected contracts</h2><p>{contracts.length} outcome check{contracts.length === 1 ? "" : "s"} currently stored in this workspace.</p></div></div>
-      {contracts.length ? <div className={styles.contractList}>{contracts.slice(0, 10).map((c) => <div className={styles.contractRow} key={c.id}><div><b>{c.name}</b><small>{c.system} · {c.type} · {c.severity}</small></div><span className={c.enabled ? styles.on : styles.off}>{c.enabled ? "PROTECTED" : "DISABLED"}</span></div>)}</div> : <div className={styles.empty}>No contracts yet. Create the first one above.</div>}
+      <div className={styles.sectionHead}><span>04</span><div><h2>Protected outcomes</h2><p>{contracts.length} protected outcome{contracts.length === 1 ? "" : "s"} currently stored in this workspace.</p></div></div>
+      {contracts.length ? <div className={styles.contractList}>{contracts.slice(0, 10).map((c) => <div className={styles.contractRow} key={c.id}><div><b>{c.name}</b><small>{c.system} · {c.type} · {c.severity}</small><time>{c.createdAt ? `Protected ${new Date(c.createdAt).toLocaleString()}` : "Protected time unavailable"}</time></div><span className={c.enabled ? styles.on : styles.off}>{c.enabled ? "PROTECTED" : "DISABLED"}</span></div>)}</div> : <div className={styles.empty}>No contracts yet. Create the first one above.</div>}
     </section>
 
-    <div className={styles.bottom}><span>V74 · Outcome Contract foundation</span><span>EXECUTION → EXPECTATION → EVIDENCE → VERIFICATION</span></div>
+    <div className={styles.bottom}><span>V75.1 · Protected Outcome foundation</span><span>EXECUTION → EXPECTED RESULT → EVIDENCE → VERIFICATION</span></div>
   </div>;
 }

@@ -92,14 +92,14 @@ export default async function ReliabilityPage() {
       <div>
         <span className={styles.kicker}><i /> OUTCOME RELIABILITY</span>
         <h1>Did the automation<br /><em>actually deliver?</em></h1>
-        <p>Reliability measures the business outcomes Outcom could prove — not whether an automation platform reported a green execution.</p>
+        <p>Reliability answers one simple question: after the automation ran, did the business result actually happen?</p>
       </div>
       <div className={styles.heroBadge}><span>FIRST-CHECK RELIABILITY</span><strong>{reliability === null ? "—" : pct(reliability)}</strong><small>{evaluations ? `${evaluations.toLocaleString()} outcome checks observed` : "Awaiting verified executions"}</small></div>
     </header>
 
     <section className={styles.metrics}>
       <div className={`${styles.metric} ${styles.featured}`}><span>OUTCOME RELIABILITY</span><strong>{reliability === null ? "—" : pct(reliability)}</strong><small>historical first-check result</small></div>
-      <div className={styles.metric}><span>EXECUTIONS OBSERVED</span><strong>{events.length.toLocaleString()}</strong><small>across protected workflows</small></div>
+      <div className={styles.metric}><span>OUTCOME CHECKS</span><strong>{evaluations.toLocaleString()}</strong><small>{events.length.toLocaleString()} executions × protected outcomes</small></div>
       <div className={styles.metric}><span>VERIFIED</span><strong className={styles.good}>{verified.toLocaleString()}</strong><small>business outcomes proven</small></div>
       <div className={styles.metric}><span>OPEN FINDINGS</span><strong className={openFindings ? styles.bad : styles.good}>{openFindings}</strong><small>{openFindings ? "need attention" : "nothing open"}</small></div>
     </section>
@@ -112,18 +112,18 @@ export default async function ReliabilityPage() {
     </section>
 
     <section className={styles.panel}>
-      <div className={styles.panelHead}><div><span className={styles.number}>02</span><h2>Reliability by workflow</h2><p>Each workflow is measured against its enabled Outcome Contracts.</p></div><Link href="/workflows" className={styles.panelLink}>View fleet →</Link></div>
+      <div className={styles.panelHead}><div><span className={styles.number}>02</span><h2>Reliability by workflow</h2><p>Each workflow is measured by how often its protected business outcomes are proven.</p></div><Link href="/workflows" className={styles.panelLink}>View fleet →</Link></div>
       {workflowRows.length ? <div className={styles.table}><div className={styles.tableHead}><span>WORKFLOW</span><span>CHECKS</span><span>VERIFIED</span><span>RELIABILITY</span><span>FINDINGS</span></div>{workflowRows.map((row) => <Link className={styles.row} href={`/workflows/${row.workflow.id}`} key={row.workflow.id}><div className={styles.workflow}><span className={styles.logo}><IntegrationLogo name={row.workflow.platform as any} size={18} /></span><div><strong>{row.workflow.name}</strong><small>{row.workflow.platform}</small></div></div><span>{row.checks.toLocaleString()}</span><span>{Math.max(row.checks - row.failures, 0).toLocaleString()}</span><strong className={row.rate !== null && row.rate < 95 ? styles.badText : styles.goodText}>{row.rate === null ? "—" : pct(row.rate)}</strong><span className={row.open ? styles.badPill : styles.goodPill}>{row.open ? `${row.open} open` : "Clean"}</span></Link>)}</div> : <div className={styles.empty}>No protected workflows have enough evidence to measure yet. Protect a workflow and send its first execution.</div>}
     </section>
 
     <section className={styles.lowerGrid}>
       <div className={styles.panel}>
-        <div className={styles.panelHead}><div><span className={styles.number}>03</span><h2>Recent failures</h2><p>Every finding is linked to an execution and an expected outcome.</p></div><Link href="/incidents" className={styles.panelLink}>All findings →</Link></div>
+        <div className={styles.panelHead}><div><span className={styles.number}>03</span><h2>Recent failures</h2><p>These are historical outcome failures, even when they were later repaired.</p></div><Link href="/incidents" className={styles.panelLink}>All findings →</Link></div>
         {recentFailures.length ? <div className={styles.failures}>{recentFailures.map((incident) => <Link href={`/incidents/${incident.id}`} className={styles.failureRow} key={incident.id}><div><span className={incident.status === "open" ? styles.badPill : styles.resolvedPill}>{incident.status === "open" ? "OPEN" : "RESOLVED"}</span><strong>{incident.title}</strong><small>{workflows.find((w) => w.id === incident.workflowId)?.name ?? "Workflow"} · {new Date(incident.detectedAt).toLocaleString()}</small></div><span>→</span></Link>)}</div> : <div className={styles.empty}>No outcome failures recorded yet.</div>}
       </div>
       <div className={styles.panel}>
-        <div className={styles.panelHead}><div><span className={styles.number}>04</span><h2>Resolution</h2><p>How quickly previously detected outcome failures were resolved.</p></div></div>
-        <div className={styles.resolution}><span>AVERAGE TIME TO RESOLUTION</span><strong>{duration(averageResolution)}</strong><small>{resolved.length ? `${resolved.length} resolved finding${resolved.length === 1 ? "" : "s"}` : "No resolved findings yet"}</small></div>
+        <div className={styles.panelHead}><div><span className={styles.number}>04</span><h2>Resolution</h2><p>How quickly a detected business-outcome failure was repaired.</p></div></div>
+        <div className={styles.resolution}><span>AVERAGE TIME TO RESOLUTION</span><strong>{duration(averageResolution)}</strong><small>{resolved.length ? `${resolved.length} resolved finding${resolved.length === 1 ? "" : "s"}` : "No resolved findings yet"}</small></div><div className={styles.explainer}><b>How reliability is calculated</b><p>Verified outcome checks ÷ total outcome checks. A failure remains part of history after repair, so reliability measures what actually happened over time.</p></div>
         <div className={styles.explainer}><b>What this means</b><p>A workflow can report SUCCESS and still count as a failed outcome. V75 keeps that historical signal instead of replacing it when the issue is repaired.</p></div>
       </div>
     </section>

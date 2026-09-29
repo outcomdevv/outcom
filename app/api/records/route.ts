@@ -4,12 +4,13 @@ import { getWorkspaceStore } from "@/lib/db";
 export async function GET() {
   try {
     const store = await getWorkspaceStore();
-    const db = await import("@/lib/supabase/server").then((m) => m.createSupabaseServiceClient());
-    const { data, error } = await db.from("contacts").select("id,name,tags,status,created_at").eq("workspace_id", store.workspaceId).order("created_at", { ascending: false });
-    if (error) throw error;
-    return NextResponse.json({ records: data || [] });
+    const records = await store.contacts.list();
+    return NextResponse.json({ records });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Could not load records." }, { status: 400 });
+    console.error("[records] GET failed", error);
+    return NextResponse.json({
+      error: error instanceof Error ? error.message : "Could not load records."
+    }, { status: 400 });
   }
 }
 
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
     const record = await store.contacts.upsert({ id, name: name || "Unknown", status, tags });
     return NextResponse.json({ record });
   } catch (error) {
+    console.error("[records] POST failed", error);
     return NextResponse.json({ error: error instanceof Error ? error.message : "Could not create record." }, { status: 400 });
   }
 }
