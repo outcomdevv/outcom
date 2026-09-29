@@ -15,6 +15,7 @@ const nav = [
   { href: "/", label: "Command Center", icon: "⌂" },
   { href: "/workflows", label: "Protected Workflows", icon: "◇" },
   { href: "/contracts", label: "Outcome Contracts", icon: "✓" },
+  { href: "/reliability", label: "Reliability", icon: "◒" },
   { href: "/incidents", label: "Findings", icon: "!" },
   { href: "/connect", label: "Integrations", icon: "◎" },
   { href: "/settings", label: "Settings", icon: "⚙" },
