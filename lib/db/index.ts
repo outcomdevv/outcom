@@ -50,7 +50,8 @@ export async function getWorkspaceStore(workspaceId?: string) {
     },
     oauthStates: {
       async create(v: { state: string; provider: OAuthProvider; expiresAt: string }) { const { error } = await db.from("oauth_states").insert({ state: v.state, workspace_id: wid, provider: v.provider, expires_at: v.expiresAt }); if (error) throw error; return v; },
-      async consume(state: string, provider: OAuthProvider) { const { data, error } = await db.from("oauth_states").select("*").eq("workspace_id", wid).eq("state", state).eq("provider", provider).maybeSingle(); if (error) throw error; await db.from("oauth_states").delete().eq("workspace_id", wid).eq("state", state); return data && new Date(data.expires_at).getTime() > Date.now() ? data : null; },
+      async consume(state: string, provider: OAuthProvider) { // single DELETE ... RETURNING so a state can be used exactly once even with concurrent callbacks
+        const { data, error } = await db.from("oauth_states").delete().eq("workspace_id", wid).eq("state", state).eq("provider", provider).select().maybeSingle(); if (error) throw error; return data && new Date(data.expires_at).getTime() > Date.now() ? data : null; },
     },
     connections: {
       async list() { const { data, error } = await scopedSelect("connections", "id,provider,account_id,account_name,email,expires_at,metadata,created_at,updated_at").order("updated_at", { ascending: false }); if (error) throw error; return (data ?? []).map((r: any) => ({ id: r.id, provider: r.provider, accountId: r.account_id, accountName: r.account_name, email: r.email, expiresAt: r.expires_at, metadata: asRecord(r.metadata), createdAt: r.created_at, updatedAt: r.updated_at })); },

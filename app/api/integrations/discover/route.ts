@@ -1,55 +1,38 @@
 import { NextResponse } from "next/server";
-import { getValidAccessToken, type OAuthProvider } from "@/lib/oauth";
+import { getValidAccessToken, OAuthReauthRequired, providerConfig, type OAuthProvider } from "@/lib/oauth";
+import { listZaps, ZapierApiError } from "@/lib/zapier";
 import { getWorkspaceStore } from "@/lib/db";
 
 const DISCOVERABLE = new Set<OAuthProvider>(["zapier", "make"]);
 
-function safeNext(base: string, next: unknown) {
-  if (typeof next !== "string" || !next) return null;
+async function discoverZapier(initialToken: string) {
+  const includeShared = providerConfig.zapier.scopes.split(/\s+/).includes("zap:account:all");
   try {
-    const url = new URL(next, base);
-    if (url.origin !== new URL(base).origin) return null;
-    return url.toString();
-  } catch {
-    return null;
+    let result;
+    try {
+      result = await listZaps(initialToken, { includeShared });
+    } catch (e) {
+      // A 401 can mean the access token was revoked/expired early: force one refresh and retry once.
+      if (!(e instanceof ZapierApiError) || e.kind !== "reauth_required") throw e;
+      const fresh = await getValidAccessToken("zapier", undefined, { forceRefresh: true });
+      if (!fresh) throw e;
+      result = await listZaps(fresh, { includeShared });
+    }
+    return NextResponse.json({ connected: true, items: result.items, total: result.total, pages: result.pages, partial: result.partial, warning: result.warning });
+  } catch (e) {
+    return zapierError(e);
   }
 }
 
-async function discoverZapier(token: string) {
-  const items: any[] = [];
-  let nextUrl: string | null = "https://api.zapier.com/v2/zaps?limit=100&offset=0";
-  let pages = 0;
-  let total: number | null = null;
-
-  while (nextUrl && pages < 100) {
-    const r = await fetch(nextUrl, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.api+json" },
-      cache: "no-store",
-    });
-    const body: any = await r.json().catch(() => ({}));
-    if (!r.ok) return { ok: false as const, status: r.status, error: body };
-
-    const data = Array.isArray(body.data) ? body.data : [];
-    items.push(...data.map((z: any) => ({
-      id: String(z.id),
-      name: z.title || "Untitled Zap",
-      enabled: Boolean(z.is_enabled),
-      updatedAt: z.updated_at || null,
-      url: z.links?.html_editor || z.url || null,
-      platform: "zapier",
-      lastSuccessfulRun: z.last_successful_run_date || null,
-      steps: Array.isArray(z.steps) ? z.steps.length : null,
-    })));
-
-    if (body.meta?.count != null) total = Number(body.meta.count);
-    nextUrl = safeNext("https://api.zapier.com", body.links?.next);
-    pages += 1;
-
-    // Protect against a provider returning the same link forever.
-    if (nextUrl === r.url) break;
+function zapierError(e: unknown) {
+  if (e instanceof OAuthReauthRequired || (e instanceof ZapierApiError && e.kind === "reauth_required")) {
+    return NextResponse.json({ connected: true, reauthRequired: true, code: "reauth_required", items: [], total: 0, error: "Your Zapier connection expired. Reconnect Zapier to continue." }, { status: 401 });
   }
-
-  return { ok: true as const, items, total: total ?? items.length, pages };
+  if (e instanceof ZapierApiError) {
+    const message = e.kind === "forbidden" ? e.message : e.kind === "rate_limited" ? e.message : "Zapier could not list your Zaps right now. Try again in a moment.";
+    return NextResponse.json({ connected: true, code: e.kind, items: [], total: 0, error: message, retryAfterSeconds: e.retryAfterSeconds }, { status: e.kind === "rate_limited" ? 429 : e.kind === "forbidden" ? 403 : 502 });
+  }
+  return NextResponse.json({ connected: false, code: "discovery_failed", items: [], total: 0, error: "Discovery failed." }, { status: 502 });
 }
 
 export async function GET(request: Request) {
@@ -62,11 +45,7 @@ export async function GET(request: Request) {
     const token = await getValidAccessToken(provider);
     if (!token) return NextResponse.json({ connected: false, items: [], total: 0 });
 
-    if (provider === "zapier") {
-      const result = await discoverZapier(token);
-      if (!result.ok) return NextResponse.json({ connected: false, items: [], error: result.error }, { status: result.status });
-      return NextResponse.json({ connected: true, items: result.items, total: result.total, pages: result.pages });
-    }
+    if (provider === "zapier") return discoverZapier(token);
 
     const store = await getWorkspaceStore();
     const connection = await store.connections.latest("make");
@@ -80,6 +59,8 @@ export async function GET(request: Request) {
     const items = (body.scenarios || body.data || []).map((s: any) => ({ id: String(s.id), name: s.name || "Untitled scenario", enabled: Boolean(s.isActive), updatedAt: s.updatedAt || null, url: null, platform: "make" }));
     return NextResponse.json({ connected: true, items, total: Number(body.total ?? items.length) });
   } catch (e) {
+    if (provider === "zapier") return zapierError(e);
+    if (e instanceof OAuthReauthRequired) return NextResponse.json({ connected: true, reauthRequired: true, code: "reauth_required", items: [], total: 0, error: "Your Make connection expired. Reconnect Make to continue." }, { status: 401 });
     return NextResponse.json({ connected: false, items: [], total: 0, error: e instanceof Error ? e.message : "Discovery failed" }, { status: 502 });
   }
 }

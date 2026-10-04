@@ -3,7 +3,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const required = [
-  ["workspace-aware OAuth", "lib/oauth.ts", "getValidAccessToken(provider:OAuthProvider, workspaceId?:string)"],
+  ["workspace-aware OAuth", "lib/oauth.ts", "getValidAccessToken(provider:OAuthProvider, workspaceId?:string"],
   ["workspace-aware GHL adapter", "lib/adapters/ghl.ts", "ghlAdapter(workspaceId?: string)"],
   ["workspace-aware checker", "lib/outcome-checker/index.ts", "evaluateEvent(event: WorkflowEvent, workspaceId?: string)"],
   ["public webhook workspace context", "app/api/inbound/[token]/route.ts", "workspace_id: endpoint.workspace_id"],
