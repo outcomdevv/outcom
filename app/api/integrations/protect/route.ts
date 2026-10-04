@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { getWorkspaceStore } from "@/lib/db";
+import { isInboundSource } from "@/lib/integrations/registry";
+import { parseSheetTarget } from "@/lib/google-sheets";
 
-const PROVIDERS = new Set(["zapier", "make"]);
+// Business systems an outcome can be verified against. "event" = no external system (checks the run payload only).
+const SYSTEMS = new Set(["ghl", "google_sheets", "event"]);
 
 export async function POST(request: Request) {
   try {
@@ -17,15 +20,18 @@ export async function POST(request: Request) {
       ...item,
       label: String(item.label || "Business outcome").trim(),
       type: item.type === "state_invariant" || item.type === "output_count" ? item.type : "record_exists",
-      system: String(item.system || (item.type === "output_count" ? "event" : "ghl")),
-      entity: String(item.entity || (item.type === "output_count" ? "output" : "contact")),
+      system: item.type === "output_count" ? "event" : (SYSTEMS.has(String(item.system)) ? String(item.system) : "ghl"),
+      target: item.type === "output_count" ? null : parseSheetTarget(item.target),
+      entity: String(item.entity || (item.type === "output_count" ? "output" : item.system === "google_sheets" ? "row" : "contact")),
       field: typeof item.field === "string" && item.field.trim() ? item.field.trim() : "tags",
       operator: typeof item.operator === "string" && item.operator.trim() ? item.operator.trim() : item.type === "output_count" ? "greater_than" : "contains",
       expectedValue: typeof item.expectedValue === "string" ? item.expectedValue : "",
       expectedCount: Number.isFinite(Number(item.expectedCount)) ? Number(item.expectedCount) : 0,
       valueFrom: typeof item.valueFrom === "string" && item.valueFrom.trim() ? item.valueFrom.trim() : item.type === "output_count" ? "event.data.output_count" : "event.data.target_record_id",
     }));
-    if (!PROVIDERS.has(provider)) return NextResponse.json({ protected: false, error: "Webhook protection is supported for Zapier and Make." }, { status: 400 });
+    if (!isInboundSource(provider)) return NextResponse.json({ protected: false, error: "Webhook protection is not available for this platform." }, { status: 400 });
+    const badTarget = normalizedOutcomes.find((o: any) => o.system === "google_sheets" && !o.target);
+    if (badTarget) return NextResponse.json({ protected: false, error: "Choose a spreadsheet, tab and key column before protecting with Google Sheets." }, { status: 400 });
     if (!externalId || !name) return NextResponse.json({ protected: false, error: "Workflow ID and name are required." }, { status: 400 });
 
     const store = await getWorkspaceStore();
@@ -56,9 +62,10 @@ export async function POST(request: Request) {
         }));
       } else if (type === "state_invariant") {
         createdContracts.push(await store.contracts.create({
-          workflowId: workflow.id, name: label, type: "state_invariant", system: "ghl", entity: "contact",
+          workflowId: workflow.id, name: label, type: "state_invariant", system: item.system, entity: item.entity,
           configuration: {
-            mode: item.expectedValue?.trim() ? "field_condition" : "preserve_tags",
+            target: item.target,
+            mode: item.expectedValue?.trim() || item.operator === "exists" || item.system !== "ghl" ? "field_condition" : "preserve_tags",
             inbound_webhook: true,
             expectedOutcome: label,
             field: item.field || "tags",
@@ -70,8 +77,8 @@ export async function POST(request: Request) {
         }));
       } else {
         createdContracts.push(await store.contracts.create({
-          workflowId: workflow.id, name: label, type: "record_exists", system: "ghl", entity: "contact",
-          configuration: { mode: "inbound_webhook", expectedOutcome: label, lookup: { field: "id", valueFrom: item.valueFrom || "event.data.target_record_id" } },
+          workflowId: workflow.id, name: label, type: "record_exists", system: item.system, entity: item.entity,
+          configuration: { target: item.target, mode: "inbound_webhook", expectedOutcome: label, lookup: { field: "id", valueFrom: item.valueFrom || "event.data.target_record_id" } },
           severity: "high", enabled: true,
         }));
       }

@@ -5,7 +5,7 @@ const required = [
   ["demo UI", "app/demo/page.tsx", "Simulate silent failure"],
   ["demo API", "app/api/demo/route.ts", "silent_failure"],
   ["mock CRM adapter", "lib/adapters/mock-crm.ts", "MockCRMAdapter"],
-  ["mock CRM outcome path", "lib/outcome-checker/index.ts", 'system === "mock_crm"'],
+  ["mock CRM outcome path", "lib/adapters/registry.ts", '["mock_crm"'],
   ["real verifier reused", "app/api/demo/route.ts", "evaluateEvent(event, store.workspaceId)"],
   ["repair path", "app/api/demo/route.ts", 'action === "repair"'],
   ["dashboard entry", "app/page.tsx", "/demo"],

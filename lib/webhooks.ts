@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { encryptSecret, decryptSecret } from "@/lib/oauth";
 
-export type InboundProvider = "zapier" | "make";
+export type InboundProvider = string; // validated against lib/integrations/registry (isInboundSource)
 
 const DEFAULT_PRODUCTION_URL = "https://outcom-six.vercel.app";
 

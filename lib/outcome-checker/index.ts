@@ -1,17 +1,10 @@
-import { ghlAdapter } from "@/lib/adapters/ghl";
-import { MockCRMAdapter } from "@/lib/adapters/mock-crm";
-import type { DownstreamAdapter } from "@/lib/adapters/types";
+import { adapterFor } from "@/lib/adapters/registry";
+import { ciGet } from "@/lib/google-sheets";
 import { getWorkspaceStore } from "@/lib/db";
 import type { CheckResult, OutcomeContract, WorkflowEvent } from "@/lib/contracts/types";
 
 const value = (event: WorkflowEvent, path: string) =>
   path.replace(/^event\.data\./, "").split(".").reduce<any>((v, k) => v?.[k], event.data);
-
-const adapterFor = async (system: string, workspaceId?: string): Promise<DownstreamAdapter> => {
-  if (system === "mock_crm") return new MockCRMAdapter();
-  if (system === "ghl") return ghlAdapter(workspaceId);
-  throw new Error(`Unsupported downstream system: ${system}`);
-};
 
 const fail = (
   c: OutcomeContract,
@@ -55,7 +48,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
     }
 
     const lookup = String(value(event, cfg.lookup?.valueFrom ?? "event.data.contact_id") ?? "");
-    const adapter = await adapterFor(c.system, workspaceId ?? event.metadata.workspace_id as string | undefined);
+    const adapter = await adapterFor(c.system, workspaceId ?? event.metadata.workspace_id as string | undefined, cfg.target);
     const record = await adapter.getRecord(lookup);
     const source = `Downstream: ${c.system} · record ${lookup}`;
 
@@ -66,7 +59,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
     }
 
     const field = String(cfg.field || "tags");
-    const actual = record?.[field];
+    const actual = record ? ciGet(record, field) : undefined;
 
     if (cfg.mode === "preserve_tags") {
       const current = Array.isArray(actual) ? actual.filter((x): x is string => typeof x === "string") : [];

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getWorkspaceStore } from "@/lib/db";
 import { getOrCreateInboundWebhook, type InboundProvider } from "@/lib/webhooks";
+import { isInboundSource } from "@/lib/integrations/registry";
 
-const PROVIDERS = new Set<InboundProvider>(["zapier", "make"]);
 
 export async function GET(request: Request) {
   try {
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const provider = String(params.get("provider") || "") as InboundProvider;
     const workflowId = String(params.get("workflowId") || "").trim();
 
-    if (!PROVIDERS.has(provider)) {
+    if (!isInboundSource(provider)) {
       return NextResponse.json({ error: "Unsupported webhook provider." }, { status: 400 });
     }
     if (!workflowId) {

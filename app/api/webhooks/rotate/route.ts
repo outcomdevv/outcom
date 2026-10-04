@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextResponse } from "next/server";
+import { isInboundSource } from "@/lib/integrations/registry";
 import { getWorkspaceStore } from "@/lib/db";
 import { encryptSecret } from "@/lib/oauth";
 import { inboundWebhookUrl } from "@/lib/webhooks";
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const provider = String(body.provider || "").trim();
     const workflowId = String(body.workflowId || "").trim();
-    if (!["zapier", "make"].includes(provider) || !workflowId) return NextResponse.json({ error: "provider and workflowId are required." }, { status: 400 });
+    if (!isInboundSource(provider) || !workflowId) return NextResponse.json({ error: "provider and workflowId are required." }, { status: 400 });
 
     const store = await getWorkspaceStore();
     const workflow = await store.workflows.get(workflowId);
