@@ -447,6 +447,21 @@ export default function ConnectClient() {
   const activeConnection = connections.find((x) => x.provider === platform);
   const platformName = platforms.find((x) => x.id === platform)?.name || platform;
 
+  const businessSystemBlock = (
+    <>
+      <BusinessSystemPicker value={targetSystem} onChange={setTargetSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} ghlConnected={Boolean(ghl)} sheet={sheetTarget} onSheet={setSheetTarget} onConnectGoogle={() => oauthConnect("google_sheets")} />
+
+      {targetSystem === "ghl" && <section id="business-system" className="business-system-card">
+        <div className="simple-section-title"><span>BUSINESS SYSTEM · SOURCE OF TRUTH</span><h2>Where does the real business result live?</h2><p>Connect the system that contains the real business state. For example, Outcom can check whether a contact, tag, opportunity, or appointment actually exists in HighLevel.</p></div>
+        <div className="business-system-panel"><div className="business-system-heading"><IntegrationLogo name="ghl" size={42}/><div><h3>HighLevel</h3><p>Business system · read-only verification</p></div>{ghl && <b className="simple-connected-pill">CONNECTED</b>}</div>
+          {!ghl && <div className="connection-setup-block"><div className="setup-instructions"><b>Recommended for a quick test: Private Integration Token</b><ol><li>Open your GoHighLevel account.</li><li>Go to <strong>Settings → Private Integrations</strong> at the agency or sub-account level.</li><li>Create an integration with only the read permissions Outcom needs.</li><li>Copy the generated token immediately; it may only be shown once.</li><li>Copy the <strong>Location ID</strong> (sub-account ID) you want Outcom to inspect.</li></ol><a href="https://marketplace.gohighlevel.com/docs/Authorization/PrivateIntegrationsToken/" target="_blank" rel="noreferrer">Open HighLevel Private Integration instructions ↗</a></div><div className="simple-form-grid ghl-form-grid"><input name="ghl-location-id" autoComplete="off" value={ghlLocationId} onChange={e => setGhlLocationId(e.target.value)} placeholder="Location ID · sub-account ID" /><input name="ghl-private-token" type="password" autoComplete="new-password" value={ghlPit} onChange={e => setGhlPit(e.target.value)} placeholder="Private Integration Token" /><button className="simple-primary" disabled={ghlConnecting || !ghlLocationId.trim() || !ghlPit.trim()} onClick={connectGhlDirect}>{ghlConnecting ? <LoadingScreen inline message="Connecting HighLevel" /> : "Connect HighLevel"}</button></div><p className="simple-help">Quick test: use a scoped Private Integration Token. For the public SaaS flow, use HighLevel OAuth so each client can authorize without pasting a token.</p>{oauth.ghl && <button className="simple-secondary" onClick={() => oauthConnect("ghl")}>Connect HighLevel with OAuth ↗</button>}</div>}
+          {ghl && <p className="simple-help">✓ Connected and verified. Outcom can now read this HighLevel location when checking the protected workflow.</p>}
+          {ghlMessage && <p className="simple-inline-message">{ghlMessage}</p>}
+        </div>
+      </section>}
+    </>
+  );
+
   return (
     <div className="connect-page v51-simple-connect">
       <header className="simple-connect-hero">
@@ -510,16 +525,7 @@ export default function ConnectClient() {
 
         {step === 2 && <div className="simple-step-content">
           <div className="simple-section-title"><span>STEP 02</span><h2>What should happen after the automation runs?</h2><p>Select one or more business outcomes. You will customize the exact check for each one next.</p></div>
-      <BusinessSystemPicker value={targetSystem} onChange={setTargetSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} ghlConnected={Boolean(ghl)} sheet={sheetTarget} onSheet={setSheetTarget} onConnectGoogle={() => oauthConnect("google_sheets")} />
-
-      {targetSystem === "ghl" && <section id="business-system" className="business-system-card">
-        <div className="simple-section-title"><span>BUSINESS SYSTEM · SOURCE OF TRUTH</span><h2>Where does the real business result live?</h2><p>Connect the system that contains the real business state. For example, Outcom can check whether a contact, tag, opportunity, or appointment actually exists in HighLevel.</p></div>
-        <div className="business-system-panel"><div className="business-system-heading"><IntegrationLogo name="ghl" size={42}/><div><h3>HighLevel</h3><p>Business system · read-only verification</p></div>{ghl && <b className="simple-connected-pill">CONNECTED</b>}</div>
-          {!ghl && <div className="connection-setup-block"><div className="setup-instructions"><b>Recommended for a quick test: Private Integration Token</b><ol><li>Open your GoHighLevel account.</li><li>Go to <strong>Settings → Private Integrations</strong> at the agency or sub-account level.</li><li>Create an integration with only the read permissions Outcom needs.</li><li>Copy the generated token immediately; it may only be shown once.</li><li>Copy the <strong>Location ID</strong> (sub-account ID) you want Outcom to inspect.</li></ol><a href="https://marketplace.gohighlevel.com/docs/Authorization/PrivateIntegrationsToken/" target="_blank" rel="noreferrer">Open HighLevel Private Integration instructions ↗</a></div><div className="simple-form-grid ghl-form-grid"><input name="ghl-location-id" autoComplete="off" value={ghlLocationId} onChange={e => setGhlLocationId(e.target.value)} placeholder="Location ID · sub-account ID" /><input name="ghl-private-token" type="password" autoComplete="new-password" value={ghlPit} onChange={e => setGhlPit(e.target.value)} placeholder="Private Integration Token" /><button className="simple-primary" disabled={ghlConnecting || !ghlLocationId.trim() || !ghlPit.trim()} onClick={connectGhlDirect}>{ghlConnecting ? <LoadingScreen inline message="Connecting HighLevel" /> : "Connect HighLevel"}</button></div><p className="simple-help">Quick test: use a scoped Private Integration Token. For the public SaaS flow, use HighLevel OAuth so each client can authorize without pasting a token.</p>{oauth.ghl && <button className="simple-secondary" onClick={() => oauthConnect("ghl")}>Connect HighLevel with OAuth ↗</button>}</div>}
-          {ghl && <p className="simple-help">✓ Connected and verified. Outcom can now read this HighLevel location when checking the protected workflow.</p>}
-          {ghlMessage && <p className="simple-inline-message">{ghlMessage}</p>}
-        </div>
-      </section>}
+{businessSystemBlock}
           <div className="simple-outcome-grid">
             {outcomeOptions.filter(item => item.id !== "tags-preserved" || targetSystem === "ghl").map(item => {
               const chosen = selectedOutcomes.some(x => x.id === item.id);
@@ -550,6 +556,7 @@ export default function ConnectClient() {
 
         {step === 3 && <div className="simple-step-content">
           <div className="simple-section-title"><span>STEP 03</span><h2>Tell Outcom exactly what to verify.</h2><p>These details define your business requirement. They do not change the automation itself.</p></div>
+          {businessSystemBlock}
           <div className="outcome-config-list">
             {selectedOutcomes.map((item) => {
               const cfg = outcomeConfigs[item.id] || { label: item.label, type: item.type, system: item.type === "output_count" ? "event" : "ghl", entity: item.type === "output_count" ? "output" : "contact", valueFrom: item.type === "output_count" ? "event.data.output_count" : "event.data.target_record_id", field: "tags", operator: item.type === "output_count" ? "greater_than" : "contains", expectedValue: "", expectedCount: 0 };
