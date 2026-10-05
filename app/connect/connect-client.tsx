@@ -77,6 +77,7 @@ export default function ConnectClient() {
   const [discoveryWarning, setDiscoveryWarning] = useState<string | null>(null);
   const [zapierCreating, setZapierCreating] = useState(false);
   const [targetSystem, setTargetSystem] = useState<TargetSystem>("google_sheets");
+  const [robotEmail, setRobotEmail] = useState<string | null>(null);
   const [sheetTarget, setSheetTarget] = useState<SheetTargetState | null>(null);
   const [makeWebhookName, setMakeWebhookName] = useState("");
   const [makeWebhookCreating, setMakeWebhookCreating] = useState(false);
@@ -96,7 +97,7 @@ export default function ConnectClient() {
 
   async function loadOAuthStatus() {
     const r = await fetch("/api/oauth/status", { cache: "no-store" });
-    if (r.ok) setOauth((await r.json()).providers || {});
+    if (r.ok) { const j = await r.json(); setOauth(j.providers || {}); setRobotEmail(j.googleRobot?.email || null); }
   }
 
   useEffect(() => {
@@ -388,8 +389,8 @@ export default function ConnectClient() {
       scrollToSystem();
       return;
     }
-    if (needsSystem && targetSystem === "google_sheets" && (!googleConn || !sheetTarget)) {
-      setTestResult(googleConn ? "Choose the spreadsheet, tab and key column Outcom should check." : "Connect Google first so Outcom can read your spreadsheet.");
+    if (needsSystem && targetSystem === "google_sheets" && ((!googleConn && !robotEmail) || !sheetTarget)) {
+      setTestResult(googleConn || robotEmail ? "Choose the spreadsheet, tab and key column Outcom should check." : "Connect Google first so Outcom can read your spreadsheet.");
       scrollToSystem();
       return;
     }
@@ -449,7 +450,7 @@ export default function ConnectClient() {
 
   const businessSystemBlock = (
     <>
-      <BusinessSystemPicker value={targetSystem} onChange={setTargetSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} ghlConnected={Boolean(ghl)} sheet={sheetTarget} onSheet={setSheetTarget} onConnectGoogle={() => oauthConnect("google_sheets")} />
+      <BusinessSystemPicker value={targetSystem} onChange={setTargetSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} robotEmail={robotEmail} ghlConnected={Boolean(ghl)} sheet={sheetTarget} onSheet={setSheetTarget} onConnectGoogle={() => oauthConnect("google_sheets")} />
 
       {targetSystem === "ghl" && <section id="business-system" className="business-system-card">
         <div className="simple-section-title"><span>BUSINESS SYSTEM · SOURCE OF TRUTH</span><h2>Where does the real business result live?</h2><p>Connect the system that contains the real business state. For example, Outcom can check whether a contact, tag, opportunity, or appointment actually exists in HighLevel.</p></div>

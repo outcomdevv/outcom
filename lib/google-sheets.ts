@@ -1,7 +1,7 @@
 // Google Sheets as a read-only "system of truth". Pure + fetch-injected so it is unit-testable with mocked responses.
 import type { DownstreamAdapter } from "@/lib/adapters/types";
 
-export type SheetTarget = { spreadsheetId: string; sheetName: string; keyColumn: string; spreadsheetName?: string };
+export type SheetTarget = { spreadsheetId: string; sheetName: string; keyColumn: string; spreadsheetName?: string; access?: "oauth" | "service_account" };
 export type SheetFile = { id: string; name: string; modifiedTime: string | null };
 export type SheetMeta = { id: string; title: string; tabs: string[] };
 
@@ -18,7 +18,7 @@ type Fetch = typeof fetch;
 
 function classify(status: number): GoogleApiError {
   if (status === 401) return new GoogleApiError("reauth_required", 401, "Google rejected the stored token. Reconnect Google.");
-  if (status === 403) return new GoogleApiError("forbidden", 403, "Google denied access to this spreadsheet. Check that the connected Google account can open it.");
+  if (status === 403) return new GoogleApiError("forbidden", 403, "Google denied access to this spreadsheet. Check that the connected Google account (or Outcom's robot email) can open it.");
   if (status === 404) return new GoogleApiError("not_found", 404, "Spreadsheet or tab not found. It may have been deleted or renamed.");
   if (status === 429) return new GoogleApiError("rate_limited", 429, "Google rate limit reached. Try again shortly.");
   return new GoogleApiError("upstream", status, `Google returned HTTP ${status}.`);
@@ -123,5 +123,6 @@ export function parseSheetTarget(value: unknown): SheetTarget | null {
   const sheetName = typeof v.sheetName === "string" ? v.sheetName.trim() : "";
   const keyColumn = typeof v.keyColumn === "string" ? v.keyColumn.trim() : "";
   if (!spreadsheetId || !sheetName || !keyColumn) return null;
-  return { spreadsheetId, sheetName, keyColumn, spreadsheetName: typeof v.spreadsheetName === "string" ? v.spreadsheetName : undefined };
+  const access = v.access === "service_account" ? "service_account" : v.access === "oauth" ? "oauth" : undefined;
+  return { spreadsheetId, sheetName, keyColumn, spreadsheetName: typeof v.spreadsheetName === "string" ? v.spreadsheetName : undefined, ...(access ? { access } : {}) };
 }

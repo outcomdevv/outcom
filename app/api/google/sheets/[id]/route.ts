@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getValidAccessToken } from "@/lib/oauth";
+import { resolveGoogleToken, type GoogleAccess } from "@/lib/google-access";
 import { getHeaders, getSheetMeta, parseSpreadsheetId } from "@/lib/google-sheets";
 import { googleError } from "@/lib/google-http";
 
@@ -9,9 +9,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const id = parseSpreadsheetId((await params).id);
     if (!id) return NextResponse.json({ error: "Invalid spreadsheet id." }, { status: 400 });
-    const token = await getValidAccessToken("google_sheets");
-    if (!token) return NextResponse.json({ connected: false }, { status: 400 });
-    const tab = new URL(request.url).searchParams.get("tab");
+    const sp = new URL(request.url).searchParams;
+    const wanted: GoogleAccess | undefined = sp.get("access") === "service_account" ? "service_account" : undefined;
+    const resolved = await resolveGoogleToken({ access: wanted });
+    if (!resolved) return NextResponse.json({ connected: false }, { status: 400 });
+    const token = resolved.token;
+    const tab = sp.get("tab");
     if (tab) return NextResponse.json({ headers: await getHeaders(token, id, tab) });
     const meta = await getSheetMeta(token, id);
     return NextResponse.json({ id, title: meta.title, tabs: meta.tabs });

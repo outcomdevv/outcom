@@ -1,0 +1,20 @@
+{
+  "name": "Lead intake → Sheet → email",
+  "nodes": [
+    { "name": "Webhook", "type": "n8n-nodes-base.webhook", "position": [0, 0], "parameters": { "path": "lead", "httpMethod": "POST" } },
+    { "name": "Clean fields", "type": "n8n-nodes-base.set", "position": [220, 0], "parameters": {} },
+    { "name": "Save lead", "type": "n8n-nodes-base.googleSheets", "position": [440, 0], "onError": "continueRegularOutput",
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": { "__rl": true, "value": "1AbCdEfGhIjKlMnOpQrStUvWxYz", "mode": "list", "cachedResultName": "CRM" },
+        "sheetName": { "__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Leads" },
+        "columns": { "mappingMode": "defineBelow", "matchingColumns": ["Email"], "value": { "Name": "={{ $json.name }}", "Email": "={{ $json.email }}" } }
+      } },
+    { "name": "Welcome email", "type": "n8n-nodes-base.gmail", "position": [660, 0], "parameters": { "operation": "send" } }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Clean fields", "type": "main", "index": 0 }]] },
+    "Clean fields": { "main": [[{ "node": "Save lead", "type": "main", "index": 0 }]] },
+    "Save lead": { "main": [[{ "node": "Welcome email", "type": "main", "index": 0 }]] }
+  }
+}

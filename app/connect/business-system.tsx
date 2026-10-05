@@ -4,7 +4,7 @@ import { useState } from "react";
 import LoadingScreen from "@/app/loading-screen";
 
 export type TargetSystem = "google_sheets" | "ghl" | "none";
-export type SheetTargetState = { spreadsheetId: string; spreadsheetName: string; sheetName: string; keyColumn: string };
+export type SheetTargetState = { spreadsheetId: string; spreadsheetName: string; sheetName: string; keyColumn: string; access?: "oauth" | "service_account" };
 type SheetFile = { id: string; name: string; modifiedTime: string | null };
 
 type Props = {
@@ -12,6 +12,8 @@ type Props = {
   onChange: (v: TargetSystem) => void;
   googleConnected: boolean;
   googleConfigured: boolean;
+  /** Outcom's robot email (service account). When set and Google is not connected, the customer can just share the sheet with it. */
+  robotEmail?: string | null;
   ghlConnected: boolean;
   sheet: SheetTargetState | null;
   onSheet: (s: SheetTargetState | null) => void;
@@ -30,7 +32,10 @@ async function api(url: string) {
   return { ok: r.ok, status: r.status, j };
 }
 
-export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, ghlConnected, sheet, onSheet, onConnectGoogle }: Props) {
+export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, sheet, onSheet, onConnectGoogle }: Props) {
+  const robot = !googleConnected && Boolean(robotEmail);
+  const acc = robot ? "&access=service_account" : "";
+  const [copied, setCopied] = useState(false);
   const [files, setFiles] = useState<SheetFile[]>([]);
   const [query, setQuery] = useState("");
   const [link, setLink] = useState("");
@@ -58,7 +63,7 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
 
   async function useLink() {
     setBusy("Opening spreadsheet"); setError(null); setReauth(false);
-    const res = await api(`/api/google/sheets?link=${encodeURIComponent(link)}`);
+    const res = await api(`/api/google/sheets?link=${encodeURIComponent(link)}${acc}`);
     setBusy(null);
     if (!res.ok) return fail(res, "Could not open that spreadsheet.");
     if (res.j.files?.[0]) await pickFile(res.j.files[0]);
@@ -66,7 +71,7 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
 
   async function pickFile(f: SheetFile) {
     setFile(f); setTab(""); setHeaders([]); setTabs([]); onSheet(null); setError(null); setBusy("Reading tabs");
-    const res = await api(`/api/google/sheets/${encodeURIComponent(f.id)}`);
+    const res = await api(`/api/google/sheets/${encodeURIComponent(f.id)}${acc ? "?" + acc.slice(1) : ""}`);
     setBusy(null);
     if (!res.ok) return fail(res, "Could not read this spreadsheet.");
     setTabs(res.j.tabs || []);
@@ -75,14 +80,14 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
 
   async function pickTab(f: SheetFile, t: string) {
     setTab(t); setHeaders([]); onSheet(null); setError(null); setBusy("Reading columns");
-    const res = await api(`/api/google/sheets/${encodeURIComponent(f.id)}?tab=${encodeURIComponent(t)}`);
+    const res = await api(`/api/google/sheets/${encodeURIComponent(f.id)}?tab=${encodeURIComponent(t)}${acc}`);
     setBusy(null);
     if (!res.ok) return fail(res, "Could not read this tab.");
     setHeaders(res.j.headers || []);
     if (!(res.j.headers || []).length) setError("The first row of this tab is empty. Outcom reads column names from row 1.");
   }
 
-  const pickKey = (k: string) => file && onSheet(k ? { spreadsheetId: file.id, spreadsheetName: file.name, sheetName: tab, keyColumn: k } : null);
+  const pickKey = (k: string) => file && onSheet(k ? { spreadsheetId: file.id, spreadsheetName: file.name, sheetName: tab, keyColumn: k, access: robot ? "service_account" : "oauth" } : null);
 
   return (
     <section id="business-system-picker" className="business-system-card">
@@ -99,18 +104,26 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
       {value === "ghl" && !ghlConnected && <p className="simple-help">Connect HighLevel in the section below. If you would rather not create a HighLevel account, choose Google Sheets above.</p>}
 
       {value === "google_sheets" && <div className="connection-setup-block">
-        {!googleConnected && <>
+        {robot && <div className="setup-instructions">
+          <b>Easiest: share your sheet with Outcom</b>
+          <ol>
+            <li>Open your Google Sheet and click <strong>Share</strong>.</li>
+            <li>Add this email as <strong>Viewer</strong>: <code>{robotEmail}</code> <button type="button" className="simple-secondary" onClick={() => { void navigator.clipboard?.writeText(robotEmail || ""); setCopied(true); }}>{copied ? "Copied" : "Copy"}</button></li>
+            <li>Paste the sheet link below. No Google sign-in needed, and Outcom can only read.</li>
+          </ol>
+        </div>}
+        {!googleConnected && !robot && <>
           <div className="setup-instructions"><b>Connect Google (read-only)</b><p className="compact-instruction">Outcom only reads spreadsheets. It cannot edit, create or delete anything.</p></div>
           {googleConfigured
             ? <button className="simple-primary" onClick={onConnectGoogle}>Connect Google →</button>
             : <p className="simple-help">Google sign-in is not configured on this deployment yet (missing GOOGLE_SHEETS_CLIENT_ID / SECRET).</p>}
         </>}
-        {googleConnected && <>
-          <p className="simple-help">✓ Google connected. {sheet ? <>Checking <b>{sheet.spreadsheetName}</b> → <b>{sheet.sheetName}</b>, matching rows by <b>{sheet.keyColumn}</b>.</> : "Choose the spreadsheet that holds the result."}</p>
-          <div className="simple-form-grid">
+        {(googleConnected || robot) && <>
+          <p className="simple-help">{robot ? "✓ Using Outcom's read-only robot email." : "✓ Google connected."} {sheet ? <>Checking <b>{sheet.spreadsheetName}</b> → <b>{sheet.sheetName}</b>, matching rows by <b>{sheet.keyColumn}</b>.</> : "Choose the spreadsheet that holds the result."}</p>
+          {!robot && <div className="simple-form-grid">
             <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => { if (e.key === "Enter") void browse(); }} placeholder="Search your spreadsheets by name" autoComplete="off" />
             <button className="simple-secondary" onClick={() => browse()} disabled={Boolean(busy)}>Browse spreadsheets</button>
-          </div>
+          </div>}
           <div className="simple-form-grid">
             <input value={link} onChange={e => setLink(e.target.value)} placeholder="…or paste a Google Sheets link" autoComplete="off" />
             <button className="simple-secondary" onClick={useLink} disabled={Boolean(busy) || !link.trim()}>Use link</button>

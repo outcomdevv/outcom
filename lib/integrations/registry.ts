@@ -28,7 +28,7 @@ export const INTEGRATIONS: readonly IntegrationDef[] = [
   // ── Execution sources (automation platforms) ──
   { id: "zapier", label: "Zapier", roles: ["source"], category: "automation", status: "code_complete", auth: ["oauth", "webhook_url"], observe: ["inbound_webhook"], note: "OAuth Zap discovery awaits Zapier public-app credentials; webhook observation works today." },
   { id: "make", label: "Make", roles: ["source"], category: "automation", status: "code_complete", auth: ["oauth", "api_key", "webhook_url"], observe: ["native_api", "inbound_webhook"] },
-  { id: "n8n", label: "n8n", roles: ["source"], category: "automation", status: "live", auth: ["api_key", "webhook_url"], observe: ["native_api", "inbound_webhook"], note: "Native API needs a HighLevel write node; use webhook mode for any other target." },
+  { id: "n8n", label: "n8n", roles: ["source"], category: "automation", status: "code_complete", auth: ["api_key", "webhook_url"], observe: ["native_api", "inbound_webhook"], note: "Native API needs a HighLevel write node; use webhook mode for any other target." },
   { id: "pipedream", label: "Pipedream", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"], note: "Add an HTTP POST step at the end of the workflow." },
   { id: "activepieces", label: "Activepieces", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
   { id: "power_automate", label: "Microsoft Power Automate", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
