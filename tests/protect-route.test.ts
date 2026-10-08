@@ -48,3 +48,14 @@ describe("POST /api/integrations/protect", () => {
     expect(created[0].system).toBe("ghl");
   });
 });
+
+describe("custom value checks from the Connect page", () => {
+  it("become enforced field conditions on the chosen sheet", async () => {
+    const { toPayload, updateCheck, newCheck } = await import("@/lib/connect-checks");
+    const c = updateCheck(newCheck("value", "v1"), { field: "Status", operator: "equals", expectedValue: "Qualified" }, { system: "google_sheets", tab: "Leads" });
+    created.length = 0;
+    const r = await call({ provider: "n8n", externalId: "manual-1", name: "Lead sync", expectedOutcomes: [toPayload(c, "google_sheets", sheet, "Leads")] });
+    expect((await r.json()).protected).toBe(true);
+    expect(created[0]).toMatchObject({ name: 'Status is "Qualified"', type: "state_invariant", system: "google_sheets", configuration: { mode: "field_condition", field: "Status", operator: "equals", expectedValue: "Qualified", target: { sheetName: "Leads", keyColumn: "Email" } } });
+  });
+});

@@ -11,24 +11,49 @@ type Fetch = typeof fetch;
 
 const b64url = (input: string | Buffer) => Buffer.from(input).toString("base64url");
 
-/**
- * Reads GOOGLE_SERVICE_ACCOUNT_JSON: the downloaded key file, either raw JSON or base64 of it.
- * Returns null when not configured or malformed (so the UI can say "not set up" instead of crashing).
- */
-export function loadServiceAccount(raw: string | undefined = process.env.GOOGLE_SERVICE_ACCOUNT_JSON): ServiceAccount | null {
-  const text = (raw ?? "").trim();
-  if (!text) return null;
-  const attempts = [text, (() => { try { return Buffer.from(text, "base64").toString("utf8"); } catch { return ""; } })()];
-  for (const candidate of attempts) {
-    try {
-      const j = JSON.parse(candidate);
-      const email = typeof j?.client_email === "string" ? j.client_email.trim() : "";
-      // Vercel env UIs often turn real newlines into the two characters \n.
-      const privateKey = typeof j?.private_key === "string" ? j.private_key.replace(/\\n/g, "\n") : "";
-      if (email && privateKey.includes("BEGIN PRIVATE KEY")) return { email, privateKey };
-    } catch { /* try the next form */ }
+/** Parses whatever Vercel stored: raw JSON, base64 of it, or JSON wrapped in extra quotes. Never throws. */
+function parseKeyFile(text: string): any | null {
+  const clean = text.replace(/^\uFEFF/, "").trim();
+  const candidates = [clean, (() => { try { return Buffer.from(clean, "base64").toString("utf8"); } catch { return ""; } })()];
+  for (const candidate of candidates) {
+    let value: unknown = candidate;
+    for (let i = 0; i < 2 && typeof value === "string"; i++) {
+      try { value = JSON.parse(value as string); } catch { value = null; }
+    }
+    if (value && typeof value === "object") return value;
   }
   return null;
+}
+
+export type ServiceAccountStatus = { configured: boolean; email: string | null; reason: "ok" | "env_missing" | "env_unreadable" };
+
+/**
+ * Reads GOOGLE_SERVICE_ACCOUNT_JSON (the downloaded key file as raw JSON or base64), or the pair
+ * GOOGLE_SERVICE_ACCOUNT_EMAIL + GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.
+ * Returns null when not configured or unreadable, so the UI can say "not set up" instead of crashing.
+ */
+export function loadServiceAccount(raw?: string): ServiceAccount | null {
+  const explicit = raw !== undefined;
+  const fromJson = (() => {
+    const j = parseKeyFile((explicit ? raw : process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? "").trim());
+    const email = typeof j?.client_email === "string" ? j.client_email.trim() : "";
+    // Vercel env UIs often turn real newlines into the two characters \n.
+    const privateKey = typeof j?.private_key === "string" ? j.private_key.replace(/\\n/g, "\n") : "";
+    return email && privateKey.includes("BEGIN PRIVATE KEY") ? { email, privateKey } : null;
+  })();
+  if (fromJson) return fromJson;
+  if (explicit) return null; // explicit input (tests) never falls back to the environment
+  const email = (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? "").trim();
+  const privateKey = (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ?? "").replace(/\\n/g, "\n").trim();
+  return email && privateKey.includes("BEGIN PRIVATE KEY") ? { email, privateKey } : null;
+}
+
+/** Safe to show to an admin: says whether the robot is readable and why not, never the key. */
+export function describeServiceAccount(): ServiceAccountStatus {
+  const sa = loadServiceAccount();
+  if (sa) return { configured: true, email: sa.email, reason: "ok" };
+  const hasAny = Boolean((process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? "").trim() || (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ?? "").trim());
+  return { configured: false, email: null, reason: hasAny ? "env_unreadable" : "env_missing" };
 }
 
 export const serviceAccountEmail = () => loadServiceAccount()?.email ?? null;

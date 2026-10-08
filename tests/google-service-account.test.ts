@@ -60,3 +60,24 @@ describe("sheet target access", () => {
     expect(parseSheetTarget({ ...base, access: "evil" })?.access).toBeUndefined();
   });
 });
+
+describe("loadServiceAccount hardening", () => {
+  it("accepts JSON wrapped in extra quotes or with a BOM", () => {
+    const wrapped = JSON.stringify(JSON.stringify(keyFile));
+    expect(loadServiceAccount(wrapped)?.email).toBe(keyFile.client_email);
+    expect(loadServiceAccount("﻿" + JSON.stringify(keyFile))?.email).toBe(keyFile.client_email);
+  });
+  it("reads the email + private key pair from the environment and reports why it is not configured", async () => {
+    const { describeServiceAccount } = await import("@/lib/google-service-account");
+    const keep = { ...process.env };
+    delete process.env.GOOGLE_SERVICE_ACCOUNT_JSON; delete process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL; delete process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY;
+    expect(describeServiceAccount()).toEqual({ configured: false, email: null, reason: "env_missing" });
+    process.env.GOOGLE_SERVICE_ACCOUNT_JSON = "{broken";
+    expect(describeServiceAccount()).toMatchObject({ configured: false, reason: "env_unreadable" });
+    delete process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+    process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL = keyFile.client_email;
+    process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY = privateKey.replace(/\n/g, "\\n");
+    expect(describeServiceAccount()).toEqual({ configured: true, email: keyFile.client_email, reason: "ok" });
+    process.env = keep;
+  });
+});
