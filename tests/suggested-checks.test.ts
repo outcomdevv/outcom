@@ -15,7 +15,7 @@ describe("suggestChecks (n8n)", () => {
     expect(top.confidence).toBe("high");
     expect(top.supported).toBe(true);
     expect(top.contract).toMatchObject({ type: "record_exists", system: "google_sheets", target: { spreadsheetId: "1AbCdEfGhIjKlMnOpQrStUvWxYz", spreadsheetName: "CRM", sheetName: "Leads", keyColumn: "Email" } });
-    expect(top.recordId).toMatchObject({ field: "email", expression: "{{ $json.email }}" });
+    expect(top.recordId).toMatchObject({ field: "email", expression: expect.stringContaining(".item.json.email") });
     expect(top.question).toContain("Leads");
     expect(r.suggestions[1].nodeName).toBe("Welcome email");
   });

@@ -104,3 +104,20 @@
   .cx-nav{flex-direction:column-reverse;align-items:stretch}
   .cx-nav .simple-primary,.cx-nav .simple-secondary{width:100%}
 }
+
+/* after protect: guided last step */
+.cx-guide{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:26px}
+.cx-guide>li{display:grid;gap:10px}
+.cx-g-head{display:flex;align-items:center;gap:10px}
+.cx-g-head b{font-size:16px;flex:1}
+.cx-g-n{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--paper);font-size:13px;font-weight:800;flex:none}
+.cx-clicks{margin:0;padding:14px 16px 14px 34px;border-radius:14px;background:var(--soft);display:grid;gap:7px;font-size:14px}
+.cx-field-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:12px;border:1.5px solid var(--green);background:var(--green-bg)}
+.cx-field-card small{display:block;color:var(--muted);font-size:12px;margin-bottom:2px}
+.cx-field-card code{font-size:15px;font-weight:800}
+.cx-hint{margin:0;font-size:14px;color:var(--ink)}
+.cx-test{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.cx-ok-text{color:var(--green);font-weight:700;font-size:14px}
+.cx-error-text{color:#c0392b;font-size:14px}
+.cx-dot.wait{background:#d9a21b;animation:cxpulse 1.4s ease-in-out infinite}
+@keyframes cxpulse{50%{opacity:.35}}

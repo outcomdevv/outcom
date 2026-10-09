@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IntegrationLogo } from "@/app/integrations";
 import LoadingScreen from "@/app/loading-screen";
+import AfterProtect, { type WebhookInfo } from "@/app/connect/after-protect";
 import BusinessSystemPicker, { type SheetTargetState, type TargetSystem } from "@/app/connect/business-system";
 import { OutputIcon, RecordIcon, SheetIcon, TagIcon } from "@/app/connect/icons";
 import {
@@ -16,7 +17,6 @@ type Provider = "ghl" | "google_sheets" | Platform;
 type Connection = { provider: Provider; accountName: string; email?: string | null; expiresAt?: string | null };
 type Discovered = { id: string; name: string; enabled: boolean; platform: string };
 type OAuthStatus = { ghl: boolean; zapier: boolean; make: boolean; google_sheets: boolean };
-type WebhookInfo = { provider: string; url: string; workflow: { id: string; name: string }; lastReceivedAt?: string | null };
 
 const DRAFT_KEY = "outcom-connect-draft-v79";
 
@@ -28,7 +28,6 @@ const platforms: Array<{ id: Platform; name: string; hint: string }> = [
 ];
 
 const platformLabel = (p: string) => (p === "custom" ? "your tool" : p === "n8n" ? "n8n" : p === "make" ? "Make" : p === "zapier" ? "Zapier" : p);
-const stepFor = (p: string) => p === "make" ? "HTTP → Make a request" : p === "zapier" ? "Webhooks by Zapier → POST" : p === "n8n" ? "an HTTP Request node" : "an HTTP POST step";
 
 const KIND_INFO: Record<Exclude<CheckKind, "value">, { title: string; text: string; icon: (s: number) => React.ReactNode }> = {
   exists: { title: "The record was created", text: "The row or contact is really there.", icon: s => <RecordIcon size={s} /> },
@@ -81,7 +80,6 @@ export default function ConnectClient() {
   const [created, setCreated] = useState(false);
   const [native, setNative] = useState(false);
   const [webhookInfo, setWebhookInfo] = useState<WebhookInfo | null>(null);
-  const [copied, setCopied] = useState<string | null>(null);
 
   const conn = (p: Provider) => connections.find(x => x.provider === p);
   const ghl = conn("ghl");
@@ -278,29 +276,6 @@ export default function ConnectClient() {
     } finally { setCreating(false); }
   }
 
-  async function copy(key: string, text: string) {
-    try { await navigator.clipboard.writeText(text); setCopied(key); window.setTimeout(() => setCopied(null), 1500); } catch { /* clipboard blocked */ }
-  }
-
-  async function checkForRun() {
-    if (!webhookInfo) return;
-    setBusy("Waiting for your first run");
-    for (let i = 0; i < 12; i++) {
-      const r = await fetch(`/api/webhooks/status?provider=${encodeURIComponent(webhookInfo.provider)}&workflowId=${encodeURIComponent(webhookInfo.workflow.id)}`, { cache: "no-store" });
-      const j = r.ok ? await r.json().catch(() => ({})) : {};
-      if (j.lastReceivedAt) { setWebhookInfo(cur => (cur ? { ...cur, lastReceivedAt: j.lastReceivedAt } : cur)); setBusy(null); return; }
-      await new Promise(res => setTimeout(res, 2500));
-    }
-    setBusy(null); setMessage("No run received yet. Run your automation once, then try again.");
-  }
-
-  async function rotate() {
-    if (!webhookInfo) return;
-    const { ok, j } = await post("/api/webhooks/rotate", { provider: webhookInfo.provider, workflowId: webhookInfo.workflow.id });
-    if (!ok) return setMessage(j.error || "Could not make a new address.");
-    setWebhookInfo(cur => (cur ? { ...cur, url: j.url, lastReceivedAt: null } : cur));
-  }
-
   /* ---------- pieces of UI ---------- */
 
   const ghlPanel = (
@@ -319,8 +294,6 @@ export default function ConnectClient() {
   const sheetOk = targetSystem !== "google_sheets" || Boolean(sheetTarget);
   const valueChecks = checks.filter(c => c.kind === "value");
   const ready = checks.length > 0;
-  const keyHint = sheetTarget?.keyColumn ? `the “${sheetTarget.keyColumn}” of the row` : "the id of the record";
-  const bodySample = `{"data":{"target_record_id":"YOUR_VALUE"}}`;
 
   return (
     <div className="connect-page cx-page">
@@ -483,26 +456,7 @@ export default function ConnectClient() {
       </section>
 
       {/* AFTER PROTECT */}
-      {created && !native && webhookInfo && <section id="live-webhook" className="cx-flow cx-done">
-        <div className="cx-done-head"><span className="cx-pill">● Protected</span><h2>{webhookInfo.workflow.name}</h2><p>One last step: send each run’s result to Outcom.</p></div>
-        <ol className="cx-todo">
-          <li><b>Copy your private address</b>
-            <div className="cx-code"><code>{webhookInfo.url}</code><button type="button" className="simple-secondary" onClick={() => copy("url", webhookInfo.url)}>{copied === "url" ? "Copied ✓" : "Copy"}</button></div>
-          </li>
-          <li><b>At the end of your automation, add {stepFor(webhookInfo.provider)}</b>
-            <small className="cx-muted">Method POST · body JSON · paste the address.</small>
-            <div className="cx-code"><code>{bodySample}</code><button type="button" className="simple-secondary" onClick={() => copy("body", bodySample)}>{copied === "body" ? "Copied ✓" : "Copy"}</button></div>
-            <small className="cx-muted">Replace YOUR_VALUE with {keyHint}, taken from the step before.</small>
-          </li>
-          <li><b>Run it once</b>
-            <div className="cx-status"><span className={`cx-dot ${webhookInfo.lastReceivedAt ? "on" : ""}`} />{webhookInfo.lastReceivedAt ? `First run received ${new Date(webhookInfo.lastReceivedAt).toLocaleString()}` : "Waiting for the first run"}
-              {!webhookInfo.lastReceivedAt && <button type="button" className="cx-link" onClick={checkForRun}>Check now</button>}</div>
-          </li>
-        </ol>
-        {busy && <LoadingScreen inline message={busy} />}
-        {message && <p className="cx-error">{message}</p>}
-        <div className="cx-nav"><button type="button" className="cx-link" onClick={rotate}>Make a new address</button><a className="simple-primary" href="/workflows">See my workflows</a></div>
-      </section>}
+      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={sheetTarget?.keyColumn ?? null} onInfo={setWebhookInfo} />}
 
       {created && native && <section id="live-webhook" className="cx-flow cx-done">
         <div className="cx-done-head"><span className="cx-pill">● Protected</span><h2>{name}</h2><p>Outcom is watching this n8n workflow directly. Nothing else to set up.</p></div>

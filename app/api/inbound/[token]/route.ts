@@ -57,7 +57,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     );
 
     if (body.test === true || data.test === true) {
-      await touchInboundWebhook(endpoint.id, endpoint.workspace_id);
+      // A test proves the address works. It must not count as a real run, so lastReceivedAt stays untouched.
       return NextResponse.json({ ok: true, test: true, provider: endpoint.provider, workflowId: endpoint.workflow_id, message: "Outcom received the test webhook." });
     }
 

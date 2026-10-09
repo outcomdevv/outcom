@@ -233,6 +233,21 @@ export function suggestChecks(input: unknown): SuggestedChecksResult {
     // then furthest from the trigger; on ties the one placed further right on the canvas
     .sort((a, b) => (Number(NOTIFY.has(shortType(a.n.type))) - Number(NOTIFY.has(shortType(b.n.type)))) || (depth.get(b.n.name)! - depth.get(a.n.name)!) || (b.n.position[0] - a.n.position[0]));
 
+  // "$json" only means "the data from the step before" for the node that wrote it. At the END of the workflow
+  // (after the writing node) it points at the node's own output, so name the step that still has the original data.
+  const previousOf = (name: string): string | null => {
+    const prev = nodes.filter(m => !m.disabled && depth.has(m.name) && next(m.name).includes(name)).sort((a, b) => depth.get(b.name)! - depth.get(a.name)!)[0];
+    return prev ? prev.name : null;
+  };
+  for (const c of candidates) {
+    const r = c.s.recordId;
+    const prev = previousOf(c.n.name);
+    if (!r.expression || !prev || !/\$json/.test(r.expression)) continue;
+    const safe = prev.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    r.expression = r.expression.replace(/\$json/g, `$('${safe}').item.json`);
+    r.explanation = r.explanation.replace(/POSTs \{.*\} to your Outcom URL/, `sends "target_record_id" to your Outcom address`).replace(/\{\{[^}]*\}\}/, r.expression);
+  }
+
   const risks: Risk[] = [];
   for (const n of nodes) {
     if (n.disabled && suggestionFor({ ...n, disabled: false })) risks.push({ nodeName: n.name, kind: "disabled_step", message: `"${n.name}" is switched off, so it never writes anything.` });
