@@ -12,6 +12,8 @@ type Props = {
   onInfo: (next: WebhookInfo) => void;
 };
 
+function SheetMini() { return <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><rect x="3" y="3" width="18" height="18" rx="4" fill="#1f9d63" /><path d="M3 9.5h18M3 15h18M9.5 9.5V21" stroke="#fff" strokeWidth="1.6" /></svg>; }
+
 type Test = "idle" | "busy" | "ok" | "fail";
 
 export default function AfterProtect({ info, keyColumn, onInfo }: Props) {
@@ -76,9 +78,12 @@ export default function AfterProtect({ info, keyColumn, onInfo }: Props) {
           <ol className="cx-clicks">
             <li>Open your workflow and click an empty spot on the canvas.</li>
             <li>Press <b>Ctrl+V</b> (Mac: <b>⌘V</b>). A step called “Tell Outcom” appears.</li>
-            <li>Connect it <b>right after your Google Sheets step</b>.</li>
+            <li>Connect it <b>from the green Google Sheets step</b> (the one that saves the row). Not from the last step.</li>
             <li>Click <b>Publish</b> and run the workflow once.</li>
           </ol>
+          <div className="cx-diagram" aria-label="Connect Tell Outcom from the Google Sheets step">
+            <span>Trigger</span><i>→</i><span>…</span><i>→</i><span className="hot"><SheetMini /> Google Sheets</span><i>→</i><span className="new">Tell Outcom</span>
+          </div>
           <details className="cx-adv"><summary>Prefer to set it up by hand?</summary>
             <ol className="cx-clicks">{guide.steps.map(s => <li key={s}>{s}</li>)}</ol>
             <div className="cx-field-card"><div><small>Field name</small><code>{FIELD_NAME}</code></div><button type="button" className="simple-secondary" onClick={() => copy("field", FIELD_NAME)}>{copied === "field" ? "Copied ✓" : "Copy"}</button></div>

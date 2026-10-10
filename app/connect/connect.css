@@ -121,3 +121,8 @@
 .cx-error-text{color:#c0392b;font-size:14px}
 .cx-dot.wait{background:#d9a21b;animation:cxpulse 1.4s ease-in-out infinite}
 @keyframes cxpulse{50%{opacity:.35}}
+.cx-diagram{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.cx-diagram span{padding:7px 11px;border-radius:10px;border:1px solid var(--line);background:var(--soft);display:inline-flex;align-items:center;gap:6px}
+.cx-diagram span.hot{border-color:var(--green);background:var(--green-bg);font-weight:700}
+.cx-diagram span.new{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:700}
+.cx-diagram i{font-style:normal;color:var(--muted)}

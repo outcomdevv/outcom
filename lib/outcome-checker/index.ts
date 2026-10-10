@@ -63,7 +63,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
 
     if (cfg.mode === "preserve_tags") {
       const current = Array.isArray(actual) ? actual.filter((x): x is string => typeof x === "string") : [];
-      const store = await getWorkspaceStore();
+      const store = await getWorkspaceStore(workspaceId ?? workspaceOf(event));
       const prior = await store.snapshots.get(c.id, lookup);
       if (!prior) {
         await store.snapshots.upsert({ contractId: c.id, entityId: lookup, snapshot: { [field]: current } });
@@ -104,8 +104,15 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
   }
 }
 
+/** Webhook and cron callers have no login session, so the workspace must come from the caller or from the stored event. */
+const workspaceOf = (event: WorkflowEvent): string | undefined => {
+  const id = event.data?.workspace_id ?? event.metadata?.workspace_id;
+  return typeof id === "string" && id ? id : undefined;
+};
+
 export async function evaluateEvent(event: WorkflowEvent, workspaceId?: string) {
-  const store = await getWorkspaceStore();
+  workspaceId = workspaceId ?? workspaceOf(event);
+  const store = await getWorkspaceStore(workspaceId);
   const contracts = (await store.contracts.list(event.workflowId)).filter((c) => c.enabled);
   const results: CheckResult[] = [];
   for (const c of contracts) {
