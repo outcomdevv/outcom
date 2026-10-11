@@ -136,3 +136,24 @@
 .cx-results li.verification_error b{background:#fff3d6;color:#9a6a00}
 .cx-results li span{display:grid;gap:3px;font-size:14px;font-weight:700}
 .cx-results li small{font-weight:400;color:var(--muted);word-break:break-word}
+
+/* flow diagram + workflow reader */
+.cx-fd{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px 4px}
+.cx-fd-item{display:flex;align-items:flex-start;gap:4px}
+.cx-fd-arrow{color:var(--muted);padding-top:8px}
+.cx-fnode{display:flex;flex-direction:column;align-items:center;gap:2px}
+.cx-fchip{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:10px;border:1px solid var(--line);background:var(--soft);font-size:13px;white-space:nowrap}
+.cx-fnode.hot .cx-fchip:first-child{border-color:var(--green);background:var(--green-bg);font-weight:700}
+.cx-fnode.soft .cx-fchip{opacity:.65}
+.cx-fbranch{width:2px;height:12px;background:var(--green)}
+.cx-fchip.cx-fnew{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:700}
+.cx-fnode small{color:var(--green);font-weight:700;font-size:12px}
+.cx-fdot{width:10px;height:10px;border-radius:50%;background:var(--muted);display:inline-block}
+.cx-fdot.trigger{background:#e8590c}
+.cx-fdot.data{background:var(--green)}
+.cx-scan{display:grid;gap:10px;padding:16px;border-radius:16px;border:1.5px solid var(--green);background:var(--green-bg)}
+.cx-scan h3{margin:0;font-size:15px}
+.cx-scan textarea{width:100%;min-height:84px;font-family:ui-monospace,monospace;font-size:12.5px;border-radius:12px;border:1px solid var(--line);padding:10px;background:var(--paper);color:var(--ink);resize:vertical}
+.cx-found{display:grid;gap:8px;padding:14px;border-radius:14px;background:var(--soft)}
+.cx-found b{font-size:14px}
+.cx-warn{margin:0;font-size:13px;color:#9a6a00}

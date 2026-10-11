@@ -85,3 +85,12 @@ describe("suggestChecks (n8n)", () => {
     expect(suggestChecks(null).ok).toBe(false);
   });
 });
+
+describe("flow for drawing", () => {
+  it("lists the steps in order and marks the data writer", () => {
+    const r: any = suggestChecks(clone());
+    expect(r.flow.length).toBeGreaterThan(2);
+    expect(r.flow[0].kind).toBe("trigger");
+    expect(r.flow.find((n: any) => n.kind === "data")?.name).toBe(r.suggestions[0].nodeName);
+  });
+});

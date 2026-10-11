@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { IntegrationLogo } from "@/app/integrations";
+import FlowDiagram from "@/app/connect/flow-diagram";
+import type { FlowNode } from "@/lib/suggested-checks";
 import { FIELD_NAME, guideFor, n8nPasteNode } from "@/lib/connect-guide";
 
 export type WebhookInfo = { provider: string; url: string; workflow: { id: string; name: string }; lastReceivedAt?: string | null };
@@ -9,6 +11,8 @@ export type WebhookInfo = { provider: string; url: string; workflow: { id: strin
 type Props = {
   info: WebhookInfo;
   keyColumn: string | null;
+  flow?: FlowNode[] | null;
+  connectFrom?: string | null;
   onInfo: (next: WebhookInfo) => void;
 };
 
@@ -17,7 +21,7 @@ function SheetMini() { return <svg width="16" height="16" viewBox="0 0 24 24" ar
 type TryResult = { state: string; title: string; observed: string };
 const LABEL: Record<string, string> = { passed: "PASS", failed: "FAIL", verification_error: "UNKNOWN" };
 
-export default function AfterProtect({ info, keyColumn, onInfo }: Props) {
+export default function AfterProtect({ info, keyColumn, flow, connectFrom, onInfo }: Props) {
   const guide = guideFor(info.provider);
   const [copied, setCopied] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
@@ -85,12 +89,14 @@ export default function AfterProtect({ info, keyColumn, onInfo }: Props) {
           <ol className="cx-clicks">
             <li>Open your workflow and click an empty spot on the canvas.</li>
             <li>Press <b>Ctrl+V</b> (Mac: <b>⌘V</b>). A step called “Tell Outcom” appears.</li>
-            <li>Connect it <b>from the green Google Sheets step</b> (the one that saves the row). Not from the last step.</li>
+            <li>Connect it <b>from {connectFrom ? `“${connectFrom}”` : "the green Google Sheets step"}</b> (the step that saves the data). Not from the last step.</li>
             <li>Click <b>Publish</b> and run the workflow once.</li>
           </ol>
-          <div className="cx-diagram" aria-label="Connect Tell Outcom from the Google Sheets step">
-            <span>Trigger</span><i>→</i><span>…</span><i>→</i><span className="hot"><SheetMini /> Google Sheets</span><i>→</i><span className="new">Tell Outcom</span>
-          </div>
+          {flow && flow.length > 0 && connectFrom
+            ? <FlowDiagram flow={flow} connectFrom={connectFrom} />
+            : <div className="cx-diagram" aria-label="Connect Tell Outcom from the Google Sheets step">
+                <span>Trigger</span><i>→</i><span>…</span><i>→</i><span className="hot"><SheetMini /> Google Sheets</span><i>→</i><span className="new">Tell Outcom</span>
+              </div>}
           <details className="cx-adv"><summary>Prefer to set it up by hand?</summary>
             <ol className="cx-clicks">{guide.steps.map(s => <li key={s}>{s}</li>)}</ol>
             <div className="cx-field-card"><div><small>Field name</small><code>{FIELD_NAME}</code></div><button type="button" className="simple-secondary" onClick={() => copy("field", FIELD_NAME)}>{copied === "field" ? "Copied ✓" : "Copy"}</button></div>
@@ -129,9 +135,9 @@ export default function AfterProtect({ info, keyColumn, onInfo }: Props) {
 
       <div className="cx-try">
         <h3>No automation to run? Try it now</h3>
-        <p className="cx-muted">Type a {label} that is in your sheet to see PASS. Type one that is not to see FAIL. Outcom does what your automation’s last step does.</p>
+        <p className="cx-muted">Type a value from the “{label}” column that is in your sheet to see PASS. Type one that is not to see FAIL. Outcom does what your automation’s last step does.</p>
         <div className="cx-row">
-          <input name="outcom-try-value" autoComplete="off" value={tryValue} onChange={e => setTryValue(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && tryValue.trim()) void tryCheck(); }} placeholder={keyColumn ? `A ${keyColumn} value` : "A value"} />
+          <input name="outcom-try-value" autoComplete="off" value={tryValue} onChange={e => setTryValue(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && tryValue.trim()) void tryCheck(); }} placeholder={keyColumn ? `${keyColumn} value` : "A value"} />
           <button type="button" className="simple-primary" disabled={tryBusy || !tryValue.trim()} onClick={tryCheck}>{tryBusy ? "Checking…" : "Run a check"}</button>
         </div>
         {tryError && <p className="cx-error">{tryError}</p>}

@@ -34,9 +34,13 @@ export type Suggestion = {
 
 export type Risk = { nodeName: string; kind: "continues_on_error" | "disabled_step"; message: string };
 
+/** The workflow as a simple ordered list, so the UI can draw it and point at the step to connect from. */
+export type FlowNode = { name: string; type: string; kind: "trigger" | "data" | "message" | "step" };
+
 export type SuggestedChecksResult = {
   ok: true;
   workflowName: string;
+  flow: FlowNode[];
   trigger: { name: string; type: string } | null;
   stepCount: number;
   suggestions: Suggestion[];
@@ -256,8 +260,18 @@ export function suggestChecks(input: unknown): SuggestedChecksResult {
   }
 
   const trig = triggers[0];
+  const flow: FlowNode[] = reachable
+    .slice()
+    .sort((a, b) => (depth.get(a.name)! - depth.get(b.name)!) || (a.position[0] - b.position[0]))
+    .slice(0, 12)
+    .map(n => ({
+      name: n.name,
+      type: shortType(n.type),
+      kind: isTrigger(n) ? "trigger" : NOTIFY.has(shortType(n.type)) ? "message" : suggestionFor(n) ? "data" : "step",
+    }));
   return {
     ok: true,
+    flow,
     workflowName: typeof wf.name === "string" && wf.name.trim() ? wf.name.trim() : "Untitled workflow",
     trigger: trig ? { name: trig.name, type: trig.type } : null,
     stepCount: nodes.length,

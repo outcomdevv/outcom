@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { IntegrationLogo } from "@/app/integrations";
 import LoadingScreen from "@/app/loading-screen";
 import AfterProtect, { type WebhookInfo } from "@/app/connect/after-protect";
+import FlowDiagram from "@/app/connect/flow-diagram";
+import ScanWorkflow, { type ScanResult } from "@/app/connect/scan-workflow";
+import type { FlowNode } from "@/lib/suggested-checks";
 import BusinessSystemPicker, { type SheetTargetState, type TargetSystem } from "@/app/connect/business-system";
 import { OutputIcon, RecordIcon, SheetIcon, TagIcon } from "@/app/connect/icons";
 import {
@@ -76,6 +79,13 @@ export default function ConnectClient() {
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  const [flow, setFlow] = useState<FlowNode[] | null>(null);
+  const [connectFrom, setConnectFrom] = useState<string | null>(null);
+  const [scanNote, setScanNote] = useState<string | null>(null);
+  const [scanWarnings, setScanWarnings] = useState<string[]>([]);
+  const [sheetBlocked, setSheetBlocked] = useState<string | null>(null);
+  const [robotCopied, setRobotCopied] = useState(false);
+
   const [creating, setCreating] = useState(false);
   const [created, setCreated] = useState(false);
   const [native, setNative] = useState(false);
@@ -117,23 +127,32 @@ export default function ConnectClient() {
         if (["google_sheets", "ghl", "none"].includes(d.targetSystem)) setTargetSystem(d.targetSystem);
         if (d.sheetTarget && typeof d.sheetTarget === "object") setSheetTarget(d.sheetTarget);
         if (typeof d.n8nBaseUrl === "string") setN8nBaseUrl(d.n8nBaseUrl);
+        if (Array.isArray(d.flow)) setFlow(d.flow);
+        if (typeof d.connectFrom === "string") setConnectFrom(d.connectFrom);
       }
     } catch { /* ignore a broken draft */ }
     setHydrated(true);
   }, []);
   useEffect(() => {
     if (!hydrated) return;
-    try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ platform, step, name, workflowId, checks, targetSystem, sheetTarget, n8nBaseUrl })); } catch { /* storage unavailable */ }
-  }, [hydrated, platform, step, name, workflowId, checks, targetSystem, sheetTarget, n8nBaseUrl]);
+    try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ platform, step, name, workflowId, checks, targetSystem, sheetTarget, n8nBaseUrl, flow, connectFrom })); } catch { /* storage unavailable */ }
+  }, [hydrated, platform, step, name, workflowId, checks, targetSystem, sheetTarget, n8nBaseUrl, flow, connectFrom]);
 
-  // A saved sheet from an earlier visit has no column list yet; fetch it once so typos can be caught.
+  // A saved or scanned sheet has no column list yet; fetch it so typos can be caught and access problems shown early.
+  async function loadHeaders() {
+    if (!sheetTarget) return;
+    const access = sheetTarget.access === "service_account" ? "&access=service_account" : "";
+    try {
+      const r = await fetch(`/api/google/sheets/${encodeURIComponent(sheetTarget.spreadsheetId)}?tab=${encodeURIComponent(sheetTarget.sheetName)}${access}`, { cache: "no-store" });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && Array.isArray(j.headers)) { setSheetHeaders(j.headers); setSheetBlocked(null); }
+      else setSheetBlocked(typeof j?.error === "string" && j.error ? j.error : "Outcom can't open this sheet yet.");
+    } catch { setSheetBlocked("Outcom can't reach Google right now."); }
+  }
   useEffect(() => {
     if (!hydrated || !sheetTarget || sheetHeaders.length) return;
-    const access = sheetTarget.access === "service_account" ? "&access=service_account" : "";
-    void fetch(`/api/google/sheets/${encodeURIComponent(sheetTarget.spreadsheetId)}?tab=${encodeURIComponent(sheetTarget.sheetName)}${access}`, { cache: "no-store" })
-      .then(r => (r.ok ? r.json() : null))
-      .then(j => { if (j && Array.isArray(j.headers)) setSheetHeaders(j.headers); })
-      .catch(() => undefined);
+    void loadHeaders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, sheetTarget, sheetHeaders.length]);
 
   // After a browser refresh, show the webhook again instead of leaving the user stranded.
@@ -228,6 +247,32 @@ export default function ConnectClient() {
     return null;
   }
 
+  /* ---------- read the workflow ---------- */
+
+  function applyScan(r: ScanResult) {
+    setFlow(r.flow);
+    setScanWarnings(r.risks.map(x => x.message));
+    if (r.workflowName && r.workflowName !== "Untitled workflow") setName(cur => (cur.trim() ? cur : r.workflowName));
+    const top = r.suggestions.find(x => x.supported && x.contract);
+    if (!top || !top.contract) {
+      setConnectFrom(null);
+      setScanNote("Outcom read your workflow but found no step that saves business data it can check yet. You can still pick your checks yourself.");
+      return;
+    }
+    const c = top.contract;
+    setConnectFrom(top.nodeName);
+    setSheetHeaders([]); setSheetBlocked(null);
+    if (c.system === "google_sheets") {
+      setTargetSystem("google_sheets");
+      setSheetTarget(c.target ? { spreadsheetId: c.target.spreadsheetId, spreadsheetName: c.target.spreadsheetName || "Google Sheet", sheetName: c.target.sheetName, keyColumn: c.target.keyColumn, access: googleConn ? "oauth" : robotEmail ? "service_account" : "oauth" } : null);
+    } else if (c.system === "ghl") { setTargetSystem("ghl"); setSheetTarget(null); }
+    const local = { system: (c.system === "ghl" ? "ghl" : "google_sheets") as TargetSystem, tab: c.target?.sheetName ?? null };
+    setChecks(cur => [updateCheck(newCheck("exists", nextId()), {}, local), updateCheck(newCheck("output", nextId()), {}, local), ...cur.filter(x => x.kind === "value")]);
+    setScanNote(`Found “${top.nodeName}”. ${top.question}`);
+    setMessage(null);
+    setStep(3);
+  }
+
   /* ---------- protect ---------- */
 
   async function setupWebhook(localWorkflowId: string) {
@@ -248,6 +293,7 @@ export default function ConnectClient() {
       if (targetSystem === "ghl" && !ghl) return setMessage("Connect HighLevel first, or switch to Google Sheets.");
       if (targetSystem === "google_sheets" && !sheetTarget) return setMessage("Choose the sheet, the tab and the column that identifies each row.");
     }
+    if (needsBusinessSystem(checks) && targetSystem === "google_sheets" && sheetBlocked) return setMessage(robotEmail && sheetTarget?.access === "service_account" ? `Share the sheet with ${robotEmail} as Viewer first.` : sheetBlocked);
     for (const c of checks) {
       const problem = problemFor(c);
       if (problem) return setMessage(problem);
@@ -327,6 +373,13 @@ export default function ConnectClient() {
           <label className="cx-field">Name this automation
             <input name="outcom-automation-name" autoComplete="off" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Lead intake → Sheet" />
           </label>
+
+          {platform === "n8n" && <ScanWorkflow onRead={applyScan} />}
+          {platform === "n8n" && scanNote && <div className="cx-found">
+            <b>{scanNote}</b>
+            {flow && flow.length > 0 && <FlowDiagram flow={flow} connectFrom={connectFrom} />}
+            {scanWarnings.map(w => <p key={w} className="cx-warn">⚠ {w}</p>)}
+          </div>}
 
           {platform === "n8n" && !n8n && <details className="cx-optional">
             <summary>Pick it from my n8n instead (optional)</summary>
@@ -415,6 +468,12 @@ export default function ConnectClient() {
         {/* STEP 3 */}
         {step === 3 && <div className="cx-step">
           <h2>Set up your checks</h2>
+          {scanNote && connectFrom && <p className="cx-note">Filled in from your workflow. Check it, then press Protect.</p>}
+          {needsBusinessSystem(checks) && targetSystem === "google_sheets" && sheetTarget && sheetBlocked && <div className="cx-card cx-block">
+            <p className="cx-error">{robotEmail && sheetTarget.access === "service_account" ? `Outcom can't open “${sheetTarget.spreadsheetName}” yet. Share it with the address below as Viewer.` : sheetBlocked}</p>
+            {robotEmail && sheetTarget.access === "service_account" && <div className="cx-code"><code>{robotEmail}</code><button type="button" className="simple-secondary" onClick={() => { void navigator.clipboard?.writeText(robotEmail); setRobotCopied(true); }}>{robotCopied ? "Copied ✓" : "Copy"}</button></div>}
+            <button type="button" className="simple-primary" onClick={() => void loadHeaders()}>I shared it, check again</button>
+          </div>}
           {needsBusinessSystem(checks)
             ? <BusinessSystemPicker value={targetSystem} onChange={setTargetSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} robotEmail={robotEmail} ghlConnected={Boolean(ghl)} sheet={sheetTarget} onSheet={setSheetTarget} onHeaders={setSheetHeaders} onConnectGoogle={() => { window.location.href = "/api/oauth/google_sheets/start"; }} ghlPanel={ghlPanel} />
             : <p className="cx-note">Your checks only look at the run itself, so there is nothing to connect.</p>}
@@ -456,7 +515,7 @@ export default function ConnectClient() {
       </section>
 
       {/* AFTER PROTECT */}
-      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={sheetTarget?.keyColumn ?? null} onInfo={setWebhookInfo} />}
+      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={sheetTarget?.keyColumn ?? null} flow={flow} connectFrom={connectFrom} onInfo={setWebhookInfo} />}
 
       {created && native && <section id="live-webhook" className="cx-flow cx-done">
         <div className="cx-done-head"><span className="cx-pill">● Protected</span><h2>{name}</h2><p>Outcom is watching this n8n workflow directly. Nothing else to set up.</p></div>
