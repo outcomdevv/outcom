@@ -14,14 +14,18 @@ type Props = {
 
 function SheetMini() { return <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden><rect x="3" y="3" width="18" height="18" rx="4" fill="#1f9d63" /><path d="M3 9.5h18M3 15h18M9.5 9.5V21" stroke="#fff" strokeWidth="1.6" /></svg>; }
 
-type Test = "idle" | "busy" | "ok" | "fail";
+type TryResult = { state: string; title: string; observed: string };
+const LABEL: Record<string, string> = { passed: "PASS", failed: "FAIL", verification_error: "UNKNOWN" };
 
 export default function AfterProtect({ info, keyColumn, onInfo }: Props) {
   const guide = guideFor(info.provider);
   const [copied, setCopied] = useState<string | null>(null);
-  const [test, setTest] = useState<Test>("idle");
   const [showJson, setShowJson] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tryValue, setTryValue] = useState("");
+  const [tryBusy, setTryBusy] = useState(false);
+  const [tryResults, setTryResults] = useState<TryResult[] | null>(null);
+  const [tryError, setTryError] = useState<string | null>(null);
   const received = Boolean(info.lastReceivedAt);
 
   async function copy(key: string, text: string) {
@@ -41,20 +45,23 @@ export default function AfterProtect({ info, keyColumn, onInfo }: Props) {
     return () => { stop = true; window.clearInterval(timer); };
   }, [received, info, onInfo]);
 
-  async function sendTest() {
-    setTest("busy"); setError(null);
+  // Does exactly what the automation's last step would do, so the result can be seen without n8n, Make or Zapier.
+  async function tryCheck() {
+    setTryBusy(true); setTryError(null); setTryResults(null);
     try {
-      const r = await fetch(info.url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ test: true }) });
+      const r = await fetch(info.url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ target_record_id: tryValue.trim(), status: "success", execution_id: `try-${Date.now()}`, metadata: { source: "outcom-try-it" } }) });
       const j = await r.json().catch(() => ({}));
-      if (r.ok && j.ok) setTest("ok"); else { setTest("fail"); setError(typeof j.error === "string" ? j.error : "Outcom did not answer. Make a new address and try again."); }
-    } catch { setTest("fail"); setError("Could not reach this address from here."); }
+      if (!r.ok || !Array.isArray(j.results)) setTryError(typeof j.error === "string" ? j.error : "Outcom could not run the check.");
+      else setTryResults(j.results as TryResult[]);
+    } catch { setTryError("Could not reach Outcom."); }
+    setTryBusy(false);
   }
 
   async function rotate() {
     const r = await fetch("/api/webhooks/rotate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ provider: info.provider, workflowId: info.workflow.id }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) return setError(j.error || "Could not make a new address.");
-    setTest("idle"); onInfo({ ...info, url: j.url, lastReceivedAt: null });
+    onInfo({ ...info, url: j.url, lastReceivedAt: null });
   }
 
   const label = keyColumn || "the id";
@@ -116,16 +123,25 @@ export default function AfterProtect({ info, keyColumn, onInfo }: Props) {
           <div className="cx-g-head"><span className="cx-g-n">3</span><b>Check that it works</b></div>
           <div className="cx-status"><span className={`cx-dot ${received ? "on" : "wait"}`} />
             {received ? `Got your first run · ${new Date(info.lastReceivedAt as string).toLocaleString()}` : `Waiting for a run. Run your automation once, this updates by itself.`}</div>
-          {!received && <div className="cx-test">
-            <button type="button" className="simple-secondary" disabled={test === "busy"} onClick={sendTest}>{test === "busy" ? "Sending…" : "Send a test"}</button>
-            {test === "ok" && <span className="cx-ok-text">✓ Outcom is ready and listening for “{label}”.</span>}
-            {test === "fail" && <span className="cx-error-text">{error}</span>}
-          </div>}
           {received && <p className="cx-hint">Open your workflows to see PASS, FAIL or UNKNOWN for this run.</p>}
         </li>
       </ol>
 
-      {error && test !== "fail" && <p className="cx-error">{error}</p>}
+      <div className="cx-try">
+        <h3>No automation to run? Try it now</h3>
+        <p className="cx-muted">Type a {label} that is in your sheet to see PASS. Type one that is not to see FAIL. Outcom does what your automation’s last step does.</p>
+        <div className="cx-row">
+          <input name="outcom-try-value" autoComplete="off" value={tryValue} onChange={e => setTryValue(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && tryValue.trim()) void tryCheck(); }} placeholder={keyColumn ? `A ${keyColumn} value` : "A value"} />
+          <button type="button" className="simple-primary" disabled={tryBusy || !tryValue.trim()} onClick={tryCheck}>{tryBusy ? "Checking…" : "Run a check"}</button>
+        </div>
+        {tryError && <p className="cx-error">{tryError}</p>}
+        {tryResults && <ul className="cx-results">{tryResults.map((r, i) => (
+          <li key={i} className={r.state}><b>{LABEL[r.state] ?? r.state}</b><span>{r.title}<small>{r.observed}</small></span></li>
+        ))}</ul>}
+        {tryResults && <a className="cx-link" href="/workflows">See it in Protected workflows →</a>}
+      </div>
+
+      {error && <p className="cx-error">{error}</p>}
       <div className="cx-nav"><button type="button" className="cx-link" onClick={rotate}>Make a new address</button><a className="simple-primary" href="/workflows">{received ? "See the result" : "See my workflows"}</a></div>
     </section>
   );

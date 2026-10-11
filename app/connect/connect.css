@@ -126,3 +126,13 @@
 .cx-diagram span.hot{border-color:var(--green);background:var(--green-bg);font-weight:700}
 .cx-diagram span.new{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:700}
 .cx-diagram i{font-style:normal;color:var(--muted)}
+.cx-try{margin-top:26px;padding:18px;border-radius:16px;border:1.5px dashed var(--line);display:grid;gap:12px}
+.cx-try h3{margin:0;font-size:16px}
+.cx-results{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.cx-results li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:12px;background:var(--soft)}
+.cx-results li b{flex:none;font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--line)}
+.cx-results li.passed b{background:var(--green-bg);color:var(--green)}
+.cx-results li.failed b{background:#fde8e6;color:#c0392b}
+.cx-results li.verification_error b{background:#fff3d6;color:#9a6a00}
+.cx-results li span{display:grid;gap:3px;font-size:14px;font-weight:700}
+.cx-results li small{font-weight:400;color:var(--muted);word-break:break-word}
