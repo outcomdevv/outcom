@@ -17,3 +17,6 @@ export function BlockIcon({ size = 28 }: P) {
 export function RecordIcon({ size = 28 }: P) {
   return <svg {...box(size)}><rect x="3" y="3" width="18" height="18" rx="4" fill="#2f6fe0" /><path d="M8 12.3l2.6 2.6L16 9.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 }
+export function TableIcon({ size = 28 }: P) {
+  return <svg {...box(size)}><rect x="3" y="3" width="18" height="18" rx="4" fill="#2d7ff9" /><path d="M7 8.5h10M7 12h10M7 15.5h6" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" /></svg>;
+}

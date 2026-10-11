@@ -34,7 +34,7 @@ describe("adapter registry", () => {
   it("resolves ghl and mock_crm, rejects unknown", async () => {
     expect(await adapterFor("ghl", "ws")).toEqual({ tag: "ghl" });
     expect(await adapterFor("mock_crm")).toBeTruthy();
-    await expect(adapterFor("hubspot")).rejects.toThrow(/Unsupported downstream/);
+    await expect(adapterFor("stripe")).rejects.toThrow(/Unsupported downstream/);
   });
   it("registerAdapter makes a new system available", async () => {
     registerAdapter("test_sys", () => ({ tag: "t" }) as any);

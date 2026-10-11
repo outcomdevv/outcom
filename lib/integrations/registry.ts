@@ -38,8 +38,8 @@ export const INTEGRATIONS: readonly IntegrationDef[] = [
   // ── Systems of truth (verification targets) ──
   { id: "ghl", label: "HighLevel", roles: ["target"], category: "crm", status: "code_complete", auth: ["private_token", "oauth"], verifies: ["contact"], note: "Read-only. Real-account testing pending (signup required a card)." },
   { id: "google_sheets", label: "Google Sheets", roles: ["target"], category: "data", status: "code_complete", auth: ["oauth"], verifies: ["row"], note: "Free for everyone. Read-only. Verifies a row exists / a column value. Real-account test pending." },
-  { id: "airtable", label: "Airtable", roles: ["target"], category: "data", status: "planned", auth: ["oauth", "private_token"], verifies: ["record"] },
-  { id: "hubspot", label: "HubSpot", roles: ["target"], category: "crm", status: "planned", auth: ["oauth", "private_token"], verifies: ["contact", "deal"] },
+  { id: "airtable", label: "Airtable", roles: ["target"], category: "data", status: "code_complete", auth: ["private_token"], verifies: ["record"], note: "Read-only personal access token (data.records:read, schema.bases:read). Real-account test pending." },
+  { id: "hubspot", label: "HubSpot", roles: ["target"], category: "crm", status: "code_complete", auth: ["private_token"], verifies: ["contact"], note: "Read-only Private App token (crm.objects.contacts.read). Contacts only for now. Real-account test pending." },
   { id: "stripe", label: "Stripe", roles: ["target"], category: "payments", status: "planned", auth: ["api_key"], verifies: ["customer", "payment", "invoice"], note: "Restricted read-only key." },
   { id: "pipedrive", label: "Pipedrive", roles: ["target"], category: "crm", status: "planned", auth: ["oauth"], verifies: ["person", "deal"] },
   { id: "notion", label: "Notion", roles: ["target"], category: "data", status: "planned", auth: ["oauth"], verifies: ["page"] },

@@ -13,6 +13,8 @@ type Props = {
   keyColumn: string | null;
   flow?: FlowNode[] | null;
   connectFrom?: string | null;
+  /** Where Outcom looks. Only Google Sheets keeps the sheet's own column names after the write step, so only then is the value prefilled. */
+  system?: string;
   onInfo: (next: WebhookInfo) => void;
 };
 
@@ -21,7 +23,7 @@ function SheetMini() { return <svg width="16" height="16" viewBox="0 0 24 24" ar
 type TryResult = { state: string; title: string; observed: string };
 const LABEL: Record<string, string> = { passed: "PASS", failed: "FAIL", verification_error: "UNKNOWN" };
 
-export default function AfterProtect({ info, keyColumn, flow, connectFrom, onInfo }: Props) {
+export default function AfterProtect({ info, keyColumn, flow, connectFrom, system = "google_sheets", onInfo }: Props) {
   const guide = guideFor(info.provider);
   const [copied, setCopied] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
@@ -82,7 +84,7 @@ export default function AfterProtect({ info, keyColumn, flow, connectFrom, onInf
         {info.provider === "n8n" ? (<>
         <li>
           <div className="cx-g-head"><span className="cx-g-n">1</span><b>Copy the ready-made step</b></div>
-          <div className="cx-code"><code>Tell Outcom · HTTP Request · already filled in</code><button type="button" className="simple-primary" onClick={() => copy("node", n8nPasteNode(info.url, keyColumn))}>{copied === "node" ? "Copied ✓" : "Copy step"}</button></div>
+          <div className="cx-code"><code>Tell Outcom · HTTP Request · already filled in</code><button type="button" className="simple-primary" onClick={() => copy("node", n8nPasteNode(info.url, keyColumn, system === "google_sheets"))}>{copied === "node" ? "Copied ✓" : "Copy step"}</button></div>
         </li>
         <li>
           <div className="cx-g-head"><span className="cx-g-n">2</span><b>Paste it into n8n</b><IntegrationLogo name="n8n" size={22} /></div>
@@ -90,6 +92,7 @@ export default function AfterProtect({ info, keyColumn, flow, connectFrom, onInf
             <li>Open your workflow and click an empty spot on the canvas.</li>
             <li>Press <b>Ctrl+V</b> (Mac: <b>⌘V</b>). A step called “Tell Outcom” appears.</li>
             <li>Connect it <b>from {connectFrom ? `“${connectFrom}”` : "the green Google Sheets step"}</b> (the step that saves the data). Not from the last step.</li>
+            {system !== "google_sheets" && <li>Open “Tell Outcom”, click between the quotes next to <b>target_record_id</b>, and drag <b>{label}</b> from the left panel into it.</li>}
             <li>Click <b>Publish</b> and run the workflow once.</li>
           </ol>
           {flow && flow.length > 0 && connectFrom

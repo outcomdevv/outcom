@@ -3,7 +3,8 @@
 import { useState } from "react";
 import LoadingScreen from "@/app/loading-screen";
 import { IntegrationLogo } from "@/app/integrations";
-import { BlockIcon, SheetIcon } from "@/app/connect/icons";
+import { BlockIcon, SheetIcon, TableIcon } from "@/app/connect/icons";
+import { AirtablePanel, HubspotPanel, type AirtableTargetState, type HubspotTargetState } from "@/app/connect/token-panels";
 import type { TargetKind } from "@/lib/connect-checks";
 
 export type TargetSystem = TargetKind;
@@ -18,6 +19,14 @@ type Props = {
   /** Outcom's robot email. When set and Google is not connected, the customer just shares the sheet with it. */
   robotEmail?: string | null;
   ghlConnected: boolean;
+  airtableConnected: boolean;
+  hubspotConnected: boolean;
+  airtable: AirtableTargetState | null;
+  onAirtable: (v: AirtableTargetState | null) => void;
+  hubspot: HubspotTargetState | null;
+  onHubspot: (v: HubspotTargetState) => void;
+  /** Called after a pasted token was saved, so the page can reload its connections. */
+  onTokenSaved: () => void;
   sheet: SheetTargetState | null;
   onSheet: (s: SheetTargetState | null) => void;
   /** Column names of the chosen tab, so the page can catch typos in custom checks. */
@@ -33,7 +42,7 @@ async function api(url: string) {
   return { ok: r.ok, status: r.status, j };
 }
 
-export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, sheet, onSheet, onHeaders, onConnectGoogle, ghlPanel }: Props) {
+export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, airtableConnected, hubspotConnected, airtable, onAirtable, hubspot, onHubspot, onTokenSaved, sheet, onSheet, onHeaders, onConnectGoogle, ghlPanel }: Props) {
   const [useOwnGoogle, setUseOwnGoogle] = useState(false);
   const robot = !googleConnected && Boolean(robotEmail) && !useOwnGoogle;
   const acc = robot ? "&access=service_account" : "";
@@ -106,6 +115,12 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
         <button type="button" className={`cx-option ${value === "google_sheets" ? "on" : ""}`} onClick={() => onChange("google_sheets")}>
           <SheetIcon size={34} /><span><b>Google Sheets</b><small>Free · read-only</small></span><i>{value === "google_sheets" ? "✓" : ""}</i>
         </button>
+        <button type="button" className={`cx-option ${value === "airtable" ? "on" : ""}`} onClick={() => onChange("airtable")}>
+          <TableIcon size={34} /><span><b>Airtable</b><small>Needs a token</small></span><i>{value === "airtable" ? "✓" : ""}</i>
+        </button>
+        <button type="button" className={`cx-option ${value === "hubspot" ? "on" : ""}`} onClick={() => onChange("hubspot")}>
+          <img src="/brands/hubspot.svg" width={34} height={34} alt="" /><span><b>HubSpot</b><small>Needs a token</small></span><i>{value === "hubspot" ? "✓" : ""}</i>
+        </button>
         <button type="button" className={`cx-option ${value === "ghl" ? "on" : ""}`} onClick={() => onChange("ghl")}>
           <IntegrationLogo name="ghl" size={34} /><span><b>HighLevel</b><small>Needs a token</small></span><i>{value === "ghl" ? "✓" : ""}</i>
         </button>
@@ -115,6 +130,9 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
       </div>
 
       {value === "none" && <p className="cx-note">Outcom will only catch failed runs and runs with no output. Pick Google Sheets later to check the real result.</p>}
+
+      {value === "airtable" && <AirtablePanel connected={airtableConnected} onConnected={onTokenSaved} value={airtable} onChange={onAirtable} onHeaders={h => onHeaders?.(h)} />}
+      {value === "hubspot" && <HubspotPanel connected={hubspotConnected} onConnected={onTokenSaved} value={hubspot} onChange={onHubspot} onHeaders={h => onHeaders?.(h)} />}
 
       {value === "ghl" && (ghlConnected ? <p className="cx-ok">✓ HighLevel connected</p> : ghlPanel)}
 

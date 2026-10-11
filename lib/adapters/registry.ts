@@ -3,6 +3,9 @@ import { MockCRMAdapter } from "@/lib/adapters/mock-crm";
 import type { DownstreamAdapter } from "@/lib/adapters/types";
 import { GoogleSheetsAdapter, parseSheetTarget } from "@/lib/google-sheets";
 import { resolveGoogleToken } from "@/lib/google-access";
+import { AirtableAdapter, parseAirtableTarget } from "@/lib/airtable";
+import { HubspotAdapter, parseHubspotTarget } from "@/lib/hubspot";
+import { getStoredToken } from "@/lib/token-store";
 
 /** A downstream (system-of-truth) adapter factory. `target` is the per-contract configuration (e.g. which spreadsheet). */
 export type AdapterFactory = (workspaceId?: string, target?: unknown) => Promise<DownstreamAdapter> | DownstreamAdapter;
@@ -10,6 +13,18 @@ export type AdapterFactory = (workspaceId?: string, target?: unknown) => Promise
 const factories = new Map<string, AdapterFactory>([
   ["mock_crm", () => new MockCRMAdapter()],
   ["ghl", (workspaceId) => ghlAdapter(workspaceId)],
+  ["airtable", async (workspaceId, target) => {
+    const parsed = parseAirtableTarget(target);
+    if (!parsed) throw new Error("Airtable table is not configured for this outcome.");
+    const token = await getStoredToken("airtable", workspaceId);
+    if (!token) throw new Error("Airtable is not connected.");
+    return new AirtableAdapter(token, parsed);
+  }],
+  ["hubspot", async (workspaceId, target) => {
+    const token = await getStoredToken("hubspot", workspaceId);
+    if (!token) throw new Error("HubSpot is not connected.");
+    return new HubspotAdapter(token, parseHubspotTarget(target));
+  }],
   ["google_sheets", async (workspaceId, target) => {
     const parsed = parseSheetTarget(target);
     if (!parsed) throw new Error("Google Sheets target is not configured for this outcome.");

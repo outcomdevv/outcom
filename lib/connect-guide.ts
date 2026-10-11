@@ -80,7 +80,7 @@ export const guideFor = (platform: string): Guide => {
  * Copy → Ctrl+V → connect it after the Google Sheets step. Placed right after that step, the row it just wrote
  * has the sheet's own column names, so {{ $json['Email'] }} is the value Outcom must find in the sheet.
  */
-export function n8nPasteNode(url: string, keyColumn: string | null): string {
+export function n8nPasteNode(url: string, keyColumn: string | null, fill = true): string {
   const key = (keyColumn || "id").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   return JSON.stringify({
     nodes: [{
@@ -89,7 +89,7 @@ export function n8nPasteNode(url: string, keyColumn: string | null): string {
         url,
         sendBody: true,
         specifyBody: "json",
-        jsonBody: `={\n  "target_record_id": "{{ $json['${key}'] }}"\n}`,
+        jsonBody: fill ? `={\n  "target_record_id": "{{ $json['${key}'] }}"\n}` : `={\n  "target_record_id": ""\n}`,
         options: {},
       },
       type: "n8n-nodes-base.httpRequest",

@@ -32,3 +32,11 @@ describe("n8n paste node", () => {
     expect(JSON.parse(n8nPasteNode("u", "Client's email")).nodes[0].parameters.jsonBody).toContain("$json['Client\\'s email']");
   });
 });
+
+describe("n8n paste node without a prefilled value", () => {
+  it("leaves the value empty for systems whose output shape we cannot know", () => {
+    const n = JSON.parse(n8nPasteNode("https://x.test/api/inbound/abc", "Email", false)).nodes[0];
+    expect(n.parameters.jsonBody).toContain('"target_record_id": ""');
+    expect(n.parameters.jsonBody).not.toContain("$json");
+  });
+});

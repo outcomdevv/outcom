@@ -9,14 +9,15 @@ import FlowDiagram from "@/app/connect/flow-diagram";
 import ScanWorkflow, { type ScanResult } from "@/app/connect/scan-workflow";
 import type { FlowNode } from "@/lib/suggested-checks";
 import BusinessSystemPicker, { type SheetTargetState, type TargetSystem } from "@/app/connect/business-system";
-import { OutputIcon, RecordIcon, SheetIcon, TagIcon } from "@/app/connect/icons";
+import { OutputIcon, RecordIcon, SheetIcon, TableIcon, TagIcon } from "@/app/connect/icons";
+import type { AirtableTargetState, HubspotTargetState } from "@/app/connect/token-panels";
 import {
-  MAX_CHECKS, OPERATORS, autoLabel, needsBusinessSystem, newCheck, toPayload, updateCheck, validateCheck,
+  MAX_CHECKS, OPERATORS, autoLabel, hasNamedFields, needsBusinessSystem, newCheck, toPayload, updateCheck, validateCheck,
   type CheckDraft, type CheckKind, type Operator,
 } from "@/lib/connect-checks";
 
 type Platform = "n8n" | "zapier" | "make" | "custom";
-type Provider = "ghl" | "google_sheets" | Platform;
+type Provider = "ghl" | "google_sheets" | "airtable" | "hubspot" | Platform;
 type Connection = { provider: Provider; accountName: string; email?: string | null; expiresAt?: string | null };
 type Discovered = { id: string; name: string; enabled: boolean; platform: string };
 type OAuthStatus = { ghl: boolean; zapier: boolean; make: boolean; google_sheets: boolean };
@@ -39,7 +40,7 @@ const KIND_INFO: Record<Exclude<CheckKind, "value">, { title: string; text: stri
 };
 
 const checkIcon = (c: CheckDraft, system: TargetSystem, size: number) =>
-  c.kind === "value" ? (system === "google_sheets" ? <SheetIcon size={size} /> : <RecordIcon size={size} />) : KIND_INFO[c.kind].icon(size);
+  c.kind === "value" ? (system === "google_sheets" ? <SheetIcon size={size} /> : system === "airtable" ? <TableIcon size={size} /> : <RecordIcon size={size} />) : KIND_INFO[c.kind].icon(size);
 
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
@@ -61,6 +62,8 @@ export default function ConnectClient() {
   const [valueDraft, setValueDraft] = useState<{ field: string; operator: Operator; expectedValue: string }>({ field: "", operator: "equals", expectedValue: "" });
   const [targetSystem, setTargetSystem] = useState<TargetSystem>("google_sheets");
   const [sheetTarget, setSheetTarget] = useState<SheetTargetState | null>(null);
+  const [airtableTarget, setAirtableTarget] = useState<AirtableTargetState | null>(null);
+  const [hubspotTarget, setHubspotTarget] = useState<HubspotTargetState | null>(null);
   const [sheetHeaders, setSheetHeaders] = useState<string[]>([]);
 
   const [discovered, setDiscovered] = useState<Discovered[]>([]);
@@ -97,7 +100,9 @@ export default function ConnectClient() {
   const n8n = conn("n8n");
   const zapier = conn("zapier");
   const make = conn("make");
-  const tab = sheetTarget?.sheetName ?? null;
+  const airtable = conn("airtable");
+  const hubspot = conn("hubspot");
+  const tab = targetSystem === "airtable" ? airtableTarget?.tableName ?? null : sheetTarget?.sheetName ?? null;
   const ctx = useMemo(() => ({ system: targetSystem, tab }), [targetSystem, tab]);
 
   const loadConnections = async () => {
@@ -124,7 +129,9 @@ export default function ConnectClient() {
         if (typeof d.name === "string") setName(d.name);
         if (typeof d.workflowId === "string") setWorkflowId(d.workflowId);
         if (Array.isArray(d.checks)) setChecks(d.checks.filter((c: any) => c && typeof c.id === "string" && typeof c.kind === "string"));
-        if (["google_sheets", "ghl", "none"].includes(d.targetSystem)) setTargetSystem(d.targetSystem);
+        if (["google_sheets", "airtable", "hubspot", "ghl", "none"].includes(d.targetSystem)) setTargetSystem(d.targetSystem);
+        if (d.airtableTarget && typeof d.airtableTarget === "object") setAirtableTarget(d.airtableTarget);
+        if (d.hubspotTarget && typeof d.hubspotTarget === "object") setHubspotTarget(d.hubspotTarget);
         if (d.sheetTarget && typeof d.sheetTarget === "object") setSheetTarget(d.sheetTarget);
         if (typeof d.n8nBaseUrl === "string") setN8nBaseUrl(d.n8nBaseUrl);
         if (Array.isArray(d.flow)) setFlow(d.flow);
@@ -135,8 +142,8 @@ export default function ConnectClient() {
   }, []);
   useEffect(() => {
     if (!hydrated) return;
-    try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ platform, step, name, workflowId, checks, targetSystem, sheetTarget, n8nBaseUrl, flow, connectFrom })); } catch { /* storage unavailable */ }
-  }, [hydrated, platform, step, name, workflowId, checks, targetSystem, sheetTarget, n8nBaseUrl, flow, connectFrom]);
+    try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ platform, step, name, workflowId, checks, targetSystem, sheetTarget, airtableTarget, hubspotTarget, n8nBaseUrl, flow, connectFrom })); } catch { /* storage unavailable */ }
+  }, [hydrated, platform, step, name, workflowId, checks, targetSystem, sheetTarget, airtableTarget, hubspotTarget, n8nBaseUrl, flow, connectFrom]);
 
   // A saved or scanned sheet has no column list yet; fetch it so typos can be caught and access problems shown early.
   async function loadHeaders() {
@@ -150,10 +157,10 @@ export default function ConnectClient() {
     } catch { setSheetBlocked("Outcom can't reach Google right now."); }
   }
   useEffect(() => {
-    if (!hydrated || !sheetTarget || sheetHeaders.length) return;
+    if (!hydrated || targetSystem !== "google_sheets" || !sheetTarget || sheetHeaders.length) return;
     void loadHeaders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, sheetTarget, sheetHeaders.length]);
+  }, [hydrated, targetSystem, sheetTarget, sheetHeaders.length]);
 
   // After a browser refresh, show the webhook again instead of leaving the user stranded.
   useEffect(() => {
@@ -210,12 +217,20 @@ export default function ConnectClient() {
 
   /* ---------- checks ---------- */
 
+  // Each system has its own list of columns; never show one system's columns for another.
+  function changeSystem(next: TargetSystem) {
+    if (next === targetSystem) return;
+    setTargetSystem(next); setSheetHeaders([]); setSheetBlocked(null); setMessage(null);
+  }
+  const currentTarget = targetSystem === "google_sheets" ? sheetTarget : targetSystem === "airtable" ? airtableTarget : targetSystem === "hubspot" ? hubspotTarget : null;
+  const systemName = targetSystem === "google_sheets" ? "Google Sheets" : targetSystem === "airtable" ? "Airtable" : targetSystem === "hubspot" ? "HubSpot" : targetSystem === "ghl" ? "HighLevel" : "";
+
   const hasKind = (k: CheckKind) => checks.some(c => c.kind === k);
   const nextId = () => `check-${crypto.randomUUID()}`;
 
   function toggleKind(kind: Exclude<CheckKind, "value">) {
     setMessage(null);
-    if (kind === "tags") setTargetSystem("ghl"); // tags only exist in HighLevel
+    if (kind === "tags") changeSystem("ghl"); // tags only exist in HighLevel
     setChecks(cur => cur.some(c => c.kind === kind)
       ? cur.filter(c => c.kind !== kind)
       : cur.length >= MAX_CHECKS ? cur : [...cur, updateCheck(newCheck(kind, nextId()), {}, ctx)]);
@@ -223,7 +238,7 @@ export default function ConnectClient() {
 
   function addValueCheck() {
     if (checks.length >= MAX_CHECKS) return setMessage(`You can add up to ${MAX_CHECKS} checks.`);
-    const problem = validateCheck({ ...newCheck("value", "x"), ...valueDraft }, { system: "google_sheets" });
+    const problem = validateCheck({ ...newCheck("value", "x"), ...valueDraft }, { system: targetSystem === "none" || targetSystem === "ghl" ? "google_sheets" : targetSystem });
     if (problem) return setMessage(problem);
     setMessage(null);
     setChecks(cur => [...cur, updateCheck(newCheck("value", nextId()), valueDraft, ctx)]);
@@ -242,7 +257,7 @@ export default function ConnectClient() {
   function problemFor(c: CheckDraft): string | null {
     const basic = validateCheck(c, { system: targetSystem });
     if (basic) return basic;
-    if (c.kind === "value" && targetSystem === "google_sheets" && sheetHeaders.length && !sheetHeaders.some(h => sameName(h, c.field)))
+    if (c.kind === "value" && (targetSystem === "google_sheets" || targetSystem === "airtable") && sheetHeaders.length && !sheetHeaders.some(h => sameName(h, c.field)))
       return `There is no column called “${c.field.trim()}” in this sheet. Pick one from the list.`;
     return null;
   }
@@ -290,7 +305,10 @@ export default function ConnectClient() {
 
     if (needsBusinessSystem(checks)) {
       if (targetSystem === "none") return setMessage("Choose where Outcom should look, or keep only “The run produced something”.");
-      if (targetSystem === "ghl" && !ghl) return setMessage("Connect HighLevel first, or switch to Google Sheets.");
+      if (targetSystem === "ghl" && !ghl) return setMessage("Connect HighLevel first, or choose another place to look.");
+      if (targetSystem === "airtable" && !airtable) return setMessage("Connect Airtable first.");
+      if (targetSystem === "airtable" && !airtableTarget) return setMessage("Choose the Airtable table and the column that identifies each record.");
+      if (targetSystem === "hubspot" && !hubspot) return setMessage("Connect HubSpot first.");
       if (targetSystem === "google_sheets" && !sheetTarget) return setMessage("Choose the sheet, the tab and the column that identifies each row.");
     }
     if (needsBusinessSystem(checks) && targetSystem === "google_sheets" && sheetBlocked) return setMessage(robotEmail && sheetTarget?.access === "service_account" ? `Share the sheet with ${robotEmail} as Viewer first.` : sheetBlocked);
@@ -302,7 +320,7 @@ export default function ConnectClient() {
     setCreating(true); setMessage(null);
     try {
       const id = workflowId.trim() || `manual-${crypto.randomUUID()}`;
-      const payload = checks.map(c => toPayload(c, targetSystem, sheetTarget, tab));
+      const payload = checks.map(c => toPayload(c, targetSystem, currentTarget, tab));
       const useNative = platform === "n8n" && targetSystem === "ghl" && Boolean(n8n) && !id.startsWith("manual-");
       setNative(useNative);
       const r = await fetch(useNative ? "/api/n8n/protect" : "/api/integrations/protect", {
@@ -337,7 +355,7 @@ export default function ConnectClient() {
 
   const selectedPlatform = platforms.find(p => p.id === platform)!;
   const connectedHere = platform === "n8n" ? n8n : platform === "zapier" ? zapier : platform === "make" ? make : undefined;
-  const sheetOk = targetSystem !== "google_sheets" || Boolean(sheetTarget);
+  const sheetOk = targetSystem === "google_sheets" ? Boolean(sheetTarget) : targetSystem === "airtable" ? Boolean(airtableTarget) : true;
   const valueChecks = checks.filter(c => c.kind === "value");
   const ready = checks.length > 0;
 
@@ -475,7 +493,7 @@ export default function ConnectClient() {
             <button type="button" className="simple-primary" onClick={() => void loadHeaders()}>I shared it, check again</button>
           </div>}
           {needsBusinessSystem(checks)
-            ? <BusinessSystemPicker value={targetSystem} onChange={setTargetSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} robotEmail={robotEmail} ghlConnected={Boolean(ghl)} sheet={sheetTarget} onSheet={setSheetTarget} onHeaders={setSheetHeaders} onConnectGoogle={() => { window.location.href = "/api/oauth/google_sheets/start"; }} ghlPanel={ghlPanel} />
+            ? <BusinessSystemPicker value={targetSystem} onChange={changeSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} robotEmail={robotEmail} ghlConnected={Boolean(ghl)} airtableConnected={Boolean(airtable)} hubspotConnected={Boolean(hubspot)} airtable={airtableTarget} onAirtable={setAirtableTarget} hubspot={hubspotTarget} onHubspot={setHubspotTarget} onTokenSaved={() => void loadConnections()} sheet={sheetTarget} onSheet={setSheetTarget} onHeaders={setSheetHeaders} onConnectGoogle={() => { window.location.href = "/api/oauth/google_sheets/start"; }} ghlPanel={ghlPanel} />
             : <p className="cx-note">Your checks only look at the run itself, so there is nothing to connect.</p>}
 
           <h3 className="cx-h">Your checks</h3>
@@ -486,12 +504,12 @@ export default function ConnectClient() {
                 <div key={c.id} className={`cx-check ${problem ? "bad" : ""}`}>
                   <div className="cx-check-head">
                     {checkIcon(c, targetSystem, 34)}
-                    <span><b>{c.label || autoLabel(c, ctx)}</b><small>{c.kind === "output" ? "From the run itself" : targetSystem === "google_sheets" ? (sheetTarget ? `${sheetTarget.spreadsheetName} → ${sheetTarget.sheetName}` : "Choose a sheet above") : targetSystem === "ghl" ? "HighLevel" : "Choose where to look"}</small></span>
+                    <span><b>{c.label || autoLabel(c, ctx)}</b><small>{c.kind === "output" ? "From the run itself" : targetSystem === "google_sheets" ? (sheetTarget ? `${sheetTarget.spreadsheetName} → ${sheetTarget.sheetName}` : "Choose a sheet above") : targetSystem === "airtable" ? (airtableTarget ? airtableTarget.tableName : "Choose a table above") : systemName || "Choose where to look"}</small></span>
                     <button type="button" aria-label="Remove check" onClick={() => removeCheck(c.id)}>✕</button>
                   </div>
                   {c.kind === "value" && <div className="cx-row cx-three">
-                    {targetSystem === "google_sheets" && sheetHeaders.length
-                      ? <select value={sheetHeaders.find(h => sameName(h, c.field)) ?? ""} onChange={e => patchCheck(c.id, { field: e.target.value })}><option value="">Column…</option>{sheetHeaders.map(h => <option key={h} value={h}>{h}</option>)}</select>
+                    {hasNamedFields(targetSystem) && sheetHeaders.length
+                      ? <select value={sheetHeaders.find(h => sameName(h, c.field)) ?? ""} onChange={e => patchCheck(c.id, { field: e.target.value })}><option value="">{targetSystem === "hubspot" ? "Property…" : "Column…"}</option>{sheetHeaders.map(h => <option key={h} value={h}>{h}</option>)}</select>
                       : <input name={`outcom-field-${c.id}`} autoComplete="off" value={c.field} onChange={e => patchCheck(c.id, { field: e.target.value })} placeholder="Column" />}
                     <select value={c.operator} onChange={e => patchCheck(c.id, { operator: e.target.value as Operator })}>{OPERATORS.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}</select>
                     {c.operator !== "exists" ? <input name={`outcom-value-${c.id}`} autoComplete="off" value={c.expectedValue} onChange={e => patchCheck(c.id, { expectedValue: e.target.value })} placeholder="Value" /> : <span className="cx-muted cx-pad">no value needed</span>}
@@ -515,7 +533,7 @@ export default function ConnectClient() {
       </section>
 
       {/* AFTER PROTECT */}
-      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={sheetTarget?.keyColumn ?? null} flow={flow} connectFrom={connectFrom} onInfo={setWebhookInfo} />}
+      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={targetSystem === "airtable" ? airtableTarget?.keyField ?? null : targetSystem === "hubspot" ? ({ email: "Email", phone: "Phone", id: "Contact ID" } as Record<string, string>)[hubspotTarget?.keyProperty ?? "email"] ?? "Email" : sheetTarget?.keyColumn ?? null} system={targetSystem} flow={flow} connectFrom={connectFrom} onInfo={setWebhookInfo} />}
 
       {created && native && <section id="live-webhook" className="cx-flow cx-done">
         <div className="cx-done-head"><span className="cx-pill">● Protected</span><h2>{name}</h2><p>Outcom is watching this n8n workflow directly. Nothing else to set up.</p></div>

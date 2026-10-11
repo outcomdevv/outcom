@@ -4,7 +4,10 @@
 
 export type CheckKind = "exists" | "value" | "output" | "tags";
 export type OutcomeType = "record_exists" | "state_invariant" | "output_count";
-export type TargetKind = "google_sheets" | "ghl" | "none";
+export type TargetKind = "google_sheets" | "airtable" | "hubspot" | "ghl" | "none";
+
+/** Systems where Outcom looks up one record by a key and reads named columns / properties. */
+export const hasNamedFields = (s: TargetKind) => s === "google_sheets" || s === "airtable" || s === "hubspot";
 
 export type Operator = "equals" | "not_equals" | "contains" | "not_contains" | "exists";
 
@@ -42,7 +45,9 @@ const quote = (v: string) => `"${v.trim()}"`;
 export function autoLabel(c: Pick<CheckDraft, "kind" | "field" | "operator" | "expectedValue" | "expectedCount">, ctx: { system: TargetKind; tab?: string | null }): string {
   switch (c.kind) {
     case "exists":
-      return ctx.system === "google_sheets" ? `A row exists${ctx.tab ? ` in ${ctx.tab}` : ""}` : "The contact exists";
+      return ctx.system === "google_sheets" ? `A row exists${ctx.tab ? ` in ${ctx.tab}` : ""}`
+        : ctx.system === "airtable" ? `A record exists${ctx.tab ? ` in ${ctx.tab}` : ""}`
+        : ctx.system === "hubspot" ? "The contact exists in HubSpot" : "The contact exists";
     case "output":
       return "The run produced output";
     case "tags":
@@ -77,10 +82,10 @@ export function updateCheck(c: CheckDraft, patch: Partial<CheckDraft>, ctx: { sy
 /** Returns a plain-language problem, or null when the check is ready. */
 export function validateCheck(c: CheckDraft, ctx: { system: TargetKind }): string | null {
   if (c.kind === "output") return null;
-  if (ctx.system === "none") return "Choose where Outcom should look (Google Sheets or HighLevel), or keep only “The run produced output”.";
+  if (ctx.system === "none") return "Choose where Outcom should look (Google Sheets, Airtable, HubSpot or HighLevel), or keep only “The run produced output”.";
   if (c.kind === "exists") return c.valueFrom.trim() ? null : "Say which field of your webhook holds the record id.";
   if (c.kind === "tags") return null;
-  if (!c.field.trim()) return ctx.system === "google_sheets" ? "Pick the column to check." : "Say which field to check.";
+  if (!c.field.trim()) return ctx.system === "google_sheets" || ctx.system === "airtable" ? "Pick the column to check." : ctx.system === "hubspot" ? "Pick the HubSpot property to check." : "Say which field to check.";
   if (c.operator !== "exists" && !c.expectedValue.trim()) return `Type the value that “${c.field.trim()}” should have.`;
   return null;
 }
@@ -98,12 +103,12 @@ export function toPayload(c: CheckDraft, system: TargetKind, target: unknown, ta
   return {
     id: c.id, label, type,
     system: out ? "event" : system,
-    entity: out ? "output" : system === "google_sheets" ? "row" : "contact",
+    entity: out ? "output" : system === "google_sheets" ? "row" : system === "airtable" ? "record" : "contact",
     field: c.field.trim() || "tags",
     operator: out ? "greater_than" : c.operator,
     expectedValue: c.operator === "exists" ? "" : c.expectedValue.trim(),
     expectedCount: Number.isFinite(c.expectedCount) ? c.expectedCount : 0,
     valueFrom: c.valueFrom.trim() || (out ? "event.data.output_count" : "event.data.target_record_id"),
-    target: !out && system === "google_sheets" ? target : null,
+    target: !out && hasNamedFields(system) ? target : null,
   };
 }
