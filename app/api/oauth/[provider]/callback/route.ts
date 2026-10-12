@@ -20,7 +20,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
     // State is workspace-bound, provider-bound, expires after 10 minutes and is deleted atomically on first use.
     if (!code || !state || !(await store.oauthStates.consume(state, provider))) return fail("oauth_state_invalid");
 
-    const tokens = await exchangeCode(provider, code);
+    const tokens = await exchangeCode(provider, code, state);
     if (!tokens.access_token) throw new Error("Provider did not return an access token");
     const profile = await profileFor(provider, tokens.access_token, tokens);
     await store.connections.upsert({

@@ -20,7 +20,7 @@ type Platform = "n8n" | "zapier" | "make" | "custom";
 type Provider = "ghl" | "google_sheets" | "airtable" | "hubspot" | Platform;
 type Connection = { provider: Provider; accountName: string; email?: string | null; expiresAt?: string | null };
 type Discovered = { id: string; name: string; enabled: boolean; platform: string };
-type OAuthStatus = { ghl: boolean; zapier: boolean; make: boolean; google_sheets: boolean };
+type OAuthStatus = { ghl: boolean; zapier: boolean; make: boolean; google_sheets: boolean; airtable: boolean; hubspot: boolean };
 
 const DRAFT_KEY = "outcom-connect-draft-v79";
 
@@ -49,7 +49,7 @@ export default function ConnectClient() {
   const params = useSearchParams();
 
   const [connections, setConnections] = useState<Connection[]>([]);
-  const [oauth, setOauth] = useState<OAuthStatus>({ ghl: false, zapier: false, make: false, google_sheets: false });
+  const [oauth, setOauth] = useState<OAuthStatus>({ ghl: false, zapier: false, make: false, google_sheets: false, airtable: false, hubspot: false });
   const [robotEmail, setRobotEmail] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -493,7 +493,7 @@ export default function ConnectClient() {
             <button type="button" className="simple-primary" onClick={() => void loadHeaders()}>I shared it, check again</button>
           </div>}
           {needsBusinessSystem(checks)
-            ? <BusinessSystemPicker value={targetSystem} onChange={changeSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} robotEmail={robotEmail} ghlConnected={Boolean(ghl)} airtableConnected={Boolean(airtable)} hubspotConnected={Boolean(hubspot)} airtable={airtableTarget} onAirtable={setAirtableTarget} hubspot={hubspotTarget} onHubspot={setHubspotTarget} onTokenSaved={() => void loadConnections()} sheet={sheetTarget} onSheet={setSheetTarget} onHeaders={setSheetHeaders} onConnectGoogle={() => { window.location.href = "/api/oauth/google_sheets/start"; }} ghlPanel={ghlPanel} />
+            ? <BusinessSystemPicker value={targetSystem} onChange={changeSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} robotEmail={robotEmail} ghlConnected={Boolean(ghl)} airtableConnected={Boolean(airtable)} hubspotConnected={Boolean(hubspot)} airtableOAuth={oauth.airtable} hubspotOAuth={oauth.hubspot} airtable={airtableTarget} onAirtable={setAirtableTarget} hubspot={hubspotTarget} onHubspot={setHubspotTarget} onTokenSaved={() => void loadConnections()} sheet={sheetTarget} onSheet={setSheetTarget} onHeaders={setSheetHeaders} onConnectGoogle={() => { window.location.href = "/api/oauth/google_sheets/start"; }} ghlPanel={ghlPanel} />
             : <p className="cx-note">Your checks only look at the run itself, so there is nothing to connect.</p>}
 
           <h3 className="cx-h">Your checks</h3>

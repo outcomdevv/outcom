@@ -157,3 +157,5 @@
 .cx-found{display:grid;gap:8px;padding:14px;border-radius:14px;background:var(--soft)}
 .cx-found b{font-size:14px}
 .cx-warn{margin:0;font-size:13px;color:#9a6a00}
+
+.cx-adv{margin-top:12px;font-size:13px}.cx-adv summary{cursor:pointer;color:var(--muted,#6b7280)}.cx-adv[open] summary{margin-bottom:10px}

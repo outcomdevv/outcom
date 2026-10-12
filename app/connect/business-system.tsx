@@ -20,6 +20,8 @@ type Props = {
   robotEmail?: string | null;
   ghlConnected: boolean;
   airtableConnected: boolean;
+  airtableOAuth?: boolean;
+  hubspotOAuth?: boolean;
   hubspotConnected: boolean;
   airtable: AirtableTargetState | null;
   onAirtable: (v: AirtableTargetState | null) => void;
@@ -42,7 +44,7 @@ async function api(url: string) {
   return { ok: r.ok, status: r.status, j };
 }
 
-export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, airtableConnected, hubspotConnected, airtable, onAirtable, hubspot, onHubspot, onTokenSaved, sheet, onSheet, onHeaders, onConnectGoogle, ghlPanel }: Props) {
+export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, airtableConnected, hubspotConnected, airtableOAuth, hubspotOAuth, airtable, onAirtable, hubspot, onHubspot, onTokenSaved, sheet, onSheet, onHeaders, onConnectGoogle, ghlPanel }: Props) {
   const [useOwnGoogle, setUseOwnGoogle] = useState(false);
   const robot = !googleConnected && Boolean(robotEmail) && !useOwnGoogle;
   const acc = robot ? "&access=service_account" : "";
@@ -131,8 +133,8 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
 
       {value === "none" && <p className="cx-note">Outcom will only catch failed runs and runs with no output. Pick Google Sheets later to check the real result.</p>}
 
-      {value === "airtable" && <AirtablePanel connected={airtableConnected} onConnected={onTokenSaved} value={airtable} onChange={onAirtable} onHeaders={h => onHeaders?.(h)} />}
-      {value === "hubspot" && <HubspotPanel connected={hubspotConnected} onConnected={onTokenSaved} value={hubspot} onChange={onHubspot} onHeaders={h => onHeaders?.(h)} />}
+      {value === "airtable" && <AirtablePanel oauthReady={airtableOAuth} connected={airtableConnected} onConnected={onTokenSaved} value={airtable} onChange={onAirtable} onHeaders={h => onHeaders?.(h)} />}
+      {value === "hubspot" && <HubspotPanel oauthReady={hubspotOAuth} connected={hubspotConnected} onConnected={onTokenSaved} value={hubspot} onChange={onHubspot} onHeaders={h => onHeaders?.(h)} />}
 
       {value === "ghl" && (ghlConnected ? <p className="cx-ok">✓ HighLevel connected</p> : ghlPanel)}
 

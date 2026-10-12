@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 const store = { connections: { latest: vi.fn(), updateTokens: vi.fn() } };
 vi.mock("@/lib/db", () => ({ getWorkspaceStore: vi.fn(async () => store) }));
 
-import { buildAuthorizationUrl, callbackUrl, decryptSecret, encryptSecret, getValidAccessToken, isOAuthProvider, oauthConfigured, OAuthReauthRequired } from "@/lib/oauth";
+import { buildAuthorizationUrl, callbackUrl, exchangeCode, pkceChallenge, pkceVerifier, decryptSecret, encryptSecret, getValidAccessToken, isOAuthProvider, oauthConfigured, OAuthReauthRequired } from "@/lib/oauth";
 
 const KEY = "a".repeat(64);
 beforeEach(() => {
@@ -123,5 +123,38 @@ describe("getValidAccessToken", () => {
     const err = await getValidAccessToken("zapier").catch(e => e);
     expect(err).not.toBeInstanceOf(OAuthReauthRequired);
     expect(err.message).toContain("503");
+  });
+});
+
+describe("Airtable and HubSpot OAuth", () => {
+  beforeEach(() => {
+    process.env.AIRTABLE_CLIENT_ID = "aid"; process.env.AIRTABLE_CLIENT_SECRET = "asec";
+    process.env.HUBSPOT_CLIENT_ID = "hid"; process.env.HUBSPOT_CLIENT_SECRET = "hsec";
+  });
+  it("uses the exact callback URLs registered with each provider", () => {
+    expect(callbackUrl("airtable")).toBe("https://outcom.test/api/oauth/airtable/callback");
+    expect(callbackUrl("hubspot")).toBe("https://outcom.test/api/oauth/hubspot/callback");
+  });
+  it("Airtable authorization URL carries read-only scopes and an S256 PKCE challenge", () => {
+    const u = new URL(buildAuthorizationUrl("airtable", "S1"));
+    expect(u.origin + u.pathname).toBe("https://airtable.com/oauth2/v1/authorize");
+    expect(u.searchParams.get("scope")).toBe("data.records:read schema.bases:read");
+    expect(u.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(u.searchParams.get("code_challenge")).toBe(pkceChallenge("S1"));
+    expect(pkceChallenge("S1")).not.toBe(pkceChallenge("S2"));
+  });
+  it("Airtable code exchange sends the matching verifier with Basic auth", async () => {
+    const fetchMock = tokenRes({ access_token: "a", refresh_token: "r", expires_in: 3600 });
+    vi.stubGlobal("fetch", fetchMock);
+    await exchangeCode("airtable", "CODE", "S1");
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(String((init.headers as any).Authorization)).toMatch(/^Basic /);
+    expect(new URLSearchParams(String(init.body)).get("code_verifier")).toBe(pkceVerifier("S1"));
+  });
+  it("HubSpot URL has contacts read scope and no PKCE", () => {
+    const u = new URL(buildAuthorizationUrl("hubspot", "S1"));
+    expect(u.origin + u.pathname).toBe("https://app.hubspot.com/oauth/authorize");
+    expect(u.searchParams.get("scope")).toBe("crm.objects.contacts.read");
+    expect(u.searchParams.has("code_challenge")).toBe(false);
   });
 });

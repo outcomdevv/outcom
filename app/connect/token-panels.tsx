@@ -12,6 +12,17 @@ async function getJson(url: string) {
   return { ok: r.ok, j: await r.json().catch(() => ({})) as any };
 }
 
+/** One-click connect when the server has OAuth set up; the pasted token stays available under "Advanced". */
+function ConnectButton({ provider, label, children }: { provider: "airtable" | "hubspot"; label: string; children: React.ReactNode }) {
+  return (
+    <div className="cx-ghl">
+      <p className="cx-note">Outcom opens {label}, you click <b>Allow</b>, and you are back here. Outcom only gets read access.</p>
+      <button type="button" className="simple-primary" onClick={() => { window.location.href = `/api/oauth/${provider}/start`; }}>Connect {label}</button>
+      <details className="cx-adv"><summary>Advanced: paste a token instead</summary>{children}</details>
+    </div>
+  );
+}
+
 /** Connect a pasted read-only token. Shared by Airtable and HubSpot. */
 function TokenForm({ provider, label, steps, onConnected }: { provider: "airtable" | "hubspot"; label: string; steps: React.ReactNode[]; onConnected: () => void }) {
   const [token, setToken] = useState("");
@@ -37,8 +48,8 @@ function TokenForm({ provider, label, steps, onConnected }: { provider: "airtabl
   );
 }
 
-export function AirtablePanel({ connected, onConnected, value, onChange, onHeaders }: {
-  connected: boolean; onConnected: () => void; value: AirtableTargetState | null; onChange: (v: AirtableTargetState | null) => void; onHeaders: (h: string[]) => void;
+export function AirtablePanel({ oauthReady, connected, onConnected, value, onChange, onHeaders }: {
+  oauthReady?: boolean; connected: boolean; onConnected: () => void; value: AirtableTargetState | null; onChange: (v: AirtableTargetState | null) => void; onHeaders: (h: string[]) => void;
 }) {
   const [link, setLink] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -58,13 +69,13 @@ export function AirtablePanel({ connected, onConnected, value, onChange, onHeade
   }
   const pickKey = (k: string) => { if (pending && k) { onChange({ baseId: pending.baseId, tableId: pending.tableId, tableName: pending.tableName, keyField: k }); setChanging(false); } };
 
-  if (!connected) return (
+  if (!connected) { const form = (
     <TokenForm provider="airtable" label="Airtable" onConnected={onConnected} steps={[
       <>Airtable → <b>Developer hub</b> → <b>Personal access tokens</b> → Create token</>,
       <>Scopes: <b>data.records:read</b> and <b>schema.bases:read</b>. Add your base.</>,
       <>Copy the token and paste it here.</>,
     ]} />
-  );
+  ); return oauthReady ? <ConnectButton provider="airtable" label="Airtable">{form}</ConnectButton> : form; }
 
   return (
     <div className="cx-sheet">
@@ -88,8 +99,8 @@ export function AirtablePanel({ connected, onConnected, value, onChange, onHeade
 
 const KEYS = [{ id: "email", text: "Email" }, { id: "phone", text: "Phone" }, { id: "id", text: "HubSpot contact ID" }];
 
-export function HubspotPanel({ connected, onConnected, value, onChange, onHeaders }: {
-  connected: boolean; onConnected: () => void; value: HubspotTargetState | null; onChange: (v: HubspotTargetState) => void; onHeaders: (h: string[]) => void;
+export function HubspotPanel({ oauthReady, connected, onConnected, value, onChange, onHeaders }: {
+  oauthReady?: boolean; connected: boolean; onConnected: () => void; value: HubspotTargetState | null; onChange: (v: HubspotTargetState) => void; onHeaders: (h: string[]) => void;
 }) {
   useEffect(() => {
     if (!connected) return;
@@ -98,13 +109,13 @@ export function HubspotPanel({ connected, onConnected, value, onChange, onHeader
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected]);
 
-  if (!connected) return (
+  if (!connected) { const form = (
     <TokenForm provider="hubspot" label="HubSpot" onConnected={onConnected} steps={[
       <>HubSpot → <b>Settings → Integrations → Private Apps</b> → Create a private app</>,
       <>Scope: <b>crm.objects.contacts.read</b> (read only)</>,
       <>Copy the <b>access token</b> and paste it here.</>,
     ]} />
-  );
+  ); return oauthReady ? <ConnectButton provider="hubspot" label="HubSpot">{form}</ConnectButton> : form; }
   return (
     <div className="cx-sheet">
       <div className="cx-picked"><span><b>HubSpot contacts</b><small>Outcom looks up each contact by the value you send</small></span></div>

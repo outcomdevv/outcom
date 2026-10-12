@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const authPage = path.startsWith("/auth/");
   const authApi = path.startsWith("/api/auth/"); const publicApi = path.startsWith("/api/cron/") || path.startsWith("/api/inbound/");
-  if (!user && !authPage && !authApi && !publicApi && path !== "/" && path !== "/favicon.ico") return NextResponse.redirect(new URL("/auth/login", request.url));
+  if (!user && !authPage && !authApi && !publicApi && path !== "/" && path !== "/favicon.ico" && path !== "/privacy" && path !== "/terms") return NextResponse.redirect(new URL("/auth/login", request.url));
   if (user && authPage) return NextResponse.redirect(new URL("/", request.url));
   return response;
 }
