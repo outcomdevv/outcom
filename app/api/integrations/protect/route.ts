@@ -59,6 +59,18 @@ export async function POST(request: Request) {
       : [{ label: expectedOutcome || "Downstream business record exists", type: "record_exists", system: "ghl", entity: "contact", valueFrom: "event.data.target_record_id" }];
     const createdContracts: any[] = [];
 
+    // Protecting again replaces the earlier choice: pause (never delete) checks this screen made before that are not in the new list.
+    const wanted = new Set(requested.map((r: any) => String(r.label || "Business outcome").trim()));
+    const pausedContracts: string[] = [];
+    for (const c of contracts) {
+      const cfg: any = c.configuration || {};
+      const fromWizard = cfg.mode === "inbound_webhook" || cfg.inbound_webhook === true;
+      if (c.enabled && fromWizard && c.type !== "output_count" && !wanted.has(String(cfg.expectedOutcome ?? c.name))) {
+        await store.contracts.setEnabled(c.id, false);
+        pausedContracts.push(c.name);
+      }
+    }
+
     for (const item of requested) {
       const type = item.type === "state_invariant" || item.type === "output_count" ? item.type : "record_exists";
       const label = String(item.label || "Business outcome").trim();
@@ -96,7 +108,7 @@ export async function POST(request: Request) {
     }
 
     await store.monitors.upsert({ workflowId: workflow.id, provider, externalId, mode: "inbound_webhook", metadata: { expectedOutcome: expectedOutcome || null, expectedOutcomes: requested } });
-    return NextResponse.json({ protected: true, workflow, createdContracts, outcomes: requested });
+    return NextResponse.json({ protected: true, workflow, createdContracts, pausedContracts, outcomes: requested });
   } catch (error) {
     return NextResponse.json({ protected: false, error: error instanceof Error ? error.message : "Could not protect workflow." }, { status: 400 });
   }

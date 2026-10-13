@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import LoadingScreen from "@/app/loading-screen";
 import { TableIcon } from "@/app/connect/icons";
+import { AirtableLogo } from "@/app/connect/brand-logo";
 
 export type AirtableTargetState = { baseId: string; tableId: string; tableName: string; keyField: string };
 export type HubspotTargetState = { keyProperty: string };
@@ -57,6 +58,15 @@ export function AirtablePanel({ oauthReady, connected, onConnected, value, onCha
   const [tables, setTables] = useState<Array<{ id: string; name: string }>>([]);
   const [pending, setPending] = useState<{ baseId: string; tableId: string; tableName: string; fields: string[] } | null>(null);
   const [changing, setChanging] = useState(false);
+  const [bases, setBases] = useState<Array<{ id: string; name: string }> | null>(null);
+
+  useEffect(() => {
+    if (!connected || bases) return;
+    void getJson("/api/airtable/bases").then(({ ok, j }) => { if (ok && Array.isArray(j.bases)) setBases(j.bases); else setBases([]); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected]);
+
+  const openBase = (id: string) => { setLink(id); void open(`/api/airtable/table?link=${encodeURIComponent(id)}`); };
 
   async function open(url: string) {
     setBusy("Reading your table"); setError(null);
@@ -79,12 +89,18 @@ export function AirtablePanel({ oauthReady, connected, onConnected, value, onCha
 
   return (
     <div className="cx-sheet">
-      {value && !changing && <div className="cx-picked"><TableIcon size={30} /><span><b>{value.tableName}</b><small>Matched by {value.keyField}</small></span><button type="button" className="cx-link" onClick={() => setChanging(true)}>Change</button></div>}
+      {value && !changing && <div className="cx-picked"><AirtableLogo size={30} /><span><b>{value.tableName}</b><small>Matched by {value.keyField}</small></span><button type="button" className="cx-link" onClick={() => setChanging(true)}>Change</button></div>}
       {(!value || changing) && <>
+        {bases && bases.length > 0 && <>
+          <p className="cx-note">Pick your base</p>
+          <div className="cx-files">{bases.map(b => <button type="button" key={b.id} onClick={() => openBase(b.id)}><AirtableLogo size={22} /><span>{b.name}</span></button>)}</div>
+        </>}
+        {bases && bases.length === 0 && <p className="cx-note">Outcom does not see any base yet. Reconnect Airtable and allow a base, or paste a link below.</p>}
+        <details className="cx-adv"><summary>Or paste a link to your table</summary>
         <div className="cx-row">
           <input name="outcom-airtable-link" autoComplete="off" value={link} onChange={e => setLink(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && link.trim()) void open(`/api/airtable/table?link=${encodeURIComponent(link)}`); }} placeholder="Paste the link of your Airtable table" />
           <button type="button" className="simple-primary" disabled={Boolean(busy) || !link.trim()} onClick={() => open(`/api/airtable/table?link=${encodeURIComponent(link)}`)}>Open</button>
-        </div>
+        </div></details>
         {tables.length > 0 && <div className="cx-files">{tables.map(t => <button type="button" key={t.id} onClick={() => open(`/api/airtable/table?link=${encodeURIComponent(link)}&tableId=${encodeURIComponent(t.id)}`)}><TableIcon size={22} /><span>{t.name}</span></button>)}</div>}
         {pending && <div className="cx-pick-grid">
           <label>Table<input value={pending.tableName} readOnly /></label>

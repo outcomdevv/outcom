@@ -39,3 +39,13 @@ describe("airtable", () => {
     expect(t).toEqual([{ id: "tbl1", name: "Leads", fields: ["Email", "Status"] }]);
   });
 });
+
+describe("airtable bases list", () => {
+  it("follows pagination and names untitled bases", async () => {
+    const pages = [{ bases: [{ id: "appAAAAAAAAAAA", name: "CRM" }], offset: "next" }, { bases: [{ id: "appBBBBBBBBBBB" }] }];
+    let i = 0;
+    const f = (async () => new Response(JSON.stringify(pages[i++]), { status: 200 })) as unknown as typeof fetch;
+    const { listAirtableBases } = await import("@/lib/airtable");
+    expect(await listAirtableBases("t", { fetchImpl: f })).toEqual([{ id: "appAAAAAAAAAAA", name: "CRM" }, { id: "appBBBBBBBBBBB", name: "Untitled base" }]);
+  });
+});

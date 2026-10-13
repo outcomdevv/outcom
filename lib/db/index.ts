@@ -21,6 +21,7 @@ export async function getWorkspaceStore(workspaceId?: string) {
       async list(workflowId?: string) { let q = scopedSelect("contracts").order("created_at", { ascending: false }); if (workflowId) q = q.eq("workflow_id", workflowId); const { data, error } = await q; if (error) throw error; return (data ?? []).map(contract); },
       async get(contractId: string) { const { data, error } = await scopedSelect("contracts").eq("id", contractId).maybeSingle(); if (error) throw error; return data ? contract(data) : null; },
       async create(v: Omit<OutcomeContract, "id" | "createdAt" | "updatedAt"> & { id?: string }) { const row = { workspace_id: wid, id: v.id || id("contract"), workflow_id: v.workflowId, name: v.name, type: v.type, system: v.system, entity: v.entity, configuration: v.configuration, severity: v.severity, enabled: v.enabled, updated_at: new Date().toISOString() }; const { data, error } = await db.from("contracts").insert(row).select().single(); if (error) throw error; return contract(data); },
+      async setEnabled(contractId: string, enabled: boolean) { const { error } = await db.from("contracts").update({ enabled, updated_at: new Date().toISOString() }).eq("workspace_id", wid).eq("id", contractId); if (error) throw error; },
     },
     events: {
       async list(workflowId?: string) { let q = scopedSelect("events").order("timestamp", { ascending: false }); if (workflowId) q = q.eq("workflow_id", workflowId); const { data, error } = await q; if (error) throw error; return (data ?? []).map(event); },

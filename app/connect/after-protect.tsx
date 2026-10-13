@@ -138,7 +138,7 @@ export default function AfterProtect({ info, keyColumn, flow, connectFrom, syste
 
       <div className="cx-try">
         <h3>No automation to run? Try it now</h3>
-        <p className="cx-muted">Type a value from the “{label}” column that is in your sheet to see PASS. Type one that is not to see FAIL. Outcom does what your automation’s last step does.</p>
+        <p className="cx-muted">{system === "hubspot" ? <>Type the {label} of a contact that exists in HubSpot to see PASS. Type one that does not exist to see FAIL.</> : <>Type a value from the “{label}” column that is in your {system === "airtable" ? "table" : "sheet"} to see PASS. Type one that is not to see FAIL.</>} Outcom does what your automation’s last step does.</p>
         <div className="cx-row">
           <input name="outcom-try-value" autoComplete="off" value={tryValue} onChange={e => setTryValue(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && tryValue.trim()) void tryCheck(); }} placeholder={keyColumn ? `${keyColumn} value` : "A value"} />
           <button type="button" className="simple-primary" disabled={tryBusy || !tryValue.trim()} onClick={tryCheck}>{tryBusy ? "Checking…" : "Run a check"}</button>

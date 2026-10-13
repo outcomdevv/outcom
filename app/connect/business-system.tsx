@@ -3,7 +3,8 @@
 import { useState } from "react";
 import LoadingScreen from "@/app/loading-screen";
 import { IntegrationLogo } from "@/app/integrations";
-import { BlockIcon, SheetIcon, TableIcon } from "@/app/connect/icons";
+import { BlockIcon, SheetIcon } from "@/app/connect/icons";
+import { AirtableLogo } from "@/app/connect/brand-logo";
 import { AirtablePanel, HubspotPanel, type AirtableTargetState, type HubspotTargetState } from "@/app/connect/token-panels";
 import type { TargetKind } from "@/lib/connect-checks";
 
@@ -118,10 +119,10 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
           <SheetIcon size={34} /><span><b>Google Sheets</b><small>Free · read-only</small></span><i>{value === "google_sheets" ? "✓" : ""}</i>
         </button>
         <button type="button" className={`cx-option ${value === "airtable" ? "on" : ""}`} onClick={() => onChange("airtable")}>
-          <TableIcon size={34} /><span><b>Airtable</b><small>Needs a token</small></span><i>{value === "airtable" ? "✓" : ""}</i>
+          <AirtableLogo size={34} /><span><b>Airtable</b><small>{airtableConnected ? "Connected" : airtableOAuth ? "One-click connect" : "Needs a token"}</small></span><i>{value === "airtable" ? "✓" : ""}</i>
         </button>
         <button type="button" className={`cx-option ${value === "hubspot" ? "on" : ""}`} onClick={() => onChange("hubspot")}>
-          <img src="/brands/hubspot.svg" width={34} height={34} alt="" /><span><b>HubSpot</b><small>Needs a token</small></span><i>{value === "hubspot" ? "✓" : ""}</i>
+          <img src="/brands/hubspot.svg" width={34} height={34} alt="" /><span><b>HubSpot</b><small>{hubspotConnected ? "Connected" : hubspotOAuth ? "One-click connect" : "Needs a token"}</small></span><i>{value === "hubspot" ? "✓" : ""}</i>
         </button>
         <button type="button" className={`cx-option ${value === "ghl" ? "on" : ""}`} onClick={() => onChange("ghl")}>
           <IntegrationLogo name="ghl" size={34} /><span><b>HighLevel</b><small>Needs a token</small></span><i>{value === "ghl" ? "✓" : ""}</i>

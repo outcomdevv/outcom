@@ -4,7 +4,7 @@ const created: any[] = [];
 const store = {
   workspaceId: "ws1",
   workflows: { get: vi.fn(async () => null), create: vi.fn(async (w: any) => w) },
-  contracts: { list: vi.fn(async () => []), create: vi.fn(async (c: any) => { created.push(c); return c; }) },
+  contracts: { list: vi.fn(async (): Promise<any[]> => []), setEnabled: vi.fn(async () => {}), create: vi.fn(async (c: any) => { created.push(c); return c; }) },
   monitors: { upsert: vi.fn(async () => ({})) },
 };
 vi.mock("@/lib/db", () => ({ getWorkspaceStore: vi.fn(async () => store) }));
@@ -57,5 +57,20 @@ describe("custom value checks from the Connect page", () => {
     const r = await call({ provider: "n8n", externalId: "manual-1", name: "Lead sync", expectedOutcomes: [toPayload(c, "google_sheets", sheet, "Leads")] });
     expect((await r.json()).protected).toBe(true);
     expect(created[0]).toMatchObject({ name: 'Status is "Qualified"', type: "state_invariant", system: "google_sheets", configuration: { mode: "field_condition", field: "Status", operator: "equals", expectedValue: "Qualified", target: { sheetName: "Leads", keyColumn: "Email" } } });
+  });
+  it("pauses earlier wizard checks that are not in the new list, and keeps the rest", async () => {
+    store.contracts.list.mockResolvedValueOnce([
+      { id: "old", name: "A record exists in Sheet1", type: "record_exists", enabled: true, configuration: { mode: "inbound_webhook", expectedOutcome: "A record exists in Sheet1" } },
+      { id: "keep", name: "A record exists in Table 1", type: "record_exists", enabled: true, configuration: { mode: "inbound_webhook", expectedOutcome: "A record exists in Table 1" } },
+      { id: "out", name: "The run produced output", type: "output_count", enabled: true, configuration: { mode: "inbound_webhook", expectedOutcome: "The run produced output" } },
+      { id: "manual", name: "Hand made", type: "record_exists", enabled: true, configuration: { mode: "manual" } },
+    ]);
+    store.contracts.setEnabled.mockClear();
+    const airtable = { baseId: "appABCDEFGHIJK", tableId: "tblABCDEFGHIJK", tableName: "Table 1", keyField: "Email" };
+    const r = await call({ provider: "n8n", externalId: "w1", name: "Lead", expectedOutcomes: [{ label: "A record exists in Table 1", type: "record_exists", system: "airtable", target: airtable }] });
+    const j = await r.json();
+    expect(store.contracts.setEnabled).toHaveBeenCalledTimes(1);
+    expect(store.contracts.setEnabled).toHaveBeenCalledWith("old", false);
+    expect(j.pausedContracts).toEqual(["A record exists in Sheet1"]);
   });
 });

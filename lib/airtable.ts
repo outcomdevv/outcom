@@ -13,8 +13,8 @@ const API = "https://api.airtable.com/v0";
 type Fetch = typeof fetch;
 
 function classify(status: number, field?: string): AirtableError {
-  if (status === 401) return new AirtableError("reauth_required", 401, "Airtable rejected the token. Paste a new one.");
-  if (status === 403) return new AirtableError("forbidden", 403, "This Airtable token cannot open that base. Give the token access to the base with data.records:read and schema.bases:read.");
+  if (status === 401) return new AirtableError("reauth_required", 401, "Airtable rejected the connection. Reconnect Airtable and try again.");
+  if (status === 403) return new AirtableError("forbidden", 403, "Outcom has no access to that base. Reconnect Airtable and allow this base.");
   if (status === 404) return new AirtableError("not_found", 404, "Airtable base or table not found. It may have been deleted, or the token has no access to it.");
   if (status === 422) return new AirtableError("bad_field", 422, field ? `Airtable has no column called “${field}” in this table.` : "Airtable could not read that column.");
   if (status === 429) return new AirtableError("rate_limited", 429, "Airtable rate limit reached. Try again shortly.");
@@ -51,6 +51,19 @@ export function parseAirtableTarget(raw: unknown): AirtableTarget | null {
   const keyField = typeof t.keyField === "string" ? t.keyField.trim() : "";
   if (!/^app[a-zA-Z0-9]{10,}$/.test(baseId) || !/^tbl[a-zA-Z0-9]{10,}$/.test(tableId) || !keyField) return null;
   return { baseId, tableId, keyField, ...(typeof t.tableName === "string" && t.tableName.trim() ? { tableName: t.tableName.trim() } : {}) };
+}
+
+/** Bases the connection can see (needs schema.bases:read). Follows Airtable's pagination, capped so a huge account cannot stall the page. */
+export async function listAirtableBases(token: string, opts: { fetchImpl?: Fetch } = {}): Promise<Array<{ id: string; name: string }>> {
+  const out: Array<{ id: string; name: string }> = [];
+  let offset: string | undefined;
+  for (let page = 0; page < 5; page++) {
+    const body = await getJson(`${API}/meta/bases${offset ? `?offset=${encodeURIComponent(offset)}` : ""}`, token, opts.fetchImpl ?? fetch);
+    for (const b of Array.isArray(body.bases) ? body.bases : []) out.push({ id: String(b.id), name: String(b.name || "Untitled base") });
+    offset = typeof body.offset === "string" && body.offset ? body.offset : undefined;
+    if (!offset) break;
+  }
+  return out;
 }
 
 /** Tables of a base with their column names (needs the schema.bases:read scope). */
