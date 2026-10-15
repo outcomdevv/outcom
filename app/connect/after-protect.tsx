@@ -15,6 +15,8 @@ type Props = {
   connectFrom?: string | null;
   /** Where Outcom looks. Only Google Sheets keeps the sheet's own column names after the write step, so only then is the value prefilled. */
   system?: string;
+  /** Value the scenario already uses for the key column (for example {{1.email}} in Make). Prefills the message. */
+  expression?: string | null;
   onInfo: (next: WebhookInfo) => void;
 };
 
@@ -23,7 +25,7 @@ function SheetMini() { return <svg width="16" height="16" viewBox="0 0 24 24" ar
 type TryResult = { state: string; title: string; observed: string };
 const LABEL: Record<string, string> = { passed: "PASS", failed: "FAIL", verification_error: "UNKNOWN" };
 
-export default function AfterProtect({ info, keyColumn, flow, connectFrom, system = "google_sheets", onInfo }: Props) {
+export default function AfterProtect({ info, keyColumn, flow, connectFrom, system = "google_sheets", expression = null, onInfo }: Props) {
   const guide = guideFor(info.provider);
   const [copied, setCopied] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
@@ -104,7 +106,7 @@ export default function AfterProtect({ info, keyColumn, flow, connectFrom, syste
             <ol className="cx-clicks">{guide.steps.map(s => <li key={s}>{s}</li>)}</ol>
             <div className="cx-field-card"><div><small>Field name</small><code>{FIELD_NAME}</code></div><button type="button" className="simple-secondary" onClick={() => copy("field", FIELD_NAME)}>{copied === "field" ? "Copied ✓" : "Copy"}</button></div>
             <div className="cx-code"><code>{info.url}</code><button type="button" className="simple-secondary" onClick={() => copy("url", info.url)}>{copied === "url" ? "Copied ✓" : "Copy address"}</button></div>
-            <p className="cx-hint">{guide.valueHelp(keyColumn)}</p>
+            <p className="cx-hint">{guide.valueHelp(keyColumn, expression)}</p>
           </details>
         </li>
         </>) : (<>
@@ -116,14 +118,15 @@ export default function AfterProtect({ info, keyColumn, flow, connectFrom, syste
 
         <li>
           <div className="cx-g-head"><span className="cx-g-n">2</span><b>In {guide.tool}, add one last step</b><IntegrationLogo name={(info.provider === "n8n" || info.provider === "zapier" || info.provider === "make" ? info.provider : "custom") as any} size={22} /></div>
+          {flow && flow.length > 0 && connectFrom && <FlowDiagram flow={flow} connectFrom={connectFrom} />}
           <ol className="cx-clicks">{guide.steps.map(s => <li key={s}>{s}</li>)}</ol>
           <div className="cx-field-card">
             <div><small>Field name</small><code>{FIELD_NAME}</code></div>
             <button type="button" className="simple-secondary" onClick={() => copy("field", FIELD_NAME)}>{copied === "field" ? "Copied ✓" : "Copy"}</button>
           </div>
-          <p className="cx-hint">{guide.valueHelp(keyColumn)}</p>
-          <button type="button" className="cx-link" onClick={() => setShowJson(v => !v)}>{showJson ? "Hide the raw message" : "My tool asks for a raw message"}</button>
-          {showJson && <div className="cx-code"><code>{guide.json(keyColumn)}</code><button type="button" className="simple-secondary" onClick={() => copy("json", guide.json(keyColumn))}>{copied === "json" ? "Copied ✓" : "Copy"}</button></div>}
+          <p className="cx-hint">{guide.valueHelp(keyColumn, expression)}</p>
+          <button type="button" className="cx-link" onClick={() => setShowJson(v => !v)}>{expression ? "" : showJson ? "Hide the raw message" : "My tool asks for a raw message"}</button>
+          {(showJson || Boolean(expression)) && <div className="cx-code"><code>{guide.json(keyColumn, expression)}</code><button type="button" className="simple-secondary" onClick={() => copy("json", guide.json(keyColumn, expression))}>{copied === "json" ? "Copied ✓" : "Copy"}</button></div>}
         </li>
 
         </>)}

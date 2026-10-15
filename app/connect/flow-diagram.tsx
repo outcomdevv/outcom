@@ -1,6 +1,7 @@
 "use client";
 
 import { SheetIcon } from "@/app/connect/icons";
+import { AirtableLogo } from "@/app/connect/brand-logo";
 import type { FlowNode } from "@/lib/suggested-checks";
 
 type Props = {
@@ -10,7 +11,7 @@ type Props = {
 };
 
 const Dot = ({ node }: { node: FlowNode }) =>
-  node.type === "googleSheets" ? <SheetIcon size={16} /> : <i className={`cx-fdot ${node.kind}`} aria-hidden />;
+  node.type === "googleSheets" ? <SheetIcon size={16} /> : node.type === "airtable" ? <AirtableLogo size={16} /> : <i className={`cx-fdot ${node.kind}`} aria-hidden />;
 
 /** Draws the user's own workflow and shows exactly where the new “Tell Outcom” step attaches. */
 export default function FlowDiagram({ flow, connectFrom }: Props) {

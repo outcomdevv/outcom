@@ -85,6 +85,7 @@ export default function ConnectClient() {
   const [flow, setFlow] = useState<FlowNode[] | null>(null);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
   const [scanNote, setScanNote] = useState<string | null>(null);
+  const [recordExpr, setRecordExpr] = useState<string | null>(null);
   const [scanWarnings, setScanWarnings] = useState<string[]>([]);
   const [sheetBlocked, setSheetBlocked] = useState<string | null>(null);
   const [robotCopied, setRobotCopied] = useState(false);
@@ -271,17 +272,24 @@ export default function ConnectClient() {
     const top = r.suggestions.find(x => x.supported && x.contract);
     if (!top || !top.contract) {
       setConnectFrom(null);
+      setRecordExpr(null);
       setScanNote("Outcom read your workflow but found no step that saves business data it can check yet. You can still pick your checks yourself.");
       return;
     }
     const c = top.contract;
     setConnectFrom(top.nodeName);
+    setRecordExpr(top.recordId.expression);
     setSheetHeaders([]); setSheetBlocked(null);
     if (c.system === "google_sheets") {
       setTargetSystem("google_sheets");
       setSheetTarget(c.target ? { spreadsheetId: c.target.spreadsheetId, spreadsheetName: c.target.spreadsheetName || "Google Sheet", sheetName: c.target.sheetName, keyColumn: c.target.keyColumn, access: googleConn ? "oauth" : robotEmail ? "service_account" : "oauth" } : null);
+    } else if (c.system === "airtable") {
+      setTargetSystem("airtable");
+      setSheetTarget(null);
+      // Without a key column the user picks it from the table list below; the base and table are still known.
+      setAirtableTarget(c.airtable && c.airtable.keyField ? { baseId: c.airtable.baseId, tableId: c.airtable.tableId, tableName: c.airtable.tableName || "Airtable table", keyField: c.airtable.keyField } : null);
     } else if (c.system === "ghl") { setTargetSystem("ghl"); setSheetTarget(null); }
-    const local = { system: (c.system === "ghl" ? "ghl" : "google_sheets") as TargetSystem, tab: c.target?.sheetName ?? null };
+    const local = { system: (c.system === "ghl" || c.system === "airtable" ? c.system : "google_sheets") as TargetSystem, tab: c.target?.sheetName ?? c.airtable?.tableName ?? null };
     setChecks(cur => [updateCheck(newCheck("exists", nextId()), {}, local), updateCheck(newCheck("output", nextId()), {}, local), ...cur.filter(x => x.kind === "value")]);
     setScanNote(`Found “${top.nodeName}”. ${top.question}`);
     setMessage(null);
@@ -392,8 +400,8 @@ export default function ConnectClient() {
             <input name="outcom-automation-name" autoComplete="off" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Lead intake → Sheet" />
           </label>
 
-          {platform === "n8n" && <ScanWorkflow onRead={applyScan} />}
-          {platform === "n8n" && scanNote && <div className="cx-found">
+          {(platform === "n8n" || platform === "make") && <ScanWorkflow platform={platform} onRead={applyScan} />}
+          {(platform === "n8n" || platform === "make") && scanNote && <div className="cx-found">
             <b>{scanNote}</b>
             {flow && flow.length > 0 && <FlowDiagram flow={flow} connectFrom={connectFrom} />}
             {scanWarnings.map(w => <p key={w} className="cx-warn">⚠ {w}</p>)}
@@ -533,7 +541,7 @@ export default function ConnectClient() {
       </section>
 
       {/* AFTER PROTECT */}
-      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={targetSystem === "airtable" ? airtableTarget?.keyField ?? null : targetSystem === "hubspot" ? ({ email: "Email", phone: "Phone", id: "Contact ID" } as Record<string, string>)[hubspotTarget?.keyProperty ?? "email"] ?? "Email" : sheetTarget?.keyColumn ?? null} system={targetSystem} flow={flow} connectFrom={connectFrom} onInfo={setWebhookInfo} />}
+      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={targetSystem === "airtable" ? airtableTarget?.keyField ?? null : targetSystem === "hubspot" ? ({ email: "Email", phone: "Phone", id: "Contact ID" } as Record<string, string>)[hubspotTarget?.keyProperty ?? "email"] ?? "Email" : sheetTarget?.keyColumn ?? null} system={targetSystem} flow={flow} connectFrom={connectFrom} expression={platform === "make" ? recordExpr : null} onInfo={setWebhookInfo} />}
 
       {created && native && <section id="live-webhook" className="cx-flow cx-done">
         <div className="cx-done-head"><span className="cx-pill">● Protected</span><h2>{name}</h2><p>Outcom is watching this n8n workflow directly. Nothing else to set up.</p></div>

@@ -1,0 +1,487 @@
+{
+    "name": "Webhook to Airtable",
+    "flow": [
+        {
+            "id": 1,
+            "module": "gateway:CustomWebHook",
+            "version": 1,
+            "parameters": {
+                "hook": 3891746
+            },
+            "mapper": {},
+            "metadata": {
+                "designer": {
+                    "x": 0,
+                    "y": 0
+                },
+                "restore": {
+                    "parameters": {
+                        "hook": {
+                            "label": "My gateway-webhook webhook"
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "hook",
+                        "label": "Webhook",
+                        "type": "hook:gateway-webhook",
+                        "required": true
+                    },
+                    {
+                        "name": "maxResults",
+                        "label": "Maximum number of results",
+                        "type": "number",
+                        "required": false,
+                        "advanced": true
+                    }
+                ]
+            }
+        },
+        {
+            "id": 2,
+            "module": "airtable:ActionCreateRecord",
+            "version": 3,
+            "parameters": {
+                "__IMTCONN__": 11869130
+            },
+            "mapper": {
+                "base": "appAAZ6ip8r2KslnC",
+                "typecast": false,
+                "useColumnId": false,
+                "table": "tblRus8vhkHkAx33d",
+                "record": {
+                    "fld48wxqv78zqXvpr": {}
+                }
+            },
+            "metadata": {
+                "designer": {
+                    "x": 300,
+                    "y": 0,
+                    "name": "Create Airtable Record"
+                },
+                "setupValidation": {
+                    "version": 1,
+                    "configuration": "c407911d3a496386",
+                    "result": {
+                        "valid": true,
+                        "fields": []
+                    }
+                },
+                "restore": {
+                    "parameters": {
+                        "__IMTCONN__": {
+                            "label": "Outcom's Airtable OAuth connection",
+                            "data": {
+                                "scoped": "true",
+                                "connection": "airtable3"
+                            }
+                        }
+                    },
+                    "expect": {
+                        "base": {
+                            "label": "Untitled Base"
+                        },
+                        "typecast": {
+                            "mode": "chose"
+                        },
+                        "useColumnId": {
+                            "mode": "chose"
+                        },
+                        "table": {
+                            "nested": [
+                                {
+                                    "name": "record",
+                                    "spec": [
+                                        {
+                                            "name": "fldb000BF7Jca96ay",
+                                            "label": "Name",
+                                            "type": "text"
+                                        },
+                                        {
+                                            "name": "fldrwhaHLVUwjmINW",
+                                            "label": "Notes",
+                                            "type": "text",
+                                            "multiline": true
+                                        },
+                                        {
+                                            "name": "fld48wxqv78zqXvpr",
+                                            "label": "Assignee",
+                                            "type": "collection",
+                                            "spec": [
+                                                {
+                                                    "name": "id",
+                                                    "type": "text",
+                                                    "label": "ID",
+                                                    "help": "ID"
+                                                },
+                                                {
+                                                    "name": "email",
+                                                    "type": "email",
+                                                    "label": "Email",
+                                                    "help": "User's email address"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "fldbnifo5UWCo1oxW",
+                                            "label": "Status",
+                                            "type": "select",
+                                            "mode": "edit",
+                                            "dynamic": true,
+                                            "validate": false,
+                                            "options": [
+                                                {
+                                                    "label": "Todo",
+                                                    "value": "Todo"
+                                                },
+                                                {
+                                                    "label": "In progress",
+                                                    "value": "In progress"
+                                                },
+                                                {
+                                                    "label": "Done",
+                                                    "value": "Done"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "fldKkfSyCXoegFemO",
+                                            "label": "Attachments",
+                                            "type": "array",
+                                            "editable": true,
+                                            "spec": [
+                                                {
+                                                    "name": "url",
+                                                    "label": "File URL",
+                                                    "type": "text",
+                                                    "help": "Airtable will download the file at the given url and keep its own copy of it."
+                                                },
+                                                {
+                                                    "name": "filename",
+                                                    "label": "File name",
+                                                    "type": "filename",
+                                                    "help": "If empty, Airtable will generate the name automatically."
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "fldGgzAlTj5giSOuL",
+                                            "label": "Email",
+                                            "type": "text"
+                                        }
+                                    ],
+                                    "type": "collection",
+                                    "label": "Record"
+                                }
+                            ],
+                            "label": "Table 1"
+                        },
+                        "record": {
+                            "nested": {
+                                "fldbnifo5UWCo1oxW": {
+                                    "mode": "edit"
+                                },
+                                "fldKkfSyCXoegFemO": {
+                                    "mode": "chose"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "__IMTCONN__",
+                        "type": "account:airtable3,airtable2",
+                        "label": "Connection",
+                        "required": true
+                    }
+                ],
+                "expect": [
+                    {
+                        "name": "base",
+                        "type": "select",
+                        "label": "Base",
+                        "required": true
+                    },
+                    {
+                        "name": "typecast",
+                        "type": "boolean",
+                        "label": "Smart links",
+                        "required": true
+                    },
+                    {
+                        "name": "useColumnId",
+                        "type": "boolean",
+                        "label": "Use column ID",
+                        "required": true
+                    },
+                    {
+                        "name": "table",
+                        "type": "select",
+                        "label": "Table",
+                        "required": true
+                    },
+                    {
+                        "name": "record",
+                        "type": "collection",
+                        "label": "Record",
+                        "spec": [
+                            {
+                                "name": "fldb000BF7Jca96ay",
+                                "type": "text",
+                                "label": "Name"
+                            },
+                            {
+                                "name": "fldrwhaHLVUwjmINW",
+                                "type": "text",
+                                "label": "Notes"
+                            },
+                            {
+                                "name": "fld48wxqv78zqXvpr",
+                                "type": "collection",
+                                "label": "Assignee",
+                                "spec": [
+                                    {
+                                        "name": "id",
+                                        "type": "text",
+                                        "label": "ID"
+                                    },
+                                    {
+                                        "name": "email",
+                                        "type": "email",
+                                        "label": "Email"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "fldbnifo5UWCo1oxW",
+                                "type": "select",
+                                "label": "Status",
+                                "mode": "edit"
+                            },
+                            {
+                                "name": "fldKkfSyCXoegFemO",
+                                "type": "array",
+                                "label": "Attachments",
+                                "spec": [
+                                    {
+                                        "name": "url",
+                                        "label": "File URL",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "name": "filename",
+                                        "label": "File name",
+                                        "type": "filename"
+                                    }
+                                ]
+                            },
+                            {
+                                "name": "fldGgzAlTj5giSOuL",
+                                "type": "text",
+                                "label": "Email"
+                            }
+                        ]
+                    }
+                ],
+                "interface": [
+                    {
+                        "name": "id",
+                        "type": "text",
+                        "label": "ID"
+                    },
+                    {
+                        "name": "createdTime",
+                        "type": "date",
+                        "label": "Created time"
+                    },
+                    {
+                        "name": "Name",
+                        "label": "Name",
+                        "type": "text"
+                    },
+                    {
+                        "name": "Notes",
+                        "label": "Notes",
+                        "type": "text",
+                        "multiline": true
+                    },
+                    {
+                        "name": "Assignee",
+                        "label": "Assignee",
+                        "type": "collection",
+                        "spec": [
+                            {
+                                "name": "id",
+                                "type": "text",
+                                "label": "ID"
+                            },
+                            {
+                                "name": "email",
+                                "type": "email",
+                                "label": "Email"
+                            },
+                            {
+                                "name": "name",
+                                "type": "text",
+                                "label": "Name"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Status",
+                        "label": "Status",
+                        "type": "text"
+                    },
+                    {
+                        "name": "Attachments",
+                        "label": "Attachments",
+                        "type": "array",
+                        "spec": [
+                            {
+                                "name": "id",
+                                "type": "text",
+                                "label": "ID"
+                            },
+                            {
+                                "name": "width",
+                                "type": "uinteger",
+                                "label": "Width"
+                            },
+                            {
+                                "name": "height",
+                                "type": "uinteger",
+                                "label": "Height"
+                            },
+                            {
+                                "name": "url",
+                                "type": "url",
+                                "label": "URL"
+                            },
+                            {
+                                "name": "filename",
+                                "type": "filename",
+                                "label": "File name"
+                            },
+                            {
+                                "name": "size",
+                                "type": "uinteger",
+                                "label": "Size"
+                            },
+                            {
+                                "name": "type",
+                                "label": "MIME type",
+                                "type": "text"
+                            },
+                            {
+                                "name": "thumbnails",
+                                "label": "Thumbnails",
+                                "type": "collection",
+                                "spec": [
+                                    {
+                                        "name": "small",
+                                        "label": "Small",
+                                        "type": "collection",
+                                        "spec": [
+                                            {
+                                                "name": "url",
+                                                "type": "url",
+                                                "label": "URL"
+                                            },
+                                            {
+                                                "name": "width",
+                                                "type": "uinteger",
+                                                "label": "Width"
+                                            },
+                                            {
+                                                "name": "height",
+                                                "type": "uinteger",
+                                                "label": "Height"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "name": "large",
+                                        "label": "Large",
+                                        "type": "collection",
+                                        "spec": [
+                                            {
+                                                "name": "url",
+                                                "type": "url",
+                                                "label": "URL"
+                                            },
+                                            {
+                                                "name": "width",
+                                                "type": "uinteger",
+                                                "label": "Width"
+                                            },
+                                            {
+                                                "name": "height",
+                                                "type": "uinteger",
+                                                "label": "Height"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "name": "full",
+                                        "label": "Full",
+                                        "type": "collection",
+                                        "spec": [
+                                            {
+                                                "name": "url",
+                                                "type": "url",
+                                                "label": "URL"
+                                            },
+                                            {
+                                                "name": "width",
+                                                "type": "uinteger",
+                                                "label": "Width"
+                                            },
+                                            {
+                                                "name": "height",
+                                                "type": "uinteger",
+                                                "label": "Height"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "name": "Attachment Summary",
+                        "label": "Attachment Summary",
+                        "type": "text"
+                    },
+                    {
+                        "name": "Email",
+                        "label": "Email",
+                        "type": "text"
+                    }
+                ]
+            }
+        }
+    ],
+    "metadata": {
+        "instant": true,
+        "version": 1,
+        "scenario": {
+            "roundtrips": 1,
+            "maxErrors": 3,
+            "autoCommit": true,
+            "autoCommitTriggerLast": true,
+            "sequential": false,
+            "slots": null,
+            "confidential": false,
+            "dataloss": false,
+            "dlq": false,
+            "freshVariables": false
+        },
+        "designer": {
+            "orphans": []
+        },
+        "zone": "eu1.make.com",
+        "notes": []
+    }
+}

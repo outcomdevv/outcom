@@ -2,15 +2,19 @@
 // Pure and deterministic (no AI, no network). Idea: the LAST step that writes business data tells us what success looks like.
 // Honest about uncertainty: every suggestion has a confidence label and a list of what we could not read.
 
+import { suggestFromMakeBlueprint } from "@/lib/make-blueprint";
+
 export type Confidence = "high" | "medium" | "low";
 
 export type SuggestedContract = {
   type: "record_exists" | "output_count";
-  system: "google_sheets" | "ghl" | "event";
+  system: "google_sheets" | "ghl" | "event" | "airtable";
   entity: string;
   label: string;
   valueFrom: string;
   target?: { spreadsheetId: string; spreadsheetName?: string; sheetName: string; keyColumn: string };
+  /** Airtable places (from a Make blueprint). keyField is empty when the scenario fills no column from earlier data. */
+  airtable?: { baseId: string; tableId: string; tableName?: string; baseName?: string; keyField: string };
   operator?: string;
   expectedCount?: number;
 };
@@ -204,7 +208,11 @@ function suggestionFor(n: N8nNode): Suggestion | null {
 
 export function suggestChecks(input: unknown): SuggestedChecksResult {
   const wf = pickWorkflow(input);
-  if (!wf) return { ok: false, error: "This does not look like an n8n workflow export. In n8n, open the workflow, select all (Ctrl+A), copy (Ctrl+C) and paste here, or use ⋯ → Download." };
+  if (!wf) {
+    const make = suggestFromMakeBlueprint(input);
+    if (make) return make;
+    return { ok: false, error: "This does not look like an n8n workflow or a Make blueprint. In n8n press Ctrl+A then Ctrl+C on the canvas. In Make use ⋯ → Export Blueprint and choose that file." };
+  }
   if (wf.nodes.length > MAX_NODES) return { ok: false, error: `This workflow has more than ${MAX_NODES} steps; Outcom does not read workflows that large yet.` };
 
   const nodes = (wf.nodes as unknown[]).map(asNode).filter((n): n is N8nNode => Boolean(n));

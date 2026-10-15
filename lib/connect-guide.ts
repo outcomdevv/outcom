@@ -11,9 +11,9 @@ export type Guide = {
   /** Short clicks, in order. {url} and {field} are shown as copy boxes by the UI, not inline. */
   steps: string[];
   /** The value to give the field, in words the user can find on screen. */
-  valueHelp: (keyColumn: string | null) => string;
+  valueHelp: (keyColumn: string | null, expression?: string | null) => string;
   /** Only shown under "Show as JSON" for tools that need a raw body. */
-  json: (keyColumn: string | null) => string;
+  json: (keyColumn: string | null, expression?: string | null) => string;
 };
 
 export const guideFor = (platform: string): Guide => {
@@ -54,11 +54,11 @@ export const guideFor = (platform: string): Guide => {
           "URL: paste your address. Method: POST.",
           "Body type: Raw. Content type: JSON (application/json).",
           "In Request content, paste the JSON below.",
-          "Click between the quotes and pick the field from the list.",
+          "Only if the message is empty between the quotes: click there and pick the field from the list.",
           "Run the scenario once.",
         ],
-        valueHelp: k => `Between the quotes, pick “${k || "the id"}” from the list that opens.`,
-        json: () => `{"target_record_id": ""}`,
+        valueHelp: (k, e) => e ? `Already filled in: ${e} is the same value your scenario saved as “${k || "the id"}”. Paste the message below as it is.` : `Between the quotes, pick “${k || "the id"}” from the list that opens.`,
+        json: (_k, e) => `{"target_record_id": "${e ?? ""}"}`,
       };
     default:
       return {
