@@ -28,6 +28,16 @@ describe("POST /api/integrations/protect", () => {
     expect(inv).toMatchObject({ system: "google_sheets", configuration: { mode: "field_condition", field: "Status", expectedValue: "Qualified" } });
     expect(out).toMatchObject({ system: "event", type: "output_count" });
   });
+  it("creates a reported-evidence contract keyed by a clean step name", async () => {
+    const r = await call({ provider: "n8n", externalId: "w", name: "n", expectedOutcomes: [{ label: "The record exists (step “CRM”)", type: "record_exists", system: "reported", target: { step: "CRM " } }] });
+    expect((await r.json()).protected).toBe(true);
+    expect(created[0]).toMatchObject({ system: "reported", entity: "evidence", configuration: { target: { step: "crm" } } });
+  });
+  it("rejects a reported outcome with no step name", async () => {
+    const r = await call({ provider: "n8n", externalId: "w", name: "n", expectedOutcomes: [{ label: "x", type: "record_exists", system: "reported", target: { step: " " } }] });
+    expect(r.status).toBe(400);
+    expect(created).toHaveLength(0);
+  });
   it("rejects a Sheets outcome with no target", async () => {
     const r = await call({ provider: "zapier", externalId: "w", name: "n", expectedOutcomes: [{ label: "x", type: "record_exists", system: "google_sheets" }] });
     expect(r.status).toBe(400);

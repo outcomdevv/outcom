@@ -4,15 +4,17 @@ import { isInboundSource } from "@/lib/integrations/registry";
 import { parseSheetTarget } from "@/lib/google-sheets";
 import { parseAirtableTarget } from "@/lib/airtable";
 import { parseHubspotTarget } from "@/lib/hubspot";
+import { slugStep } from "@/lib/evidence";
 
 // Business systems an outcome can be verified against. "event" = no external system (checks the run payload only).
-const SYSTEMS = new Set(["ghl", "google_sheets", "airtable", "hubspot", "event"]);
-const ENTITY: Record<string, string> = { google_sheets: "row", airtable: "record", hubspot: "contact", ghl: "contact", event: "output" };
+const SYSTEMS = new Set(["ghl", "google_sheets", "airtable", "hubspot", "reported", "event"]);
+const ENTITY: Record<string, string> = { google_sheets: "row", airtable: "record", hubspot: "contact", ghl: "contact", reported: "evidence", event: "output" };
 
 /** Each system keeps its own target shape. HubSpot also learns which properties the value checks will read. */
 function parseTarget(system: string, raw: unknown, fields: string[]) {
   if (system === "google_sheets") return parseSheetTarget(raw);
   if (system === "airtable") return parseAirtableTarget(raw);
+  if (system === "reported") { const step = slugStep(raw && typeof raw === "object" ? (raw as any).step : ""); return step ? { step } : null; }
   if (system === "hubspot") return parseHubspotTarget({ ...(raw && typeof raw === "object" ? raw : {}), properties: fields });
   return null;
 }
@@ -41,8 +43,8 @@ export async function POST(request: Request) {
       valueFrom: typeof item.valueFrom === "string" && item.valueFrom.trim() ? item.valueFrom.trim() : item.type === "output_count" ? "event.data.output_count" : "event.data.target_record_id",
     }));
     if (!isInboundSource(provider)) return NextResponse.json({ protected: false, error: "Webhook protection is not available for this platform." }, { status: 400 });
-    const badTarget = normalizedOutcomes.find((o: any) => (o.system === "google_sheets" || o.system === "airtable") && !o.target);
-    if (badTarget) return NextResponse.json({ protected: false, error: badTarget.system === "airtable" ? "Choose an Airtable table and key column before protecting with Airtable." : "Choose a spreadsheet, tab and key column before protecting with Google Sheets." }, { status: 400 });
+    const badTarget = normalizedOutcomes.find((o: any) => (o.system === "google_sheets" || o.system === "airtable" || o.system === "reported") && !o.target);
+    if (badTarget) return NextResponse.json({ protected: false, error: badTarget.system === "reported" ? "Give the read-back step a short name, for example crm." : badTarget.system === "airtable" ? "Choose an Airtable table and key column before protecting with Airtable." : "Choose a spreadsheet, tab and key column before protecting with Google Sheets." }, { status: 400 });
     if (!externalId || !name) return NextResponse.json({ protected: false, error: "Workflow ID and name are required." }, { status: 400 });
 
     const store = await getWorkspaceStore();

@@ -1,6 +1,7 @@
 import { adapterFor } from "@/lib/adapters/registry";
 import { ciGet } from "@/lib/google-sheets";
 import { getWorkspaceStore } from "@/lib/db";
+import { ReportedAdapter, evidenceFor } from "@/lib/evidence";
 import type { CheckResult, OutcomeContract, WorkflowEvent } from "@/lib/contracts/types";
 
 const value = (event: WorkflowEvent, path: string) =>
@@ -47,10 +48,19 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
         : fail(c, "Workflow succeeded but produced too few outputs", `Expected output count ${op} ${n}`, `Observed output count: ${actual}`, "Expected downstream work was not produced.", event);
     }
 
-    const lookup = String(value(event, cfg.lookup?.valueFrom ?? "event.data.contact_id") ?? "");
-    const adapter = await adapterFor(c.system, workspaceId ?? event.metadata.workspace_id as string | undefined, cfg.target);
+    // "reported": the automation read the destination itself and sent what it saw. Outcom judges that evidence.
+    const reported = c.system === "reported";
+    const step = reported ? String(cfg.target?.step ?? "") : "";
+    const evidence = reported ? evidenceFor(event.data, step) : null;
+    if (reported && !evidence) throw new Error(`No evidence has been reported for step "${step}" yet.`);
+    const lookup = reported
+      ? String(evidence?.key ?? value(event, cfg.lookup?.valueFrom ?? "event.data.target_record_id") ?? "")
+      : String(value(event, cfg.lookup?.valueFrom ?? "event.data.contact_id") ?? "");
+    const adapter = reported && evidence ? new ReportedAdapter(evidence) : await adapterFor(c.system, workspaceId ?? event.metadata.workspace_id as string | undefined, cfg.target);
     const record = await adapter.getRecord(lookup);
-    const source = `Downstream: ${c.system} · record ${lookup}`;
+    const source = reported
+      ? `Evidence reported by the workflow · step "${step}"${lookup ? ` · record ${lookup}` : ""} · not independently verified`
+      : `Downstream: ${c.system} · record ${lookup}`;
 
     if (c.type === "record_exists") {
       return record
@@ -99,7 +109,9 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
       evidence: [`Execution ${event.executionId} · status SUCCESS`, `Verification failed: ${error instanceof Error ? error.message : "Unknown adapter error"}`],
       summary: "Outcom cannot determine the business outcome.",
       impact: "Business outcome is unknown until verification succeeds.",
-      recommendedAction: "Check the downstream connection, permissions, API health and retry verification.",
+      recommendedAction: c.system === "reported"
+        ? "Make sure the read-back step ran and sent its evidence to Outcom. Turn on “Always Output Data” on the search step so an empty result still reports."
+        : "Check the downstream connection, permissions, API health and retry verification.",
     };
   }
 }

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getWorkspaceStore } from "@/lib/db";
 import { getInboundWebhookByToken, touchInboundWebhook } from "@/lib/webhooks";
 import { evaluateEvent } from "@/lib/outcome-checker";
+import { normalizeEvidence } from "@/lib/evidence";
 
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -64,13 +65,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
     const store = await getWorkspaceStore(endpoint.workspace_id);
     const workflow = await store.workflows.get(endpoint.workflow_id);
     if (!workflow) return NextResponse.json({ error: "Protected workflow no longer exists." }, { status: 410 });
+    const evidence = normalizeEvidence(body, data);
+    const hasEvidence = Object.keys(evidence).length > 0;
     const duplicate = await store.events.getByExecution(workflow.id, executionId);
     if (duplicate) {
       await touchInboundWebhook(endpoint.id, endpoint.workspace_id);
+      // Same run, more evidence: a later step reports into the run that is already open, then the run is judged again.
+      if (hasEvidence) {
+        const prior = duplicate.data?.evidence && typeof duplicate.data.evidence === "object" ? duplicate.data.evidence as Record<string, unknown> : {};
+        const merged = await store.events.mergeData(duplicate.id, { evidence: { ...prior, ...evidence }, ...(targetRecordId && !duplicate.data?.target_record_id ? { target_record_id: targetRecordId, contact_id: targetRecordId } : {}) });
+        const results = merged ? await evaluateEvent(merged, endpoint.workspace_id) : [];
+        return NextResponse.json({ ok: true, duplicate: true, merged: true, eventId: duplicate.id, executionId, results });
+      }
       return NextResponse.json({ ok: true, duplicate: true, eventId: duplicate.id, executionId });
     }
 
-    const inferredOutputCount = Number(body.output_count ?? body.outputCount ?? data.output_count ?? data.outputCount ?? (targetRecordId ? 1 : 0));
+    const anyFound = Object.values(evidence).some((e) => e.found);
+    const inferredOutputCount = Number(body.output_count ?? body.outputCount ?? data.output_count ?? data.outputCount ?? (targetRecordId || anyFound ? 1 : 0));
 
     const event = await store.events.create({
       workflowId: workflow.id,
@@ -83,6 +94,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
         ...data,
         workspace_id: endpoint.workspace_id,
         output_count: Number.isFinite(inferredOutputCount) ? inferredOutputCount : 0,
+        evidence,
         ...(targetRecordId ? { target_record_id: targetRecordId, contact_id: targetRecordId } : {}),
       },
       metadata: {

@@ -20,3 +20,6 @@ export function RecordIcon({ size = 28 }: P) {
 export function TableIcon({ size = 28 }: P) {
   return <svg {...box(size)}><rect x="3" y="3" width="18" height="18" rx="4" fill="#2d7ff9" /><path d="M7 8.5h10M7 12h10M7 15.5h6" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" /></svg>;
 }
+export function AnyAppIcon({ size = 28 }: P) {
+  return <svg {...box(size)}><rect x="3" y="3" width="18" height="18" rx="4" fill="#0e8f8a" /><circle cx="8" cy="12" r="2" fill="#fff" /><circle cx="16" cy="8" r="1.7" fill="#fff" /><circle cx="16" cy="16" r="1.7" fill="#fff" /><path d="M9.8 11.2l4.5-2.4M9.8 12.8l4.5 2.4" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" /></svg>;
+}

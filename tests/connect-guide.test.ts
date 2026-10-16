@@ -40,3 +40,18 @@ describe("n8n paste node without a prefilled value", () => {
     expect(n.parameters.jsonBody).not.toContain("$json");
   });
 });
+
+import { evidenceJson, n8nEvidenceNode } from "@/lib/connect-guide";
+describe("evidence guide", () => {
+  it("builds a pasteable n8n node that reports the step and uses the run id", () => {
+    const parsed = JSON.parse(n8nEvidenceNode("https://x/api/inbound/abc", 'My "CRM"'));
+    const node = parsed.nodes[0];
+    expect(node.type).toBe("n8n-nodes-base.httpRequest");
+    expect(node.parameters.url).toBe("https://x/api/inbound/abc");
+    expect(node.parameters.jsonBody).toContain("$execution.id");
+    expect(node.parameters.jsonBody).toContain("My 'CRM'");
+  });
+  it("gives a plain JSON body for other tools", () => {
+    expect(JSON.parse(evidenceJson("crm")).evidence[0].step).toBe("crm");
+  });
+});

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import LoadingScreen from "@/app/loading-screen";
 import { IntegrationLogo } from "@/app/integrations";
-import { BlockIcon, SheetIcon } from "@/app/connect/icons";
+import { AnyAppIcon, BlockIcon, SheetIcon } from "@/app/connect/icons";
 import { AirtableLogo } from "@/app/connect/brand-logo";
 import { AirtablePanel, HubspotPanel, type AirtableTargetState, type HubspotTargetState } from "@/app/connect/token-panels";
 import type { TargetKind } from "@/lib/connect-checks";
@@ -37,6 +37,9 @@ type Props = {
   onConnectGoogle: () => void;
   /** Rendered under HighLevel when it is chosen (token form). */
   ghlPanel?: React.ReactNode;
+  /** "Any other app": the short name of the read-back step that reports what it saw. */
+  reportedStep?: string;
+  onReportedStep?: (v: string) => void;
 };
 
 async function api(url: string) {
@@ -45,7 +48,7 @@ async function api(url: string) {
   return { ok: r.ok, status: r.status, j };
 }
 
-export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, airtableConnected, hubspotConnected, airtableOAuth, hubspotOAuth, airtable, onAirtable, hubspot, onHubspot, onTokenSaved, sheet, onSheet, onHeaders, onConnectGoogle, ghlPanel }: Props) {
+export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, airtableConnected, hubspotConnected, airtableOAuth, hubspotOAuth, airtable, onAirtable, hubspot, onHubspot, onTokenSaved, sheet, onSheet, onHeaders, onConnectGoogle, ghlPanel, reportedStep = "", onReportedStep }: Props) {
   const [useOwnGoogle, setUseOwnGoogle] = useState(false);
   const robot = !googleConnected && Boolean(robotEmail) && !useOwnGoogle;
   const acc = robot ? "&access=service_account" : "";
@@ -127,6 +130,9 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
         <button type="button" className={`cx-option ${value === "ghl" ? "on" : ""}`} onClick={() => onChange("ghl")}>
           <IntegrationLogo name="ghl" size={34} /><span><b>HighLevel</b><small>Needs a token</small></span><i>{value === "ghl" ? "✓" : ""}</i>
         </button>
+        <button type="button" className={`cx-option ${value === "reported" ? "on" : ""}`} onClick={() => onChange("reported")}>
+          <AnyAppIcon size={34} /><span><b>Any other app</b><small>Your automation reports what it saw</small></span><i>{value === "reported" ? "✓" : ""}</i>
+        </button>
         <button type="button" className={`cx-option ${value === "none" ? "on" : ""}`} onClick={() => onChange("none")}>
           <BlockIcon size={34} /><span><b>Nowhere yet</b><small>Only check the run</small></span><i>{value === "none" ? "✓" : ""}</i>
         </button>
@@ -136,6 +142,13 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
 
       {value === "airtable" && <AirtablePanel oauthReady={airtableOAuth} connected={airtableConnected} onConnected={onTokenSaved} value={airtable} onChange={onAirtable} onHeaders={h => onHeaders?.(h)} />}
       {value === "hubspot" && <HubspotPanel oauthReady={hubspotOAuth} connected={hubspotConnected} onConnected={onTokenSaved} value={hubspot} onChange={onHubspot} onHeaders={h => onHeaders?.(h)} />}
+
+      {value === "reported" && <div className="cx-sheet">
+        <p className="cx-note">Works with any app your automation can read, for example Salesforce, Notion, Pipedrive or Stripe. After the step that writes, your automation adds a step that looks the record up and sends the result to Outcom. Outcom judges it and shows PASS, FAIL or UNKNOWN. The label says the evidence was reported by your workflow, not read by Outcom.</p>
+        <label className="cx-label">Short name for that read-back step
+          <input value={reportedStep} onChange={e => onReportedStep?.(e.target.value)} placeholder="for example crm" autoComplete="off" name="outcom-reported-step" maxLength={60} />
+        </label>
+      </div>}
 
       {value === "ghl" && (ghlConnected ? <p className="cx-ok">✓ HighLevel connected</p> : ghlPanel)}
 

@@ -100,3 +100,35 @@ export function n8nPasteNode(url: string, keyColumn: string | null, fill = true)
     connections: {},
   });
 }
+
+/** What the read-back step sends. `found` must be true when the search step returned a record. */
+export function evidenceJson(step: string): string {
+  return JSON.stringify({ run_id: "<id of this run>", evidence: [{ step: step || "crm", found: true, key: "<the email or id you searched for>", fields: { Email: "<optional values to check>" } }] }, null, 2);
+}
+
+/**
+ * A ready-made n8n node for the read-back step. Put it right after the step that searches the destination
+ * (Airtable "Search", HubSpot "Get contact", Salesforce "Get record", and so on). Turn on "Always Output Data" on that
+ * search step, otherwise an empty result sends nothing and Outcom can only say UNKNOWN instead of FAIL.
+ * `run_id` is the n8n execution id, so every step of one run reports into the same run.
+ */
+export function n8nEvidenceNode(url: string, step: string): string {
+  const name = (step || "crm").replace(/\\/g, "\\\\").replace(/"/g, "'");
+  return JSON.stringify({
+    nodes: [{
+      parameters: {
+        method: "POST",
+        url,
+        sendBody: true,
+        specifyBody: "json",
+        jsonBody: `={\n  "run_id": "{{ $execution.id }}",\n  "evidence": [{\n    "step": "${name}",\n    "found": {{ $input.all().filter(i => Object.keys(i.json || {}).length > 0).length > 0 }},\n    "fields": {{ JSON.stringify($input.first()?.json ?? {}) }}\n  }]\n}`,
+        options: {},
+      },
+      type: "n8n-nodes-base.httpRequest",
+      typeVersion: 4.2,
+      position: [0, 0],
+      name: "Tell Outcom what was found",
+    }],
+    connections: {},
+  });
+}
