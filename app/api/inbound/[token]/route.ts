@@ -80,8 +80,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
       return NextResponse.json({ ok: true, duplicate: true, eventId: duplicate.id, executionId });
     }
 
-    const anyFound = Object.values(evidence).some((e) => e.found);
-    const inferredOutputCount = Number(body.output_count ?? body.outputCount ?? data.output_count ?? data.outputCount ?? (targetRecordId || anyFound ? 1 : 0));
+    const inferredOutputCount = Number(body.output_count ?? body.outputCount ?? data.output_count ?? data.outputCount ?? (targetRecordId || hasEvidence ? 1 : 0));
 
     const event = await store.events.create({
       workflowId: workflow.id,

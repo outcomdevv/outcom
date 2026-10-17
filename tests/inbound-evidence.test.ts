@@ -27,6 +27,10 @@ describe("inbound webhook with evidence", () => {
     expect(e.data.evidence.crm.found).toBe(true);
     expect(e.data.output_count).toBe(1);
   });
+  it("a run that reports a missing record still counts as a run with output, so only the real check fails", async () => {
+    await post({ run_id: "r0", evidence: [{ step: "crm", found: false }] });
+    expect([...events.values()][0].data.output_count).toBe(1);
+  });
   it("merges a later step into the same run and judges it again", async () => {
     await post({ run_id: "r2", target_record_id: "a@b.com", evidence: [{ step: "crm", found: true }] });
     evaluateEvent.mockClear();
