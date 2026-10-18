@@ -34,7 +34,7 @@ export default function ResendConfirmation() {
 
   return (
     <section className="auth-resend" aria-label="Send confirmation email again">
-      <div className="auth-divider"><span>Didn't receive the email?</span></div>
+      <div className="auth-divider"><span>Didn&apos;t receive the email?</span></div>
       <form onSubmit={submit}>
         <label>Email to resend confirmation
           <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required autoComplete="email" placeholder="you@example.com" />

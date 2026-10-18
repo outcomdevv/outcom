@@ -1,1 +1,66 @@
-import {getWorkspaceStore} from "@/lib/db";import OperatorSettings from "./operator-settings";export const dynamic="force-dynamic";export default async function Settings(){const store=await getWorkspaceStore();const settings=await store.settings.get();return <div className="settings-page"><div className="page-header-row"><div><span className="section-kicker">WORKSPACE CONFIGURATION</span><h1 className="page-title">Settings</h1><p className="page-intro">Control how Outcom connects to your stack and how Operator reasons over your workspace.</p></div></div><section className="settings-grid"><div className="settings-main"><section className="settings-card"><div className="settings-card-head"><div><span className="section-kicker">01 / OPERATOR</span><h2>Bring your own Groq key</h2><p>Your key is encrypted server-side and scoped to this workspace. It is never sent to the browser or shown again.</p></div><span className={settings.groqApiKeyEncrypted?"setting-status on":"setting-status"}>{settings.groqApiKeyEncrypted?"CONFIGURED":"NOT CONFIGURED"}</span></div><OperatorSettings configured={Boolean(settings.groqApiKeyEncrypted)} model={settings.groqModel}/></section><section className="settings-card"><div className="settings-card-head"><div><span className="section-kicker">02 / DATA</span><h2>Persistent workspace storage</h2><p>Workflows, connections, findings, contracts and state snapshots live in your Supabase PostgreSQL workspace—not on the machine running the UI.</p></div><span className="setting-status on">PERSISTENT</span></div><div className="architecture-mini"><div><b>AUTH</b><span>Supabase Auth</span></div><div><b>DATA</b><span>PostgreSQL + RLS</span></div><div><b>SECRETS</b><span>AES-256-GCM</span></div><div><b>OBSERVER</b><span>Server-side / scheduled</span></div></div></section></div><aside className="settings-aside"><div className="price-card"><span>DESIGN PARTNER TIER</span><strong>$500–$1,000<span>/mo</span></strong><p>Outcom is being designed as an agency-grade assurance layer, not another workflow dashboard.</p><ul><li>Fleet-level visibility</li><li>Business-state verification</li><li>Evidence-backed findings</li><li>Read-only integrations</li></ul></div><div className="security-card"><span>SECURITY MODEL</span><h3>Read-only by default.</h3><p>Provider credentials are encrypted before persistence. Outcom's observer reads workflow and business state; it does not edit customer automations.</p></div></aside></section></div>}
+import { getWorkspaceStore } from "@/lib/db";
+import { getUser, ensureWorkspace } from "@/lib/auth";
+import OperatorSettings from "./operator-settings";
+
+export const dynamic = "force-dynamic";
+
+export default async function Settings() {
+  const store = await getWorkspaceStore();
+  const settings = await store.settings.get();
+  const user = await getUser();
+  const workspace = await ensureWorkspace().catch(() => null);
+  const configured = Boolean(settings.groqApiKeyEncrypted);
+
+  return (
+    <div className="settings-page">
+      <div className="page-header-row">
+        <div>
+          <span className="section-kicker">SETTINGS</span>
+          <h1 className="page-title">Settings</h1>
+          <p className="page-intro">Your workspace, the optional Operator assistant, and how your data is protected.</p>
+        </div>
+      </div>
+
+      <section className="settings-grid" style={{ gridTemplateColumns: "minmax(0, 860px)" }}>
+        <div className="settings-main">
+          <section className="settings-card">
+            <div className="settings-card-head">
+              <div>
+                <span className="section-kicker">WORKSPACE</span>
+                <h2>{workspace?.workspace?.name || "Outcom Workspace"}</h2>
+                <p>Signed in as {user?.email ?? "unknown"}. Everything you protect in Outcom lives in this workspace.</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="settings-card">
+            <div className="settings-card-head">
+              <div>
+                <span className="section-kicker">OPERATOR (OPTIONAL)</span>
+                <h2>Operator assistant</h2>
+                <p>Operator is the “Ask Operator” button. It answers questions about your findings and needs your own Groq key. Without a key only Operator is switched off. Protecting workflows and checking outcomes keep working.</p>
+              </div>
+              <span className={configured ? "setting-status on" : "setting-status"}>{configured ? "CONFIGURED" : "NOT CONFIGURED"}</span>
+            </div>
+            <OperatorSettings configured={configured} model={settings.groqModel} />
+          </section>
+
+          <section className="settings-card">
+            <div className="settings-card-head">
+              <div>
+                <span className="section-kicker">DATA AND SECURITY</span>
+                <h2>How your data is protected</h2>
+              </div>
+            </div>
+            <ul className="settings-facts" style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 8 }}>
+              <li>Outcom only reads. It never edits your automations or your business data.</li>
+              <li>Connection tokens and keys are encrypted (AES-256-GCM) before they are stored, and are never shown again.</li>
+              <li>Your workflows, checks and findings are stored in a database that separates each workspace.</li>
+              <li>Webhook addresses are secret keys. You can replace one on a workflow’s page.</li>
+            </ul>
+          </section>
+        </div>
+      </section>
+    </div>
+  );
+}

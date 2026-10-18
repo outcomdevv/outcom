@@ -12,6 +12,7 @@ export default function LoginForm({ error, notice }: { error?: string; notice?: 
     <form action="/api/auth/login" method="post" onSubmit={() => setLoading(true)}>
       <label>Email<input name="email" type="email" required autoComplete="email"/></label>
       <PasswordInput label="Password" name="password" required autoComplete="current-password" />
+      <div style={{ textAlign: "right", margin: "-4px 0 10px" }}><Link className="auth-link" href="/auth/forgot" style={{ fontSize: 13 }}>Forgot password?</Link></div>
       {error&&<div className="auth-error">{error}</div>}
       {notice&&<div className="auth-notice">{notice}</div>}
       <button className="auth-submit" disabled={loading}>{loading ? <LoadingScreen inline message="Signing you in" /> : <>Sign in <span>↗</span></>}</button>

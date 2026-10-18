@@ -107,11 +107,11 @@ export async function protectMakeScenario(externalScenarioId: string, workspaceI
   const local = await store.workflows.get(localId) || await store.workflows.create({ id: localId, name: detail?.scenario?.name || `Make scenario ${externalScenarioId}`, platform: "make", description: "Auto-protected by Outcom · native Make observer" });
   const contracts = await store.contracts.list(local.id);
   const created: any[] = [];
-  for (const module of writes) {
-    const entity = likelyEntity(module);
+  for (const writeModule of writes) {
+    const entity = likelyEntity(writeModule);
     if (entity !== "contact") continue;
-    const existing = contracts.find((c) => c.type === "record_exists" && c.configuration?.sourceModule === module?.id && c.configuration?.auto === true);
-    if (!existing) created.push(await store.contracts.create({ workflowId: local.id, name: `Make write: downstream contact exists`, type: "record_exists", system: "ghl", entity: "contact", configuration: { auto: true, sourceModule: module?.id || null, sourceModuleName: module?.label || module?.name || moduleName(module), lookup: { field: "id", valueFrom: "event.data.target_record_id" } }, severity: "high", enabled: true }));
+    const existing = contracts.find((c) => c.type === "record_exists" && c.configuration?.sourceModule === writeModule?.id && c.configuration?.auto === true);
+    if (!existing) created.push(await store.contracts.create({ workflowId: local.id, name: `Make write: downstream contact exists`, type: "record_exists", system: "ghl", entity: "contact", configuration: { auto: true, sourceModule: writeModule?.id || null, sourceModuleName: writeModule?.label || writeModule?.name || moduleName(writeModule), lookup: { field: "id", valueFrom: "event.data.target_record_id" } }, severity: "high", enabled: true }));
   }
 
   await store.monitors.upsert({ workflowId: local.id, provider: "make", externalId: String(externalScenarioId), mode: "native_observer", metadata: { teamId: ctx.teamId, baseUrl: ctx.base, authMode: "native_api", moduleCount: modules.length, inferredWrites: writes.map((m) => ({ id: m.id, name: m.label || m.name || moduleName(m) })) } });

@@ -1,0 +1,38 @@
+// What Operator knows about Outcom itself. Kept short and factual: it is sent with every question,
+// and Operator is told to rely on it, so anything wrong here becomes a wrong answer.
+export const OPERATOR_GUIDE = `
+ABOUT OUTCOM
+Outcom checks whether an automation really produced the business result, not just whether it ran. Many automations show "success" while the record they should have created is missing (a silent failure). Outcom is read-only: it never changes the customer's automations or business data.
+
+VERDICTS
+- PASS: the expected result was found.
+- FAIL: the automation succeeded but the expected result is missing or wrong. This opens a finding.
+- UNKNOWN: Outcom could not decide (no evidence arrived, or a connection failed).
+
+HOW A WORKFLOW GETS PROTECTED
+1. "Connect stack" (top right) opens a short wizard: pick the platform (n8n, Zapier, Make or other), pick the checks, pick where Outcom looks.
+2. The last step of the automation sends a small message (POST) to a secret webhook address Outcom gives. Each message is one run.
+3. Outcom then checks each expectation (an "outcome contract") and records PASS, FAIL or UNKNOWN with evidence.
+
+WHERE OUTCOM LOOKS
+- Google Sheets, Airtable, HubSpot (contacts only) and HighLevel: Outcom reads the system itself (independent verification).
+- Any other app: "Any other app". The automation adds a read-back step that looks the record up and reports what it found. Outcom judges that report. The evidence is labelled "reported by the workflow, not independently verified". Several steps can report into the same run (same run_id).
+- Make can also be read from an exported blueprint; n8n workflows can be read from an exported workflow. Zapier needs the paid Webhooks by Zapier step.
+
+CHECK TYPES
+- Record exists: the record the run handled can be found.
+- Value check: a named column or property has an expected value.
+- Run produced output: the run reported at least one output.
+
+PAGES
+- Overview: counts of protected workflows, healthy ones and open findings, plus the latest findings.
+- Workflows: every protected workflow. Opening one shows its checks, recent runs (Verified or Finding), and its webhook address, which can be replaced there.
+- Findings: Open, Resolved and All. Opening one shows expected vs observed, the evidence and the recommended action. "Mark as resolved" closes it. If the same check fails again, a new finding opens.
+- Reports: Reliability (how often results were correct, trend, weakest workflows) and Evidence (the proof chain behind each finding).
+- Settings: workspace name, the optional Groq key for Operator, and a security summary.
+
+LIMITS TO STATE HONESTLY
+- Outcom does not repair anything or re-run automations.
+- HubSpot checks cover contacts only. Each workflow has checks against the places chosen for it.
+- A webhook address is a secret: whoever has it can send events to that workflow, but cannot read data.
+`.trim();

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-export const LEGAL_CONTACT = "widjajaanthony24@gmail.com";
-export const LEGAL_UPDATED = "October 12, 2026";
+export const LEGAL_CONTACT = "outcom.devv@gmail.com";
+export const LEGAL_UPDATED = "October 18, 2026";
 
 /** Plain, public page shell for /privacy and /terms (readable without an account). */
 export default function LegalPage({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {

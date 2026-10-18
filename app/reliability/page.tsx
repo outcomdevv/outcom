@@ -1,3 +1,4 @@
+import ReportsTabs from "@/app/reports-tabs";
 import Link from "next/link";
 import { getWorkspaceStore } from "@/lib/db";
 import { IntegrationLogo } from "@/app/integrations";
@@ -88,6 +89,7 @@ export default async function ReliabilityPage() {
   });
 
   return <div className={styles.page}>
+    <ReportsTabs />
     <header className={styles.hero}>
       <div>
         <span className={styles.kicker}><i /> OUTCOME RELIABILITY</span>

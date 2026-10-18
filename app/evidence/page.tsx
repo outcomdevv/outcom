@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getWorkspaceStore } from "@/lib/db";
 import styles from "./evidence.module.css";
+import LocalTime from "@/app/local-time";
+import ReportsTabs from "@/app/reports-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -9,8 +11,7 @@ function shortId(value: string) {
 }
 
 function formatDate(value?: string | null) {
-  if (!value) return "Unknown time";
-  return new Date(value).toLocaleString();
+  return <LocalTime iso={value} fallback="Unknown time" />;
 }
 
 export default async function EvidenceGraph() {
@@ -37,6 +38,7 @@ export default async function EvidenceGraph() {
   const open = incidents.filter((item) => item.status === "open").length;
 
   return <div className={styles.page}>
+    <ReportsTabs />
     <div className={styles.hero}>
       <div>
         <span className={styles.kicker}>EVIDENCE GRAPH</span>
@@ -90,7 +92,7 @@ function EvidenceChain({ chain }: { chain: { incident: any; workflow: any; contr
   return <section className={styles.graphCard}>
     <div className={styles.graphMeta}>
       <div><span>WORKFLOW</span><strong>{workflow?.name || "Unknown workflow"}</strong><small>{workflow?.platform || event?.platform || "Unknown platform"}</small></div>
-      <div><span>DETECTED</span><strong>{formatDate(incident.detectedAt)}</strong><small>{verified ? `Resolved ${formatDate(incident.resolvedAt)}` : "Finding remains open"}</small></div>
+      <div><span>DETECTED</span><strong>{formatDate(incident.detectedAt)}</strong><small>{verified ? <>Resolved {formatDate(incident.resolvedAt)}</> : "Finding remains open"}</small></div>
       <div><span>FINDING</span><strong>{incident.title}</strong><small>{incident.type.replaceAll("_", " ")}</small></div>
     </div>
 

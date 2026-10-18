@@ -65,7 +65,7 @@ export default function ConfirmedPage() {
         <span className={`auth-confirm-badge ${status}`}>
           {status === "checking" ? "VERIFYING" : status === "success" ? "EMAIL CONFIRMED" : "CONFIRMATION ISSUE"}
         </span>
-        <h1>{status === "success" ? <>You're in.<br /><em>Let's prove outcomes.</em></> : status === "error" ? <>Almost there.<br /><em>Let's fix this.</em></> : <>Checking your email…</>}</h1>
+        <h1>{status === "success" ? <>You&apos;re in.<br /><em>Let&apos;s prove outcomes.</em></> : status === "error" ? <>Almost there.<br /><em>Let&apos;s fix this.</em></> : <>Checking your email…</>}</h1>
         <p>{message}</p>
         {status === "success" ? (
           <button className="auth-submit auth-confirm-button" onClick={() => router.replace("/")}>Enter Outcom <span>↗</span></button>

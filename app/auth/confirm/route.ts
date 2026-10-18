@@ -9,7 +9,9 @@ export async function GET(request: NextRequest) {
   const url = request.nextUrl.clone();
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type") as EmailOtpType | null;
-  const next = url.searchParams.get("next") || "/";
+  const rawNext = url.searchParams.get("next") || "/";
+  // Only a path on this site. "//evil.com" or "https://evil.com" would turn this endpoint into an open redirect.
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/";
 
   if (tokenHash && type) {
     const supabase = await createSupabaseServerClient();

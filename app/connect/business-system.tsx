@@ -82,7 +82,7 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
     if (!(res.j.files || []).length) setError("No spreadsheets found. Paste a link instead.");
   }
 
-  async function useLink() {
+  async function openLink() {
     setBusy("Opening spreadsheet"); setError(null); setReauth(false);
     const res = await api(`/api/google/sheets?link=${encodeURIComponent(link)}${acc}`);
     setBusy(null);
@@ -172,8 +172,8 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
             <button type="button" className="simple-secondary" onClick={() => browse()} disabled={Boolean(busy)}>Browse</button>
           </div>}
           <div className="cx-row">
-            <input value={link} onChange={e => setLink(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && link.trim()) void useLink(); }} placeholder="Paste the Google Sheets link" autoComplete="off" name="outcom-sheet-link" />
-            <button type="button" className="simple-primary" onClick={useLink} disabled={Boolean(busy) || !link.trim()}>Open</button>
+            <input value={link} onChange={e => setLink(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && link.trim()) void openLink(); }} placeholder="Paste the Google Sheets link" autoComplete="off" name="outcom-sheet-link" />
+            <button type="button" className="simple-primary" onClick={openLink} disabled={Boolean(busy) || !link.trim()}>Open</button>
           </div>
           {files.length > 0 && !file && <div className="cx-files">{files.map(f => <button type="button" key={f.id} onClick={() => pickFile(f)}><SheetIcon size={22} /><span>{f.name}</span></button>)}</div>}
           {file && <div className="cx-pick-grid">
