@@ -30,11 +30,14 @@ function cleanValue(v: unknown): unknown {
   return undefined;
 }
 
+/** Never store values whose field name says they are secrets, even if a workflow sends them by accident. */
+const SENSITIVE_KEY = /pass(word|wd)?|secret|token|api[_-]?key|authorization|credit|card[_-]?(number|no)|cvv|ssn|iban/i;
+
 function cleanFields(v: unknown): Record<string, unknown> {
   if (!isObject(v)) return {};
   const out: Record<string, unknown> = {};
   for (const [k, val] of Object.entries(v).slice(0, MAX_FIELDS)) {
-    const c = cleanValue(val);
+    const c = SENSITIVE_KEY.test(k) ? "[redacted]" : cleanValue(val);
     if (c !== undefined) out[k] = c;
   }
   return out;

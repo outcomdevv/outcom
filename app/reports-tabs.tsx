@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-/** Reliability and Evidence are two views of the same proof, so they share one menu item. */
+/** Reliability, Evidence and the shareable Proof report are views of the same proof, so they share one menu item. */
 export default function ReportsTabs() {
   const pathname = usePathname();
   const tabs = [
     { href: "/reliability", label: "Reliability", hint: "Did the results happen?" },
     { href: "/evidence", label: "Evidence", hint: "The proof behind each finding" },
+    { href: "/proof", label: "Proof report", hint: "A report to share with a client" },
   ];
   return (
     <div className="reports-tabs" role="tablist" aria-label="Reports">

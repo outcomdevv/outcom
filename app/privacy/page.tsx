@@ -14,6 +14,8 @@ export default function Privacy() {
       </ul>
       <H>How Outcom uses your connected tools</H>
       <p>Outcom asks for <b>read-only</b> access. For Airtable that is <code>data.records:read</code> and <code>schema.bases:read</code>. For HubSpot that is <code>crm.objects.contacts.read</code>. Outcom looks up only the specific record an automation reported, to confirm that it exists or has the expected value. Outcom never creates, edits or deletes anything in your tools.</p>
+      <H>Shared reports</H>
+      <p>If you create a Proof report link, anyone who has the link can view a summary of counts, workflow names and finding titles for the period you chose. It never includes record values or evidence details. You can revoke the link at any time and it stops working immediately.</p>
       <H>How tokens are protected</H>
       <p>Access and refresh tokens are encrypted at rest and are never sent back to your browser. You can disconnect a tool at any time, and you can also revoke Outcom directly inside Airtable, HubSpot or Google.</p>
       <H>What Outcom does not do</H>

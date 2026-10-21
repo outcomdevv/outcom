@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     if (!response.ok) throw new Error("AI provider request failed");
     const data = await response.json();
     let parsed: AssistantResult = JSON.parse(data.choices?.[0]?.message?.content || "{}");
-    const allowed = new Set(["/", "/workflows", "/incidents", "/reliability", "/evidence", "/connect", "/settings"]);
+    const allowed = new Set(["/", "/workflows", "/incidents", "/reliability", "/evidence", "/proof", "/connect", "/settings"]);
     if (parsed.action === "navigate" && (!parsed.path || !allowed.has(parsed.path))) parsed = { ...parsed, action: "none", path: null };
     if (parsed.action === "connect") parsed = { ...parsed, path: "/connect" };
     if (parsed.action === "refresh") parsed = { ...parsed, path: null };

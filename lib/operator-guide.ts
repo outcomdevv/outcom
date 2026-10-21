@@ -17,6 +17,8 @@ HOW A WORKFLOW GETS PROTECTED
 WHERE OUTCOM LOOKS
 - Google Sheets, Airtable, HubSpot (contacts only) and HighLevel: Outcom reads the system itself (independent verification).
 - Any other app: "Any other app". The automation adds a read-back step that looks the record up and reports what it found. Outcom judges that report. The evidence is labelled "reported by the workflow, not independently verified". Several steps can report into the same run (same run_id).
+- AI agents: each workflow also has an MCP address (shown under "Using an AI agent instead?" in the Any other app guide). The agent calls the tool verify_outcome after a task, reporting what it read back, and gets PASS, FAIL or UNKNOWN. It is still reported evidence, not independent.
+- Fields whose name looks secret (password, token, api key, card number...) are stored as "[redacted]".
 - Make can also be read from an exported blueprint; n8n workflows can be read from an exported workflow. Zapier needs the paid Webhooks by Zapier step.
 
 CHECK TYPES
@@ -28,7 +30,8 @@ PAGES
 - Overview: counts of protected workflows, healthy ones and open findings, plus the latest findings.
 - Workflows: every protected workflow. Opening one shows its checks, recent runs (Verified or Finding), and its webhook address, which can be replaced there.
 - Findings: Open, Resolved and All. Opening one shows expected vs observed, the evidence and the recommended action. "Mark as resolved" closes it. If the same check fails again, a new finding opens.
-- Reports: Reliability (how often results were correct, trend, weakest workflows) and Evidence (the proof chain behind each finding).
+- Reports: Reliability (how often results were correct, trend, weakest workflows), Evidence (the proof chain behind each finding) and Proof report (a client-ready summary for the last 7, 30 or 90 days: runs checked, results verified, silent failures caught, what is still open). A Proof report can be shared by a private link that shows counts, workflow names and finding titles only, never record values. The link can be revoked.
+- Connect, step 2: "Not sure what to check?" lets the user describe the workflow; Operator suggests checks and the user adds the ones they want. Nothing is created without the user adding it.
 - Settings: workspace name, the optional Groq key for Operator, and a security summary.
 
 LIMITS TO STATE HONESTLY

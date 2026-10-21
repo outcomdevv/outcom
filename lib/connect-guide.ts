@@ -132,3 +132,11 @@ export function n8nEvidenceNode(url: string, step: string): string {
     connections: {},
   });
 }
+
+/** The MCP address for a workflow: same secret as the webhook address, different path. */
+export const mcpUrl = (webhookUrl: string) => webhookUrl.replace("/api/inbound/", "/api/mcp/");
+
+/** Config for MCP clients that take a JSON server list (Cursor, Claude Desktop via mcp-remote, and similar). */
+export function mcpConfigJson(webhookUrl: string): string {
+  return JSON.stringify({ mcpServers: { outcom: { url: mcpUrl(webhookUrl) } } }, null, 2);
+}

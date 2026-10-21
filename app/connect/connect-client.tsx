@@ -1,5 +1,7 @@
 "use client";
 
+import DescribeChecks from "./describe-checks";
+import type { CheckSuggestion } from "@/lib/check-suggestions";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { IntegrationLogo } from "@/app/integrations";
@@ -239,6 +241,13 @@ export default function ConnectClient() {
       : cur.length >= MAX_CHECKS ? cur : [...cur, updateCheck(newCheck(kind, nextId()), {}, ctx)]);
   }
 
+  function addSuggested(s: CheckSuggestion) {
+    setMessage(null);
+    if (s.kind !== "value") { if (!hasKind(s.kind)) toggleKind(s.kind); return; }
+    if (checks.length >= MAX_CHECKS) return setMessage(`You can add up to ${MAX_CHECKS} checks.`);
+    setChecks(cur => [...cur, updateCheck(newCheck("value", nextId()), { field: s.field, operator: s.operator, expectedValue: s.expectedValue }, ctx)]);
+  }
+
   function addValueCheck() {
     if (checks.length >= MAX_CHECKS) return setMessage(`You can add up to ${MAX_CHECKS} checks.`);
     const problem = validateCheck({ ...newCheck("value", "x"), ...valueDraft }, { system: targetSystem === "none" || targetSystem === "ghl" ? "google_sheets" : targetSystem });
@@ -458,6 +467,7 @@ export default function ConnectClient() {
         {step === 2 && <div className="cx-step">
           <h2>What must be true after every run?</h2>
           <p className="cx-sub">Pick as many as you need.</p>
+          <DescribeChecks onAdd={addSuggested} disabled={checks.length >= MAX_CHECKS} />
 
           <div className="cx-options">
             {(["exists", "output"] as const).map(k => (

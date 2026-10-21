@@ -55,3 +55,11 @@ describe("evidence guide", () => {
     expect(JSON.parse(evidenceJson("crm")).evidence[0].step).toBe("crm");
   });
 });
+
+import { mcpUrl, mcpConfigJson } from "@/lib/connect-guide";
+describe("mcp address", () => {
+  it("reuses the webhook secret on the mcp path", () => {
+    expect(mcpUrl("https://x.app/api/inbound/abc")).toBe("https://x.app/api/mcp/abc");
+    expect(JSON.parse(mcpConfigJson("https://x.app/api/inbound/abc")).mcpServers.outcom.url).toBe("https://x.app/api/mcp/abc");
+  });
+});

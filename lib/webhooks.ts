@@ -36,6 +36,8 @@ function appBaseUrl() {
 const hashToken = (token: string) => crypto.createHash("sha256").update(token, "utf8").digest("hex");
 const newToken = () => crypto.randomBytes(32).toString("base64url");
 
+export const appPublicUrl = (path: string) => `${appBaseUrl()}${path}`;
+
 export function inboundWebhookUrl(token: string) {
   return `${appBaseUrl()}/api/inbound/${encodeURIComponent(token)}`;
 }

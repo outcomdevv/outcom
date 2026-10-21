@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { IntegrationLogo } from "@/app/integrations";
 import FlowDiagram from "@/app/connect/flow-diagram";
 import type { FlowNode } from "@/lib/suggested-checks";
-import { FIELD_NAME, evidenceJson, guideFor, n8nEvidenceNode, n8nPasteNode } from "@/lib/connect-guide";
+import { FIELD_NAME, evidenceJson, guideFor, mcpConfigJson, mcpUrl, n8nEvidenceNode, n8nPasteNode } from "@/lib/connect-guide";
 
 export type WebhookInfo = { provider: string; url: string; workflow: { id: string; name: string }; lastReceivedAt?: string | null };
 
@@ -124,6 +124,12 @@ export default function AfterProtect({ info, keyColumn, flow, connectFrom, syste
               </ol>
               <div className="cx-code"><code>{evidenceJson(reportedStep)}</code><button type="button" className="simple-secondary" onClick={() => copy("json", evidenceJson(reportedStep))}>{copied === "json" ? "Copied ✓" : "Copy"}</button></div>
             </>}
+          <details className="cx-hint">
+            <summary><b>Using an AI agent instead?</b></summary>
+            <p>Add Outcom as an MCP tool. The agent calls <code>verify_outcome</code> after each task and gets PASS, FAIL or UNKNOWN back, so it cannot honestly say “done” on a missing result. Keep this address private.</p>
+            <div className="cx-code"><code>{mcpUrl(info.url)}</code><button type="button" className="simple-secondary" onClick={() => copy("mcp", mcpUrl(info.url))}>{copied === "mcp" ? "Copied ✓" : "Copy address"}</button></div>
+            <div className="cx-code"><code>{mcpConfigJson(info.url)}</code><button type="button" className="simple-secondary" onClick={() => copy("mcpjson", mcpConfigJson(info.url))}>{copied === "mcpjson" ? "Copied ✓" : "Copy config"}</button></div>
+          </details>
           <p className="cx-hint">Outcom will show “Evidence reported by your workflow”. It judges what your automation saw. It does not read {reportedStep ? `“${reportedStep}”` : "the app"} itself.</p>
         </li>
         </>) : info.provider === "n8n" ? (<>
