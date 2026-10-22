@@ -159,3 +159,9 @@
 .cx-warn{margin:0;font-size:13px;color:#9a6a00}
 
 .cx-adv{margin-top:12px;font-size:13px}.cx-adv summary{cursor:pointer;color:var(--muted,#6b7280)}.cx-adv[open] summary{margin-bottom:10px}
+
+/* V95 */
+.cx-field select{width:100%;min-width:0;border:1.5px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);padding:13px 14px;font-size:14px;outline:none}
+.cx-option .integration-logo-ghl{width:56px;height:34px;object-fit:contain;flex:none}
+.cx-option:disabled{opacity:.5;cursor:not-allowed}
+.watches-panel .proof-links li>span{flex:1}

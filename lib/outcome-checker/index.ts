@@ -2,10 +2,22 @@ import { adapterFor } from "@/lib/adapters/registry";
 import { ciGet } from "@/lib/google-sheets";
 import { getWorkspaceStore } from "@/lib/db";
 import { ReportedAdapter, evidenceFor } from "@/lib/evidence";
+import { perRunContracts } from "@/lib/watches";
 import type { CheckResult, OutcomeContract, WorkflowEvent } from "@/lib/contracts/types";
 
 const value = (event: WorkflowEvent, path: string) =>
   path.replace(/^event\.data\./, "").split(".").reduce<any>((v, k) => v?.[k], event.data);
+
+const blank = (v: unknown) => v === null || v === undefined || (typeof v === "string" && !v.trim()) || (Array.isArray(v) && v.length === 0);
+const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
+/** Accepts ISO text, epoch seconds or epoch milliseconds. */
+const toTime = (v: unknown): number => {
+  if (typeof v === "number") return v < 1e12 ? v * 1000 : v;
+  const n = Number(v);
+  if (typeof v === "string" && v.trim() && Number.isFinite(n) && /^\d+(\.\d+)?$/.test(v.trim())) return n < 1e12 ? n * 1000 : n;
+  return Date.parse(String(v));
+};
+const pass = (c: OutcomeContract, event: WorkflowEvent, title: string, expected: string, observed: string, source: string): CheckResult => ({ state: "passed", type: c.type, severity: c.severity, title, expected, observed, evidence: [`Execution ${event.executionId} · status SUCCESS`, source, `Observed: ${observed}`], summary: "Outcome Contract passed.", impact: "", recommendedAction: "" });
 
 const fail = (
   c: OutcomeContract,
@@ -71,6 +83,43 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
     const field = String(cfg.field || "tags");
     const actual = record ? ciGet(record, field) : undefined;
 
+    if (cfg.mode === "required_fields") {
+      const names: string[] = Array.isArray(cfg.fields) ? cfg.fields.map(String).filter(Boolean) : [];
+      if (!names.length) throw new Error("No required fields were set for this check.");
+      if (!record) return fail(c, "Workflow succeeded but the downstream record is missing", `Record ${lookup} exists with ${names.join(", ")} filled in`, `No matching record ${lookup} found`, "The record was not created, so its required fields cannot be filled.", event, [source]);
+      const empty = names.filter((n) => blank(ciGet(record, n)));
+      return empty.length
+        ? fail(c, "Workflow succeeded but required fields are empty", `${names.join(", ")} filled in`, `Empty: ${empty.join(", ")}`, "The record exists but is missing information the business depends on. A renamed or unmapped field often causes this.", event, [source, `Checked fields: ${names.join(", ")}`])
+        : pass(c, event, "Required fields are filled in", `${names.join(", ")} filled in`, `All ${names.length} field${names.length === 1 ? "" : "s"} filled in`, source);
+    }
+
+    if (cfg.mode === "record_count") {
+      if (!reported) throw new Error("Counting records needs “Any other app” evidence. Send count with the read-back step.");
+      const n = evidence?.count;
+      if (n === undefined) throw new Error("The workflow did not report how many records it found. Add count to the evidence.");
+      const op = cfg.operator === "at_least" || cfg.operator === "at_most" ? cfg.operator : "equals";
+      const want = Number(cfg.expectedCount ?? 1);
+      const good = op === "equals" ? n === want : op === "at_least" ? n >= want : n <= want;
+      const words = op === "equals" ? `exactly ${want}` : op === "at_least" ? `at least ${want}` : `at most ${want}`;
+      return good
+        ? pass(c, event, "Record count is right", `Found ${words}`, `Found ${n}`, source)
+        : fail(c, n > want ? "Workflow succeeded but created duplicates" : "Workflow succeeded but too few records exist", `Found ${words} record${want === 1 ? "" : "s"}`, `Found ${n}`, n > want ? "The same item was written more than once, or another automation wrote it too." : "Fewer records exist than the business expects.", event, [source]);
+    }
+
+    if (cfg.mode === "fresh_within") {
+      const minutes = Number(cfg.maxMinutes);
+      if (!Number.isFinite(minutes) || minutes <= 0) throw new Error("No time limit was set for this check.");
+      const name = String(cfg.field || "");
+      if (!record) return fail(c, "Workflow succeeded but the downstream record is missing", `Record ${lookup} written within ${minutes} minutes of the run`, `No matching record ${lookup} found`, "Nothing was written.", event, [source]);
+      const raw = ciGet(record, name);
+      const at = toTime(raw);
+      if (blank(raw) || !Number.isFinite(at)) throw new Error(`The field “${name}” does not hold a readable date or time.`);
+      const diff = Math.abs(at - new Date(event.timestamp).getTime()) / 60000;
+      return diff <= minutes
+        ? pass(c, event, "Record was written on time", `${name} within ${minutes} minutes of the run`, `${name} is ${diff.toFixed(1)} minutes from the run`, source)
+        : fail(c, "Workflow succeeded but the record was not written on time", `${name} within ${minutes} minutes of the run`, `${name} is ${diff.toFixed(1)} minutes from the run (${new Date(at).toISOString()})`, "The record is stale or arrived late, so the run may not have written it.", event, [source, `Run time: ${new Date(event.timestamp).toISOString()}`]);
+    }
+
     if (cfg.mode === "preserve_tags") {
       const current = Array.isArray(actual) ? actual.filter((x): x is string => typeof x === "string") : [];
       const store = await getWorkspaceStore(workspaceId ?? workspaceOf(event));
@@ -88,12 +137,19 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
       return { state: "passed", type: c.type, severity: c.severity, title: "Business state preserved", expected: "Previously observed tags remain present", observed: `Current tags: ${JSON.stringify(current)}`, evidence: [`Execution ${event.executionId} · status SUCCESS`, source, `Compared current ${field} against Outcom's previous read-only baseline.`], summary: "Outcom found no business-state regression.", impact: "", recommendedAction: "" };
     }
 
-    const expected = cfg.expectedValue;
+    // "expectedFrom" compares the destination with something the run itself carried, for example the email typed in the form.
+    const fromRun = typeof cfg.expectedFrom === "string" && cfg.expectedFrom.trim() ? cfg.expectedFrom.trim() : null;
+    let expected = cfg.expectedValue;
+    if (fromRun) {
+      expected = value(event, fromRun);
+      if (blank(expected)) throw new Error(`The run did not send “${fromRun.replace(/^event\.data\./, "")}”, so Outcom has nothing to compare ${field} with.`);
+    }
     const op = cfg.operator;
     const list = Array.isArray(actual) ? actual : [];
-    const passed = op === "equals" ? actual === expected : op === "not_equals" ? actual !== expected : op === "contains" ? list.includes(expected) : op === "not_contains" ? !list.includes(expected) : op === "exists" ? actual != null : actual == null;
+    const same = (a: unknown, b: unknown) => (fromRun ? norm(a) === norm(b) : a === b);
+    const passed = op === "equals" ? same(actual, expected) : op === "not_equals" ? !same(actual, expected) : op === "contains" ? list.some((x) => same(x, expected)) : op === "not_contains" ? !list.some((x) => same(x, expected)) : op === "exists" ? actual != null : actual == null;
     const observed = `${field} = ${JSON.stringify(actual)}`;
-    const expectedText = `Expected ${field} ${op} ${String(expected)}`;
+    const expectedText = `Expected ${field} ${op} ${fromRun ? `the run's “${fromRun.replace(/^event\.data\./, "")}” (${String(expected)})` : String(expected)}`;
 
     return passed
       ? { state: "passed", type: c.type, severity: c.severity, title: "Business state preserved", expected: expectedText, observed, evidence: [`Execution ${event.executionId} · status SUCCESS`, source, `Read-only verification returned ${observed}.`], summary: "Outcome Contract passed.", impact: "", recommendedAction: "" }
@@ -125,7 +181,7 @@ const workspaceOf = (event: WorkflowEvent): string | undefined => {
 export async function evaluateEvent(event: WorkflowEvent, workspaceId?: string) {
   workspaceId = workspaceId ?? workspaceOf(event);
   const store = await getWorkspaceStore(workspaceId);
-  const contracts = (await store.contracts.list(event.workflowId)).filter((c) => c.enabled);
+  const contracts = perRunContracts<OutcomeContract>((await store.contracts.list(event.workflowId)).filter((c) => c.enabled));
   const results: CheckResult[] = [];
   for (const c of contracts) {
     let r: CheckResult;

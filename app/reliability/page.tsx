@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getWorkspaceStore } from "@/lib/db";
 import { IntegrationLogo } from "@/app/integrations";
 import styles from "./reliability.module.css";
+import { isWatch } from "@/lib/watches";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export default async function ReliabilityPage() {
     store.contracts.list(),
   ]);
 
-  const enabledContracts = contracts.filter((c) => c.enabled);
+  const enabledContracts = contracts.filter((c) => c.enabled && !isWatch(c));
   const incidentByEvent = new Map<string, typeof incidents>();
   for (const incident of incidents) {
     const list = incidentByEvent.get(incident.eventId) ?? [];

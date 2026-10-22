@@ -84,3 +84,37 @@ describe("custom value checks from the Connect page", () => {
     expect(j.pausedContracts).toEqual(["A record exists in Sheet1"]);
   });
 });
+
+describe("V95 check modes through the protect route", () => {
+  const base = { provider: "n8n", externalId: "w", name: "n" };
+  const rep = { type: "state_invariant", system: "reported", target: { step: "crm" } };
+  it("stores required fields, record count, freshness and run-input comparisons", async () => {
+    const r = await call({ ...base, expectedOutcomes: [
+      { ...rep, label: "Fields filled", mode: "required_fields", fields: ["email", "owner", "email"] },
+      { ...rep, label: "Exactly one", mode: "record_count", operator: "equals", expectedCount: 1 },
+      { ...rep, label: "On time", mode: "fresh_within", field: "created_at", maxMinutes: 5 },
+      { ...rep, label: "Email matches", field: "Email", operator: "equals", expectedFrom: "event.data.email" },
+    ] });
+    expect((await r.json()).protected).toBe(true);
+    expect(created[0].configuration).toMatchObject({ mode: "required_fields", fields: ["email", "owner"] });
+    expect(created[1].configuration).toMatchObject({ mode: "record_count", operator: "equals", expectedCount: 1 });
+    expect(created[2].configuration).toMatchObject({ mode: "fresh_within", field: "created_at", maxMinutes: 5 });
+    expect(created[3].configuration).toMatchObject({ mode: "field_condition", expectedFrom: "event.data.email", expectedValue: "" });
+  });
+  it("rejects incomplete or unsupported new checks", async () => {
+    for (const bad of [
+      { ...rep, label: "a", mode: "required_fields", fields: [] },
+      { ...rep, system: "airtable", label: "b", mode: "record_count", operator: "equals", expectedCount: 1, target: { baseId: "appABCDEFGHIJKLMN", tableId: "tblABCDEFGHIJKLMN", keyField: "Email" } },
+      { ...rep, label: "c", mode: "fresh_within", field: "", maxMinutes: 5 },
+      { ...rep, label: "d", mode: "fresh_within", field: "created_at", maxMinutes: 0 },
+    ]) {
+      created.length = 0;
+      expect((await call({ ...base, expectedOutcomes: [bad] })).status).toBe(400);
+      expect(created).toHaveLength(0);
+    }
+  });
+  it("only lets a run field name through when it is a plain name", async () => {
+    await call({ ...base, expectedOutcomes: [{ ...rep, label: "x", field: "Email", operator: "equals", expectedFrom: "email; drop" }] });
+    expect(created[0].configuration.expectedFrom).toBeUndefined();
+  });
+});

@@ -6,6 +6,8 @@ import type { DownstreamAdapter } from "@/lib/adapters/types";
 export type EvidenceItem = {
   step: string;
   found: boolean;
+  /** How many matching records the workflow saw. Lets Outcom catch duplicates. */
+  count?: number;
   key?: string;
   fields: Record<string, unknown>;
   source?: string;
@@ -56,7 +58,8 @@ function parseItem(raw: unknown, fallbackStep?: string): EvidenceItem | null {
   const key = typeof raw.key === "string" && raw.key.trim() ? raw.key.trim().slice(0, 200)
     : typeof raw.key === "number" ? String(raw.key) : undefined;
   const source = typeof raw.source === "string" && raw.source.trim() ? raw.source.trim().slice(0, 120) : undefined;
-  return { step, found, ...(key ? { key } : {}), fields, ...(source ? { source } : {}) };
+  const countOut = raw.count !== undefined && raw.count !== null && raw.count !== "" && Number.isFinite(count) && count >= 0 ? Math.floor(count) : undefined;
+  return { step, found, ...(countOut !== undefined ? { count: countOut } : {}), ...(key ? { key } : {}), fields, ...(source ? { source } : {}) };
 }
 
 /**

@@ -8,6 +8,12 @@ import { slugStep } from "@/lib/evidence";
 
 // Business systems an outcome can be verified against. "event" = no external system (checks the run payload only).
 const SYSTEMS = new Set(["ghl", "google_sheets", "airtable", "hubspot", "reported", "event"]);
+const NEW_MODES = new Set(["required_fields", "record_count", "fresh_within"]);
+/** A field name the run carries, stored as a path into the event: "Email" -> "event.data.Email". */
+function cleanRunField(raw: unknown): string {
+  const name = typeof raw === "string" ? raw.trim().replace(/^event\.data\./, "") : "";
+  return /^[A-Za-z0-9_.\- ]{1,80}$/.test(name) ? `event.data.${name}` : "";
+}
 const ENTITY: Record<string, string> = { google_sheets: "row", airtable: "record", hubspot: "contact", ghl: "contact", reported: "evidence", event: "output" };
 
 /** Each system keeps its own target shape. HubSpot also learns which properties the value checks will read. */
@@ -41,7 +47,16 @@ export async function POST(request: Request) {
       expectedValue: typeof item.expectedValue === "string" ? item.expectedValue : "",
       expectedCount: Number.isFinite(Number(item.expectedCount)) ? Number(item.expectedCount) : 0,
       valueFrom: typeof item.valueFrom === "string" && item.valueFrom.trim() ? item.valueFrom.trim() : item.type === "output_count" ? "event.data.output_count" : "event.data.target_record_id",
+      mode: item.type === "state_invariant" && NEW_MODES.has(String(item.mode)) ? String(item.mode) : null,
+      fields: Array.isArray(item.fields) ? [...new Set(item.fields.map((x: unknown) => String(x).trim()).filter(Boolean))].slice(0, 20) : [],
+      expectedFrom: cleanRunField(item.expectedFrom),
+      maxMinutes: Number(item.maxMinutes),
     }));
+    const badNew = normalizedOutcomes.find((o: any) =>
+      (o.mode === "required_fields" && !o.fields.length) ||
+      (o.mode === "record_count" && o.system !== "reported") ||
+      (o.mode === "fresh_within" && (!o.field || o.field === "tags" || !(o.maxMinutes > 0))));
+    if (badNew) return NextResponse.json({ protected: false, error: badNew.mode === "required_fields" ? "Name the fields that must be filled in." : badNew.mode === "record_count" ? "Counting records works with “Any other app”: your workflow sends how many it found." : "Name the date field and how many minutes the record may take." }, { status: 400 });
     if (!isInboundSource(provider)) return NextResponse.json({ protected: false, error: "Webhook protection is not available for this platform." }, { status: 400 });
     const badTarget = normalizedOutcomes.find((o: any) => (o.system === "google_sheets" || o.system === "airtable" || o.system === "reported") && !o.target);
     if (badTarget) return NextResponse.json({ protected: false, error: badTarget.system === "reported" ? "Give the read-back step a short name, for example crm." : badTarget.system === "airtable" ? "Choose an Airtable table and key column before protecting with Airtable." : "Choose a spreadsheet, tab and key column before protecting with Google Sheets." }, { status: 400 });
@@ -90,12 +105,16 @@ export async function POST(request: Request) {
           workflowId: workflow.id, name: label, type: "state_invariant", system: item.system, entity: item.entity,
           configuration: {
             target: item.target,
-            mode: item.expectedValue?.trim() || item.operator === "exists" || item.system !== "ghl" ? "field_condition" : "preserve_tags",
+            mode: item.mode ?? (item.expectedValue?.trim() || item.expectedFrom || item.operator === "exists" || item.system !== "ghl" ? "field_condition" : "preserve_tags"),
             inbound_webhook: true,
             expectedOutcome: label,
             field: item.field || "tags",
             operator: item.operator || "contains",
             expectedValue: typeof item.expectedValue === "string" ? item.expectedValue : "",
+            ...(item.mode === "required_fields" ? { fields: item.fields } : {}),
+            ...(item.mode === "record_count" ? { expectedCount: Number.isFinite(item.expectedCount) ? item.expectedCount : 1 } : {}),
+            ...(item.mode === "fresh_within" ? { maxMinutes: item.maxMinutes } : {}),
+            ...(item.expectedFrom && !item.mode ? { expectedFrom: item.expectedFrom } : {}),
             lookup: { field: "id", valueFrom: item.valueFrom || "event.data.target_record_id" },
           },
           severity: "high", enabled: true,

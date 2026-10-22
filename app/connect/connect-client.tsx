@@ -1,6 +1,8 @@
 "use client";
 
 import DescribeChecks from "./describe-checks";
+import MoreChecks from "./more-checks";
+import { CHECK_TEMPLATES } from "@/lib/check-templates";
 import type { CheckSuggestion } from "@/lib/check-suggestions";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -14,11 +16,14 @@ import BusinessSystemPicker, { type SheetTargetState, type TargetSystem } from "
 import { OutputIcon, RecordIcon, SheetIcon, TableIcon, TagIcon } from "@/app/connect/icons";
 import type { AirtableTargetState, HubspotTargetState } from "@/app/connect/token-panels";
 import {
-  MAX_CHECKS, OPERATORS, autoLabel, hasNamedFields, needsBusinessSystem, newCheck, toPayload, updateCheck, validateCheck,
-  type CheckDraft, type CheckKind, type Operator,
+  COUNT_OPERATORS, MAX_CHECKS, OPERATORS, autoLabel, hasNamedFields, needsBusinessSystem, newCheck, toPayload, updateCheck, validateCheck,
+  type CheckDraft, type CheckKind, type CountOperator, type Operator,
 } from "@/lib/connect-checks";
 
-type Platform = "n8n" | "zapier" | "make" | "custom";
+type CoreTool = "n8n" | "zapier" | "make" | "custom";
+type ExtraTool = "pipedream" | "activepieces" | "power_automate" | "workato" | "ghl_workflows";
+type Platform = CoreTool | ExtraTool;
+const EXTRA_TOOLS: Array<{ id: ExtraTool; name: string }> = [{ id: "pipedream", name: "Pipedream" }, { id: "activepieces", name: "Activepieces" }, { id: "power_automate", name: "Power Automate" }, { id: "workato", name: "Workato" }, { id: "ghl_workflows", name: "HighLevel Workflows" }];
 type Provider = "ghl" | "google_sheets" | "airtable" | "hubspot" | Platform;
 type Connection = { provider: Provider; accountName: string; email?: string | null; expiresAt?: string | null };
 type Discovered = { id: string; name: string; enabled: boolean; platform: string };
@@ -26,7 +31,7 @@ type OAuthStatus = { ghl: boolean; zapier: boolean; make: boolean; google_sheets
 
 const DRAFT_KEY = "outcom-connect-draft-v79";
 
-const platforms: Array<{ id: Platform; name: string; hint: string }> = [
+const platforms: Array<{ id: CoreTool; name: string; hint: string }> = [
   { id: "n8n", name: "n8n", hint: "Webhook or API key" },
   { id: "zapier", name: "Zapier", hint: "Webhook" },
   { id: "make", name: "Make", hint: "Webhook or API token" },
@@ -39,6 +44,9 @@ const KIND_INFO: Record<Exclude<CheckKind, "value">, { title: string; text: stri
   exists: { title: "The record was created", text: "The row or contact is really there.", icon: s => <RecordIcon size={s} /> },
   output: { title: "The run produced something", text: "At least one output came out.", icon: s => <OutputIcon size={s} /> },
   tags: { title: "Tags are kept", text: "Existing tags did not disappear.", icon: s => <TagIcon size={s} /> },
+  required: { title: "Fields are filled in", text: "Nothing important is blank.", icon: s => <RecordIcon size={s} /> },
+  count: { title: "Number of records", text: "No duplicates, none missing.", icon: s => <RecordIcon size={s} /> },
+  fresh: { title: "Written on time", text: "The record is recent.", icon: s => <RecordIcon size={s} /> },
 };
 
 const checkIcon = (c: CheckDraft, system: TargetSystem, size: number) =>
@@ -61,7 +69,7 @@ export default function ConnectClient() {
   const [workflowId, setWorkflowId] = useState("");
 
   const [checks, setChecks] = useState<CheckDraft[]>([]);
-  const [valueDraft, setValueDraft] = useState<{ field: string; operator: Operator; expectedValue: string }>({ field: "", operator: "equals", expectedValue: "" });
+  const [valueDraft, setValueDraft] = useState<{ field: string; operator: Operator; expectedValue: string; expectedFrom: string; useRun: boolean }>({ field: "", operator: "equals", expectedValue: "", expectedFrom: "", useRun: false });
   const [targetSystem, setTargetSystem] = useState<TargetSystem>("google_sheets");
   const [reportedStep, setReportedStep] = useState("");
   const [sheetTarget, setSheetTarget] = useState<SheetTargetState | null>(null);
@@ -241,6 +249,30 @@ export default function ConnectClient() {
       : cur.length >= MAX_CHECKS ? cur : [...cur, updateCheck(newCheck(kind, nextId()), {}, ctx)]);
   }
 
+  function addExtra(kind: CheckKind, patch: Partial<CheckDraft>) {
+    setMessage(null);
+    if (checks.length >= MAX_CHECKS) return setMessage(`You can add up to ${MAX_CHECKS} checks.`);
+    setChecks(cur => [...cur, updateCheck(newCheck(kind, nextId()), patch, ctx)]);
+  }
+
+  function applyTemplate(id: string) {
+    const t = CHECK_TEMPLATES.find(x => x.id === id);
+    if (!t) return;
+    setMessage(null);
+    const skipped: string[] = [];
+    setChecks(cur => {
+      let next = [...cur];
+      for (const it of t.items) {
+        if (next.length >= MAX_CHECKS) break;
+        if (it.kind === "count" && targetSystem !== "reported") { skipped.push("the duplicate check (needs “Any other app”)"); continue; }
+        if ((it.kind === "exists" || it.kind === "output") && next.some(c => c.kind === it.kind)) continue;
+        next = [...next, updateCheck(newCheck(it.kind, nextId()), it.patch ?? {}, ctx)];
+      }
+      return next;
+    });
+    if (skipped.length) setMessage(`Added “${t.title}” without ${skipped.join(" and ")}. Edit the field names in the next step.`);
+  }
+
   function addSuggested(s: CheckSuggestion) {
     setMessage(null);
     if (s.kind !== "value") { if (!hasKind(s.kind)) toggleKind(s.kind); return; }
@@ -250,11 +282,13 @@ export default function ConnectClient() {
 
   function addValueCheck() {
     if (checks.length >= MAX_CHECKS) return setMessage(`You can add up to ${MAX_CHECKS} checks.`);
-    const problem = validateCheck({ ...newCheck("value", "x"), ...valueDraft }, { system: targetSystem === "none" || targetSystem === "ghl" ? "google_sheets" : targetSystem });
+    const patch = { field: valueDraft.field, operator: valueDraft.operator, expectedValue: valueDraft.useRun ? "" : valueDraft.expectedValue, expectedFrom: valueDraft.useRun ? valueDraft.expectedFrom : "" };
+    if (valueDraft.useRun && valueDraft.operator !== "exists" && !valueDraft.expectedFrom.trim()) return setMessage("Type the name of the field your run sends, for example email.");
+    const problem = validateCheck({ ...newCheck("value", "x"), ...patch }, { system: targetSystem === "none" || targetSystem === "ghl" ? "google_sheets" : targetSystem });
     if (problem) return setMessage(problem);
     setMessage(null);
-    setChecks(cur => [...cur, updateCheck(newCheck("value", nextId()), valueDraft, ctx)]);
-    setValueDraft({ field: "", operator: "equals", expectedValue: "" });
+    setChecks(cur => [...cur, updateCheck(newCheck("value", nextId()), patch, ctx)]);
+    setValueDraft({ field: "", operator: "equals", expectedValue: "", expectedFrom: "", useRun: false });
   }
 
   const patchCheck = (id: string, patch: Partial<CheckDraft>) => setChecks(cur => cur.map(c => (c.id === id ? updateCheck(c, patch, ctx) : c)));
@@ -301,7 +335,7 @@ export default function ConnectClient() {
       setAirtableTarget(c.airtable && c.airtable.keyField ? { baseId: c.airtable.baseId, tableId: c.airtable.tableId, tableName: c.airtable.tableName || "Airtable table", keyField: c.airtable.keyField } : null);
     } else if (c.system === "ghl") { setTargetSystem("ghl"); setSheetTarget(null); }
     const local = { system: (c.system === "ghl" || c.system === "airtable" ? c.system : "google_sheets") as TargetSystem, tab: c.target?.sheetName ?? c.airtable?.tableName ?? null };
-    setChecks(cur => [updateCheck(newCheck("exists", nextId()), {}, local), updateCheck(newCheck("output", nextId()), {}, local), ...cur.filter(x => x.kind === "value")]);
+    setChecks(cur => [updateCheck(newCheck("exists", nextId()), {}, local), updateCheck(newCheck("output", nextId()), {}, local), ...cur.filter(x => x.kind !== "exists" && x.kind !== "output" && x.kind !== "tags")]);
     setScanNote(`Found “${top.nodeName}”. ${top.question}`);
     setMessage(null);
     setStep(3);
@@ -373,10 +407,10 @@ export default function ConnectClient() {
     </div>
   );
 
-  const selectedPlatform = platforms.find(p => p.id === platform)!;
+  const selectedPlatform = platforms.find(p => p.id === platform) ?? { id: "custom" as const, name: EXTRA_TOOLS.find(t => t.id === platform)?.name ?? "Other tool", hint: "" };
   const connectedHere = platform === "n8n" ? n8n : platform === "zapier" ? zapier : platform === "make" ? make : undefined;
   const sheetOk = targetSystem === "google_sheets" ? Boolean(sheetTarget) : targetSystem === "airtable" ? Boolean(airtableTarget) : targetSystem === "reported" ? Boolean(reportedStep.trim()) : true;
-  const valueChecks = checks.filter(c => c.kind === "value");
+  const valueChecks = checks.filter(c => c.kind !== "exists" && c.kind !== "output" && c.kind !== "tags");
   const ready = checks.length > 0;
 
   return (
@@ -407,6 +441,13 @@ export default function ConnectClient() {
               </button>
             ))}
           </div>
+          <label className="cx-field">Another tool?
+            <select value={EXTRA_TOOLS.some(t => t.id === platform) ? platform : ""} onChange={e => { if (e.target.value) { setPlatform(e.target.value as Platform); setMessage(null); setDiscoveryLoaded(false); } }}>
+              <option value="">Choose…</option>
+              {EXTRA_TOOLS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+            <small className="cx-muted">Anything that can send an HTTP request works. These tools get their own instructions.</small>
+          </label>
 
           <label className="cx-field">Name this automation
             <input name="outcom-automation-name" autoComplete="off" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Lead intake → Sheet" />
@@ -443,7 +484,7 @@ export default function ConnectClient() {
           {platform === "make" && oauth.make && !make && <button type="button" className="simple-secondary" onClick={() => { window.location.href = "/api/oauth/make/start"; }}>Connect Make to pick a scenario</button>}
 
           {connectedHere && platform !== "custom" && <div className="cx-picked">
-            <IntegrationLogo name={platform} size={28} /><span><b>{selectedPlatform.name} connected</b><small>{reauthProvider === platform ? "Reconnect to continue" : "Pick a workflow, or just name it above"}</small></span>
+            <IntegrationLogo name={platform as CoreTool} size={28} /><span><b>{selectedPlatform.name} connected</b><small>{reauthProvider === platform ? "Reconnect to continue" : "Pick a workflow, or just name it above"}</small></span>
             <button type="button" className="cx-link" onClick={() => discover(platform as "n8n" | "zapier" | "make")}>{loadingDiscovery ? "Loading…" : "Show my workflows"}</button>
           </div>}
 
@@ -452,7 +493,7 @@ export default function ConnectClient() {
             {discoveryWarning && <p className="cx-muted">{discoveryWarning}</p>}
             {discovered.map(d => (
               <button type="button" key={`${d.platform}:${d.id}`} onClick={() => { setWorkflowId(d.id); setName(d.name); setPlatform(d.platform as Platform); setStep(2); }}>
-                <IntegrationLogo name={(d.platform === "n8n" || d.platform === "zapier" || d.platform === "make" ? d.platform : "custom") as Platform} size={24} />
+                <IntegrationLogo name={(d.platform === "n8n" || d.platform === "zapier" || d.platform === "make" ? d.platform : "custom") as CoreTool} size={24} />
                 <span>{d.name}<small>{d.enabled ? "Active" : "Paused"}</small></span><em>Use</em>
               </button>
             ))}
@@ -468,6 +509,7 @@ export default function ConnectClient() {
           <h2>What must be true after every run?</h2>
           <p className="cx-sub">Pick as many as you need.</p>
           <DescribeChecks onAdd={addSuggested} disabled={checks.length >= MAX_CHECKS} />
+          <MoreChecks system={targetSystem} disabled={checks.length >= MAX_CHECKS} onTemplate={applyTemplate} onRequired={f => addExtra("required", { field: f })} onCount={(op, n) => addExtra("count", { countOp: op, expectedCount: Number.isFinite(n) ? n : 1 })} onFresh={(f, m) => addExtra("fresh", { field: f, expectedCount: Number.isFinite(m) ? m : 10 })} />
 
           <div className="cx-options">
             {(["exists", "output"] as const).map(k => (
@@ -487,7 +529,12 @@ export default function ConnectClient() {
               <input name="outcom-check-field" autoComplete="off" value={valueDraft.field} onChange={e => setValueDraft(v => ({ ...v, field: e.target.value }))} placeholder="Column · e.g. Status" />
               <select value={valueDraft.operator} onChange={e => setValueDraft(v => ({ ...v, operator: e.target.value as Operator }))}>{OPERATORS.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}</select>
               {valueDraft.operator !== "exists"
-                ? <input name="outcom-check-value" autoComplete="off" value={valueDraft.expectedValue} onChange={e => setValueDraft(v => ({ ...v, expectedValue: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") addValueCheck(); }} placeholder="Value · e.g. Qualified" />
+                ? <div style={{ display: "grid", gap: 6 }}>
+                    <select value={valueDraft.useRun ? "run" : "fixed"} onChange={e => setValueDraft(v => ({ ...v, useRun: e.target.value === "run" }))} aria-label="Compare with"><option value="fixed">a fixed value</option><option value="run">a field from the run</option></select>
+                    {valueDraft.useRun
+                      ? <input name="outcom-check-from" autoComplete="off" value={valueDraft.expectedFrom} onChange={e => setValueDraft(v => ({ ...v, expectedFrom: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") addValueCheck(); }} placeholder="Field your run sends · e.g. email" />
+                      : <input name="outcom-check-value" autoComplete="off" value={valueDraft.expectedValue} onChange={e => setValueDraft(v => ({ ...v, expectedValue: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") addValueCheck(); }} placeholder="Value · e.g. Qualified" />}
+                  </div>
                 : <span className="cx-muted cx-pad">no value needed</span>}
             </div>
             <button type="button" className="simple-secondary" onClick={addValueCheck} disabled={!valueDraft.field.trim() || checks.length >= MAX_CHECKS}>Add this check</button>
@@ -533,7 +580,18 @@ export default function ConnectClient() {
                       ? <select value={sheetHeaders.find(h => sameName(h, c.field)) ?? ""} onChange={e => patchCheck(c.id, { field: e.target.value })}><option value="">{targetSystem === "hubspot" ? "Property…" : "Column…"}</option>{sheetHeaders.map(h => <option key={h} value={h}>{h}</option>)}</select>
                       : <input name={`outcom-field-${c.id}`} autoComplete="off" value={c.field} onChange={e => patchCheck(c.id, { field: e.target.value })} placeholder="Column" />}
                     <select value={c.operator} onChange={e => patchCheck(c.id, { operator: e.target.value as Operator })}>{OPERATORS.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}</select>
-                    {c.operator !== "exists" ? <input name={`outcom-value-${c.id}`} autoComplete="off" value={c.expectedValue} onChange={e => patchCheck(c.id, { expectedValue: e.target.value })} placeholder="Value" /> : <span className="cx-muted cx-pad">no value needed</span>}
+                    {c.expectedFrom ? <span className="cx-muted cx-pad">the run’s “{c.expectedFrom}”</span> : c.operator !== "exists" ? <input name={`outcom-value-${c.id}`} autoComplete="off" value={c.expectedValue} onChange={e => patchCheck(c.id, { expectedValue: e.target.value })} placeholder="Value" /> : <span className="cx-muted cx-pad">no value needed</span>}
+                  </div>}
+                  {c.kind === "required" && <div className="cx-row"><input name={`outcom-req-${c.id}`} autoComplete="off" value={c.field} onChange={e => patchCheck(c.id, { field: e.target.value })} placeholder="Fields, separated by commas · e.g. email, owner" /></div>}
+                  {c.kind === "count" && <div className="cx-row cx-three">
+                    <select value={c.countOp ?? "equals"} onChange={e => patchCheck(c.id, { countOp: e.target.value as CountOperator })}>{COUNT_OPERATORS.map(o => <option key={o.id} value={o.id}>{o.text}</option>)}</select>
+                    <input inputMode="numeric" value={String(c.expectedCount)} onChange={e => patchCheck(c.id, { expectedCount: Number(e.target.value.replace(/\D/g, "") || 0) })} aria-label="Number of records" />
+                    <span className="cx-muted cx-pad">record(s) must exist</span>
+                  </div>}
+                  {c.kind === "fresh" && <div className="cx-row cx-three">
+                    <input name={`outcom-fresh-${c.id}`} autoComplete="off" value={c.field} onChange={e => patchCheck(c.id, { field: e.target.value })} placeholder="Date field · e.g. created_at" />
+                    <input inputMode="numeric" value={String(c.expectedCount)} onChange={e => patchCheck(c.id, { expectedCount: Number(e.target.value.replace(/\D/g, "") || 0) })} aria-label="Minutes" />
+                    <span className="cx-muted cx-pad">minutes from the run</span>
                   </div>}
                   {problem && <p className="cx-error">{problem}</p>}
                   {c.kind !== "output" && <details className="cx-adv"><summary>Advanced</summary>

@@ -1,5 +1,6 @@
 // Proof Report: a client-ready summary of what Outcom verified. Pure and testable; no I/O.
 import type { Incident, OutcomeContract, Workflow, WorkflowEvent } from "@/lib/contracts/types";
+import { isWatch } from "@/lib/watches";
 
 export type ProofTotals = { runs: number; checks: number; verified: number; failed: number; unknown: number; fixed: number; open: number; reportedChecks: number; rate: number | null };
 export type ProofWorkflowRow = { id: string; name: string; platform: string; runs: number; checks: number; verified: number; failed: number; unknown: number; open: number; rate: number | null };
@@ -23,9 +24,10 @@ export function buildProofReport(input: ProofInput): ProofReport {
     return byId.has(e.workflowId) && t >= from.getTime() && t <= to.getTime();
   });
   const eventIds = new Set(events.map((e) => e.id));
-  const enabled = input.contracts.filter((c) => c.enabled);
+  const enabled = input.contracts.filter((c) => c.enabled && !isWatch(c));
   const contractsOf = (workflowId: string) => enabled.filter((c) => c.workflowId === workflowId);
-  const incidents = input.incidents.filter((i) => eventIds.has(i.eventId));
+  // A watch finding has no run behind it, so it belongs to the period by the day it was detected.
+  const incidents = input.incidents.filter((i) => eventIds.has(i.eventId) || (i.eventId.startsWith("watch:") && byId.has(i.workflowId) && new Date(i.detectedAt).getTime() >= from.getTime() && new Date(i.detectedAt).getTime() <= to.getTime()));
 
   const rows = new Map<string, ProofWorkflowRow>(workflows.map((w) => [w.id, { id: w.id, name: w.name, platform: w.platform, runs: 0, checks: 0, verified: 0, failed: 0, unknown: 0, open: 0, rate: null }]));
   let reportedChecks = 0;
@@ -39,6 +41,7 @@ export function buildProofReport(input: ProofInput): ProofReport {
   for (const i of incidents) {
     const row = rows.get(i.workflowId);
     if (!row) continue;
+    if (i.eventId.startsWith("watch:")) row.checks += 1; // a watch has no run, so its finding is its own check
     if (i.type === "verification_error") row.unknown += 1; else row.failed += 1;
     if (i.status === "open") row.open += 1;
   }

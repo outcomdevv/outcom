@@ -145,7 +145,7 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
 
       {value === "reported" && <div className="cx-sheet">
         <p className="cx-note">Works with any app your automation can read, for example Salesforce, Notion, Pipedrive or Stripe. After the step that writes, your automation adds a step that looks the record up and sends the result to Outcom. Outcom judges it and shows PASS, FAIL or UNKNOWN. The label says the evidence was reported by your workflow, not read by Outcom.</p>
-        <label className="cx-label">Short name for that read-back step
+        <label className="cx-field">Short name for that read-back step
           <input value={reportedStep} onChange={e => onReportedStep?.(e.target.value)} placeholder="for example crm" autoComplete="off" name="outcom-reported-step" maxLength={60} />
         </label>
       </div>}

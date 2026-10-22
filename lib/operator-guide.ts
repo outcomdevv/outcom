@@ -21,6 +21,11 @@ WHERE OUTCOM LOOKS
 - Fields whose name looks secret (password, token, api key, card number...) are stored as "[redacted]".
 - Make can also be read from an exported blueprint; n8n workflows can be read from an exported workflow. Zapier needs the paid Webhooks by Zapier step.
 
+SILENT FAILURES THAT LEAVE NO FAILED RUN (V95)
+- Watches (on a workflow's page): "No runs arrived for a while" catches a trigger or schedule that stopped; "Volume dropped" catches fewer runs or outputs than usual; "Counts do not match another workflow" compares two streams. Outcom's scheduler checks them about every 5 minutes. A new watch needs one full period before it judges. The finding closes itself when things recover.
+- Per-run checks beyond the basics: "fields filled in" (several fields at once), "number of records" (exactly one catches duplicates; needs Any other app, the workflow sends count), "written within N minutes" (a date field close to the run time), and a value compared with a field the run itself carried (for example the email typed in the form must equal the email in the CRM).
+- Connect, step 2 has starter templates: new lead, lead has a real owner, invoice or payment, email or SMS sent, booking.
+
 CHECK TYPES
 - Record exists: the record the run handled can be found.
 - Value check: a named column or property has an expected value.

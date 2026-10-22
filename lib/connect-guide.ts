@@ -2,7 +2,16 @@
 // Every platform sends ONE field called target_record_id. The inbound webhook reads it at the top level
 // (and also under data.), so non-technical users fill a name/value pair instead of writing JSON.
 
-export type GuidePlatform = "n8n" | "zapier" | "make" | "custom";
+export type GuidePlatform = "n8n" | "zapier" | "make" | "custom" | "pipedream" | "activepieces" | "power_automate" | "workato" | "ghl_workflows";
+
+/** Tools that only need an HTTP POST. They share one guide; only the wording of the first step differs. */
+export const HTTP_TOOLS: Record<string, { label: string; first: string }> = {
+  pipedream: { label: "Pipedream", first: "At the end of the workflow add a step: search for “HTTP” and choose the action that sends an HTTP request." },
+  activepieces: { label: "Activepieces", first: "At the end of the flow add the HTTP piece and choose its “Send HTTP request” action." },
+  power_automate: { label: "Power Automate", first: "At the end of the flow add the HTTP action (it is a premium connector in Power Automate)." },
+  workato: { label: "Workato", first: "At the end of the recipe add an HTTP action that sends a POST request." },
+  ghl_workflows: { label: "HighLevel Workflows", first: "At the end of the workflow add the Custom Webhook action." },
+};
 
 export const FIELD_NAME = "target_record_id";
 
@@ -60,6 +69,15 @@ export const guideFor = (platform: string): Guide => {
         valueHelp: (k, e) => e ? `Already filled in: ${e} is the same value your scenario saved as “${k || "the id"}”. Paste the message below as it is.` : `Between the quotes, pick “${k || "the id"}” from the list that opens.`,
         json: (_k, e) => `{"target_record_id": "${e ?? ""}"}`,
       };
+    case "pipedream": case "activepieces": case "power_automate": case "workato": case "ghl_workflows": {
+      const t = HTTP_TOOLS[platform];
+      return {
+        tool: t.label,
+        steps: [t.first, "Method: POST. URL: paste your address.", "Body: JSON, with one field named target_record_id.", "Run the automation once."],
+        valueHelp: k => `Its value is the “${k || "id"}” of the record your automation just handled. Pick it from an earlier step.`,
+        json: () => `{"target_record_id": "<value>"}`,
+      };
+    }
     default:
       return {
         tool: "your tool",
@@ -103,7 +121,7 @@ export function n8nPasteNode(url: string, keyColumn: string | null, fill = true)
 
 /** What the read-back step sends. `found` must be true when the search step returned a record. */
 export function evidenceJson(step: string): string {
-  return JSON.stringify({ run_id: "<id of this run>", evidence: [{ step: step || "crm", found: true, key: "<the email or id you searched for>", fields: { Email: "<optional values to check>" } }] }, null, 2);
+  return JSON.stringify({ run_id: "<id of this run>", evidence: [{ step: step || "crm", found: true, count: 1, key: "<the email or id you searched for>", fields: { Email: "<optional values to check>" } }] }, null, 2);
 }
 
 /**
@@ -121,7 +139,7 @@ export function n8nEvidenceNode(url: string, step: string): string {
         url,
         sendBody: true,
         specifyBody: "json",
-        jsonBody: `={\n  "run_id": "{{ $execution.id }}",\n  "evidence": [{\n    "step": "${name}",\n    "found": {{ $input.all().filter(i => Object.keys(i.json || {}).length > 0).length > 0 }},\n    "fields": {{ JSON.stringify($input.first()?.json ?? {}) }}\n  }]\n}`,
+        jsonBody: `={\n  "run_id": "{{ $execution.id }}",\n  "evidence": [{\n    "step": "${name}",\n    "found": {{ $input.all().filter(i => Object.keys(i.json || {}).length > 0).length > 0 }},\n    "count": {{ $input.all().filter(i => Object.keys(i.json || {}).length > 0).length }},\n    "fields": {{ JSON.stringify($input.first()?.json ?? {}) }}\n  }]\n}`,
         options: {},
       },
       type: "n8n-nodes-base.httpRequest",
