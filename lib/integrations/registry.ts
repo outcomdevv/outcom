@@ -4,10 +4,11 @@
 //   "target"  = where the business outcome LIVES (we verify state; the system of truth)
 // Status is honest: "live" = code exists and has run against the real service,
 // "code_complete" = implemented but not yet proven with real credentials, "webhook" = works through the universal
-// inbound webhook only, "planned" = not built.
+// inbound webhook only, "reported" = a target with no connector: the automation reads it back and reports what it saw,
+// "planned" = not built.
 
 export type IntegrationRole = "source" | "target";
-export type IntegrationStatus = "live" | "code_complete" | "webhook" | "planned";
+export type IntegrationStatus = "live" | "code_complete" | "webhook" | "reported" | "planned";
 export type IntegrationAuth = "oauth" | "api_key" | "private_token" | "webhook_url" | "none";
 export type ObservationMode = "native_api" | "inbound_webhook";
 
@@ -34,15 +35,31 @@ export const INTEGRATIONS: readonly IntegrationDef[] = [
   { id: "power_automate", label: "Microsoft Power Automate", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
   { id: "workato", label: "Workato", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
   { id: "ghl_workflows", label: "HighLevel Workflows", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"], note: "Use the Custom Webhook action at the end of a HighLevel workflow." },
+  { id: "uipath", label: "UiPath", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
+  { id: "airtable_automations", label: "Airtable Automations", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"], note: "Use a Run script action with fetch()." },
+  { id: "gumloop", label: "Gumloop", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
+  { id: "relevance_ai", label: "Relevance AI", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
+  { id: "lindy", label: "Lindy", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
+  { id: "stack_ai", label: "Stack AI", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
+  { id: "vellum", label: "Vellum", roles: ["source"], category: "automation", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"] },
   { id: "custom", label: "Custom code / any HTTP sender", roles: ["source"], category: "generic", status: "webhook", auth: ["webhook_url"], observe: ["inbound_webhook"], note: "Anything that can POST JSON: scripts, cron jobs, AI agents, Cloudflare Workers." },
   // ── Systems of truth (verification targets) ──
   { id: "ghl", label: "HighLevel", roles: ["target"], category: "crm", status: "code_complete", auth: ["private_token", "oauth"], verifies: ["contact"], note: "Read-only. Real-account testing pending (signup required a card)." },
   { id: "google_sheets", label: "Google Sheets", roles: ["target"], category: "data", status: "code_complete", auth: ["oauth"], verifies: ["row"], note: "Free for everyone. Read-only. Verifies a row exists / a column value. Real-account test pending." },
   { id: "airtable", label: "Airtable", roles: ["target"], category: "data", status: "code_complete", auth: ["private_token"], verifies: ["record"], note: "Read-only personal access token (data.records:read, schema.bases:read). Real-account test pending." },
   { id: "hubspot", label: "HubSpot", roles: ["target"], category: "crm", status: "code_complete", auth: ["private_token"], verifies: ["contact"], note: "Read-only Private App token (crm.objects.contacts.read). Contacts only for now. Real-account test pending." },
-  { id: "stripe", label: "Stripe", roles: ["target"], category: "payments", status: "planned", auth: ["api_key"], verifies: ["customer", "payment", "invoice"], note: "Restricted read-only key." },
-  { id: "pipedrive", label: "Pipedrive", roles: ["target"], category: "crm", status: "planned", auth: ["oauth"], verifies: ["person", "deal"] },
-  { id: "notion", label: "Notion", roles: ["target"], category: "data", status: "planned", auth: ["oauth"], verifies: ["page"] },
+  { id: "stripe", label: "Stripe", roles: ["target"], category: "payments", status: "reported", auth: ["none"], verifies: ["customer", "payment", "invoice"], note: "Through “Any other app”: the automation retrieves it and reports what it found." },
+  { id: "pipedrive", label: "Pipedrive", roles: ["target"], category: "crm", status: "reported", auth: ["none"], verifies: ["person", "deal"], note: "Through “Any other app”." },
+  { id: "notion", label: "Notion", roles: ["target"], category: "data", status: "reported", auth: ["none"], verifies: ["page"], note: "Through “Any other app”." },
+  { id: "salesforce", label: "Salesforce", roles: ["target"], category: "crm", status: "reported", auth: ["none"], verifies: ["lead", "contact", "opportunity"], note: "Through “Any other app”." },
+  { id: "intercom", label: "Intercom", roles: ["target"], category: "support", status: "reported", auth: ["none"], verifies: ["contact", "conversation"], note: "Through “Any other app”." },
+  { id: "coda", label: "Coda", roles: ["target"], category: "data", status: "reported", auth: ["none"], verifies: ["row"], note: "Through “Any other app”." },
+  { id: "postgres", label: "Supabase / PostgreSQL / MySQL", roles: ["target"], category: "data", status: "reported", auth: ["none"], verifies: ["row"], note: "Through “Any other app”: send a SELECT result and COUNT(*)." },
+  { id: "mongodb", label: "MongoDB", roles: ["target"], category: "data", status: "reported", auth: ["none"], verifies: ["document"], note: "Through “Any other app”." },
+  { id: "google_drive", label: "Google Drive", roles: ["target"], category: "data", status: "reported", auth: ["none"], verifies: ["file"], note: "Through “Any other app”." },
+  { id: "dropbox", label: "Dropbox", roles: ["target"], category: "data", status: "reported", auth: ["none"], verifies: ["file"], note: "Through “Any other app”." },
+  { id: "slack", label: "Slack", roles: ["target"], category: "comms", status: "reported", auth: ["none"], verifies: ["message"], note: "Through “Any other app”." },
+  { id: "teams", label: "Microsoft Teams", roles: ["target"], category: "comms", status: "reported", auth: ["none"], verifies: ["message"], note: "Through “Any other app”." },
   { id: "http_check", label: "Any REST API (read-only check)", roles: ["target"], category: "generic", status: "planned", auth: ["api_key", "none"], verifies: ["http_resource"], note: "Generic GET + JSON-path assertion: one adapter that unlocks long-tail systems." },
 ] as const;
 

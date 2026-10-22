@@ -3,6 +3,7 @@ import { ciGet } from "@/lib/google-sheets";
 import { getWorkspaceStore } from "@/lib/db";
 import { ReportedAdapter, evidenceFor } from "@/lib/evidence";
 import { perRunContracts } from "@/lib/watches";
+import { destinationApp } from "@/lib/destination-apps";
 import type { CheckResult, OutcomeContract, WorkflowEvent } from "@/lib/contracts/types";
 
 const value = (event: WorkflowEvent, path: string) =>
@@ -71,7 +72,7 @@ export async function checkOutcome(event: WorkflowEvent, c: OutcomeContract, wor
     const adapter = reported && evidence ? new ReportedAdapter(evidence) : await adapterFor(c.system, workspaceId ?? event.metadata.workspace_id as string | undefined, cfg.target);
     const record = await adapter.getRecord(lookup);
     const source = reported
-      ? `Evidence reported by the workflow · step "${step}"${lookup ? ` · record ${lookup}` : ""} · not independently verified`
+      ? `Evidence reported by the workflow${destinationApp(cfg.target?.app) ? ` · ${destinationApp(cfg.target?.app)!.label}` : ""} · step "${step}"${lookup ? ` · record ${lookup}` : ""} · not independently verified`
       : `Downstream: ${c.system} · record ${lookup}`;
 
     if (c.type === "record_exists") {

@@ -14,9 +14,12 @@ HOW A WORKFLOW GETS PROTECTED
 2. The last step of the automation sends a small message (POST) to a secret webhook address Outcom gives. Each message is one run.
 3. Outcom then checks each expectation (an "outcome contract") and records PASS, FAIL or UNKNOWN with evidence.
 
+WHERE THE AUTOMATION RUNS
+- n8n, Zapier, Make, any tool that can send an HTTP POST. The "Another tool?" list adds Pipedream, Activepieces, Power Automate, Workato, UiPath, Airtable Automations, HighLevel Workflows, and the AI agent builders Gumloop, Relevance AI, Lindy, Stack AI and Vellum. None of the extra tools has been tested live yet; they all use the same POST.
+
 WHERE OUTCOM LOOKS
 - Google Sheets, Airtable, HubSpot (contacts only) and HighLevel: Outcom reads the system itself (independent verification).
-- Any other app: "Any other app". The automation adds a read-back step that looks the record up and reports what it found. Outcom judges that report. The evidence is labelled "reported by the workflow, not independently verified". Several steps can report into the same run (same run_id).
+- Any other app: "Any other app" (pick which one: Salesforce, Pipedrive, Intercom, Notion, Coda, Supabase/PostgreSQL/MySQL, MongoDB, Google Drive, Dropbox, Slack, Microsoft Teams, Stripe, or another). There is no direct connector for these. The automation adds a read-back step that looks the record up and reports what it found. Outcom judges that report. The evidence is labelled "reported by the workflow, not independently verified". Several steps can report into the same run (same run_id).
 - AI agents: each workflow also has an MCP address (shown under "Using an AI agent instead?" in the Any other app guide). The agent calls the tool verify_outcome after a task, reporting what it read back, and gets PASS, FAIL or UNKNOWN. It is still reported evidence, not independent.
 - Fields whose name looks secret (password, token, api key, card number...) are stored as "[redacted]".
 - Make can also be read from an exported blueprint; n8n workflows can be read from an exported workflow. Zapier needs the paid Webhooks by Zapier step.

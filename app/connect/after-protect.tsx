@@ -1,5 +1,6 @@
 "use client";
 
+import { destinationApp } from "@/lib/destination-apps";
 import { useEffect, useState } from "react";
 import { IntegrationLogo } from "@/app/integrations";
 import FlowDiagram from "@/app/connect/flow-diagram";
@@ -19,6 +20,7 @@ type Props = {
   expression?: string | null;
   /** "Any other app": name of the read-back step. */
   reportedStep?: string;
+  reportedApp?: string;
   onInfo: (next: WebhookInfo) => void;
 };
 
@@ -27,7 +29,7 @@ function SheetMini() { return <svg width="16" height="16" viewBox="0 0 24 24" ar
 type TryResult = { state: string; title: string; observed: string };
 const LABEL: Record<string, string> = { passed: "PASS", failed: "FAIL", verification_error: "UNKNOWN" };
 
-export default function AfterProtect({ info, keyColumn, flow, connectFrom, system = "google_sheets", expression = null, reportedStep = "", onInfo }: Props) {
+export default function AfterProtect({ info, keyColumn, flow, connectFrom, system = "google_sheets", expression = null, reportedStep = "", reportedApp = "", onInfo }: Props) {
   const guide = guideFor(info.provider);
   const [copied, setCopied] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
@@ -101,7 +103,7 @@ export default function AfterProtect({ info, keyColumn, flow, connectFrom, syste
         <li>
           <div className="cx-g-head"><span className="cx-g-n">1</span><b>Add a read-back step after the step that writes</b><IntegrationLogo name={(info.provider === "n8n" || info.provider === "zapier" || info.provider === "make" ? info.provider : "custom") as any} size={22} /></div>
           <ol className="cx-clicks">
-            <li>After the step that saves the record, add a step that <b>looks that record up</b> in the same app (a Search or Get step).</li>
+            <li>After the step that saves the record, add a step that <b>looks that record up</b> {destinationApp(reportedApp) ? <>in {destinationApp(reportedApp)!.label}: {destinationApp(reportedApp)!.lookup}.</> : <>in the same app (a Search or Get step).</>}</li>
             {info.provider === "n8n" && <li>On that search step open <b>Settings</b> and turn on <b>Always Output Data</b>. Without it, an empty result sends nothing and Outcom can only say UNKNOWN.</li>}
             <li>Then add the step that sends the result to Outcom (below).</li>
           </ol>

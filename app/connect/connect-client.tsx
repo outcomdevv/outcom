@@ -2,6 +2,7 @@
 
 import DescribeChecks from "./describe-checks";
 import MoreChecks from "./more-checks";
+import { HTTP_TOOLS, type HttpToolId } from "@/lib/connect-guide";
 import { CHECK_TEMPLATES } from "@/lib/check-templates";
 import type { CheckSuggestion } from "@/lib/check-suggestions";
 import { useEffect, useMemo, useState } from "react";
@@ -21,9 +22,10 @@ import {
 } from "@/lib/connect-checks";
 
 type CoreTool = "n8n" | "zapier" | "make" | "custom";
-type ExtraTool = "pipedream" | "activepieces" | "power_automate" | "workato" | "ghl_workflows";
+type ExtraTool = HttpToolId;
 type Platform = CoreTool | ExtraTool;
-const EXTRA_TOOLS: Array<{ id: ExtraTool; name: string }> = [{ id: "pipedream", name: "Pipedream" }, { id: "activepieces", name: "Activepieces" }, { id: "power_automate", name: "Power Automate" }, { id: "workato", name: "Workato" }, { id: "ghl_workflows", name: "HighLevel Workflows" }];
+const EXTRA_TOOLS = (Object.entries(HTTP_TOOLS) as Array<[ExtraTool, (typeof HTTP_TOOLS)[ExtraTool]]>).map(([id, t]) => ({ id, name: t.label, group: t.group }));
+const EXTRA_GROUPS = [...new Set(EXTRA_TOOLS.map(t => t.group))];
 type Provider = "ghl" | "google_sheets" | "airtable" | "hubspot" | Platform;
 type Connection = { provider: Provider; accountName: string; email?: string | null; expiresAt?: string | null };
 type Discovered = { id: string; name: string; enabled: boolean; platform: string };
@@ -72,6 +74,9 @@ export default function ConnectClient() {
   const [valueDraft, setValueDraft] = useState<{ field: string; operator: Operator; expectedValue: string; expectedFrom: string; useRun: boolean }>({ field: "", operator: "equals", expectedValue: "", expectedFrom: "", useRun: false });
   const [targetSystem, setTargetSystem] = useState<TargetSystem>("google_sheets");
   const [reportedStep, setReportedStep] = useState("");
+  const [reportedApp, setReportedApp] = useState("");
+  /** Picking an app suggests its name as the read-back step, unless the user already typed their own. */
+  const pickReportedApp = (id: string) => { setReportedStep(cur => (!cur.trim() || cur === reportedApp ? (id && id !== "other" ? id : "") : cur)); setReportedApp(id); };
   const [sheetTarget, setSheetTarget] = useState<SheetTargetState | null>(null);
   const [airtableTarget, setAirtableTarget] = useState<AirtableTargetState | null>(null);
   const [hubspotTarget, setHubspotTarget] = useState<HubspotTargetState | null>(null);
@@ -143,6 +148,7 @@ export default function ConnectClient() {
         if (Array.isArray(d.checks)) setChecks(d.checks.filter((c: any) => c && typeof c.id === "string" && typeof c.kind === "string"));
         if (["google_sheets", "airtable", "hubspot", "ghl", "reported", "none"].includes(d.targetSystem)) setTargetSystem(d.targetSystem);
         if (typeof d.reportedStep === "string") setReportedStep(d.reportedStep);
+        if (typeof d.reportedApp === "string") setReportedApp(d.reportedApp);
         if (d.airtableTarget && typeof d.airtableTarget === "object") setAirtableTarget(d.airtableTarget);
         if (d.hubspotTarget && typeof d.hubspotTarget === "object") setHubspotTarget(d.hubspotTarget);
         if (d.sheetTarget && typeof d.sheetTarget === "object") setSheetTarget(d.sheetTarget);
@@ -155,8 +161,8 @@ export default function ConnectClient() {
   }, []);
   useEffect(() => {
     if (!hydrated) return;
-    try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ platform, step, name, workflowId, checks, targetSystem, reportedStep, sheetTarget, airtableTarget, hubspotTarget, n8nBaseUrl, flow, connectFrom })); } catch { /* storage unavailable */ }
-  }, [hydrated, platform, step, name, workflowId, checks, targetSystem, reportedStep, sheetTarget, airtableTarget, hubspotTarget, n8nBaseUrl, flow, connectFrom]);
+    try { window.localStorage.setItem(DRAFT_KEY, JSON.stringify({ platform, step, name, workflowId, checks, targetSystem, reportedStep, reportedApp, sheetTarget, airtableTarget, hubspotTarget, n8nBaseUrl, flow, connectFrom })); } catch { /* storage unavailable */ }
+  }, [hydrated, platform, step, name, workflowId, checks, targetSystem, reportedStep, reportedApp, sheetTarget, airtableTarget, hubspotTarget, n8nBaseUrl, flow, connectFrom]);
 
   // A saved or scanned sheet has no column list yet; fetch it so typos can be caught and access problems shown early.
   async function loadHeaders() {
@@ -235,7 +241,7 @@ export default function ConnectClient() {
     if (next === targetSystem) return;
     setTargetSystem(next); setSheetHeaders([]); setSheetBlocked(null); setMessage(null);
   }
-  const currentTarget = targetSystem === "google_sheets" ? sheetTarget : targetSystem === "airtable" ? airtableTarget : targetSystem === "hubspot" ? hubspotTarget : targetSystem === "reported" ? { step: reportedStep.trim() } : null;
+  const currentTarget = targetSystem === "google_sheets" ? sheetTarget : targetSystem === "airtable" ? airtableTarget : targetSystem === "hubspot" ? hubspotTarget : targetSystem === "reported" ? { step: reportedStep.trim(), ...(reportedApp ? { app: reportedApp } : {}) } : null;
   const systemName = targetSystem === "google_sheets" ? "Google Sheets" : targetSystem === "airtable" ? "Airtable" : targetSystem === "hubspot" ? "HubSpot" : targetSystem === "ghl" ? "HighLevel" : targetSystem === "reported" ? "Any other app" : "";
 
   const hasKind = (k: CheckKind) => checks.some(c => c.kind === k);
@@ -444,7 +450,7 @@ export default function ConnectClient() {
           <label className="cx-field">Another tool?
             <select value={EXTRA_TOOLS.some(t => t.id === platform) ? platform : ""} onChange={e => { if (e.target.value) { setPlatform(e.target.value as Platform); setMessage(null); setDiscoveryLoaded(false); } }}>
               <option value="">Choose…</option>
-              {EXTRA_TOOLS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              {EXTRA_GROUPS.map(g => <optgroup key={g} label={g}>{EXTRA_TOOLS.filter(t => t.group === g).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}
             </select>
             <small className="cx-muted">Anything that can send an HTTP request works. These tools get their own instructions.</small>
           </label>
@@ -561,7 +567,7 @@ export default function ConnectClient() {
             <button type="button" className="simple-primary" onClick={() => void loadHeaders()}>I shared it, check again</button>
           </div>}
           {needsBusinessSystem(checks)
-            ? <BusinessSystemPicker value={targetSystem} onChange={changeSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} robotEmail={robotEmail} ghlConnected={Boolean(ghl)} airtableConnected={Boolean(airtable)} hubspotConnected={Boolean(hubspot)} airtableOAuth={oauth.airtable} hubspotOAuth={oauth.hubspot} airtable={airtableTarget} onAirtable={setAirtableTarget} hubspot={hubspotTarget} onHubspot={setHubspotTarget} onTokenSaved={() => void loadConnections()} sheet={sheetTarget} onSheet={setSheetTarget} onHeaders={setSheetHeaders} onConnectGoogle={() => { window.location.href = "/api/oauth/google_sheets/start"; }} ghlPanel={ghlPanel} reportedStep={reportedStep} onReportedStep={setReportedStep} />
+            ? <BusinessSystemPicker value={targetSystem} onChange={changeSystem} googleConnected={Boolean(googleConn)} googleConfigured={oauth.google_sheets} robotEmail={robotEmail} ghlConnected={Boolean(ghl)} airtableConnected={Boolean(airtable)} hubspotConnected={Boolean(hubspot)} airtableOAuth={oauth.airtable} hubspotOAuth={oauth.hubspot} airtable={airtableTarget} onAirtable={setAirtableTarget} hubspot={hubspotTarget} onHubspot={setHubspotTarget} onTokenSaved={() => void loadConnections()} sheet={sheetTarget} onSheet={setSheetTarget} onHeaders={setSheetHeaders} onConnectGoogle={() => { window.location.href = "/api/oauth/google_sheets/start"; }} ghlPanel={ghlPanel} reportedStep={reportedStep} onReportedStep={setReportedStep} reportedApp={reportedApp} onReportedApp={pickReportedApp} />
             : <p className="cx-note">Your checks only look at the run itself, so there is nothing to connect.</p>}
 
           <h3 className="cx-h">Your checks</h3>
@@ -612,7 +618,7 @@ export default function ConnectClient() {
       </section>
 
       {/* AFTER PROTECT */}
-      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={targetSystem === "airtable" ? airtableTarget?.keyField ?? null : targetSystem === "hubspot" ? ({ email: "Email", phone: "Phone", id: "Contact ID" } as Record<string, string>)[hubspotTarget?.keyProperty ?? "email"] ?? "Email" : sheetTarget?.keyColumn ?? null} system={targetSystem} reportedStep={reportedStep.trim()} flow={flow} connectFrom={connectFrom} expression={platform === "make" ? recordExpr : null} onInfo={setWebhookInfo} />}
+      {created && !native && webhookInfo && <AfterProtect info={webhookInfo} keyColumn={targetSystem === "airtable" ? airtableTarget?.keyField ?? null : targetSystem === "hubspot" ? ({ email: "Email", phone: "Phone", id: "Contact ID" } as Record<string, string>)[hubspotTarget?.keyProperty ?? "email"] ?? "Email" : sheetTarget?.keyColumn ?? null} system={targetSystem} reportedStep={reportedStep.trim()} reportedApp={reportedApp} flow={flow} connectFrom={connectFrom} expression={platform === "make" ? recordExpr : null} onInfo={setWebhookInfo} />}
 
       {created && native && <section id="live-webhook" className="cx-flow cx-done">
         <div className="cx-done-head"><span className="cx-pill">● Protected</span><h2>{name}</h2><p>Outcom is watching this n8n workflow directly. Nothing else to set up.</p></div>

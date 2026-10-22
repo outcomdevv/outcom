@@ -2,16 +2,24 @@
 // Every platform sends ONE field called target_record_id. The inbound webhook reads it at the top level
 // (and also under data.), so non-technical users fill a name/value pair instead of writing JSON.
 
-export type GuidePlatform = "n8n" | "zapier" | "make" | "custom" | "pipedream" | "activepieces" | "power_automate" | "workato" | "ghl_workflows";
-
 /** Tools that only need an HTTP POST. They share one guide; only the wording of the first step differs. */
-export const HTTP_TOOLS: Record<string, { label: string; first: string }> = {
-  pipedream: { label: "Pipedream", first: "At the end of the workflow add a step: search for “HTTP” and choose the action that sends an HTTP request." },
-  activepieces: { label: "Activepieces", first: "At the end of the flow add the HTTP piece and choose its “Send HTTP request” action." },
-  power_automate: { label: "Power Automate", first: "At the end of the flow add the HTTP action (it is a premium connector in Power Automate)." },
-  workato: { label: "Workato", first: "At the end of the recipe add an HTTP action that sends a POST request." },
-  ghl_workflows: { label: "HighLevel Workflows", first: "At the end of the workflow add the Custom Webhook action." },
-};
+export const HTTP_TOOLS = {
+  pipedream: { group: "No-code and enterprise", label: "Pipedream", first: "At the end of the workflow add a step: search for “HTTP” and choose the action that sends an HTTP request." },
+  activepieces: { group: "No-code and enterprise", label: "Activepieces", first: "At the end of the flow add the HTTP piece and choose its “Send HTTP request” action." },
+  power_automate: { group: "No-code and enterprise", label: "Power Automate", first: "At the end of the flow add the HTTP action (it is a premium connector in Power Automate)." },
+  workato: { group: "No-code and enterprise", label: "Workato", first: "At the end of the recipe add an HTTP action that sends a POST request." },
+  uipath: { group: "No-code and enterprise", label: "UiPath", first: "At the end of the process add an HTTP request activity set to POST." },
+  airtable_automations: { group: "No-code and enterprise", label: "Airtable Automations", first: "At the end of the automation add a “Run a script” action and send the JSON below with fetch()." },
+  ghl_workflows: { group: "No-code and enterprise", label: "HighLevel Workflows", first: "At the end of the workflow add the Custom Webhook action." },
+  gumloop: { group: "AI agent builders", label: "Gumloop", first: "At the end of the flow add the node that sends an HTTP or API request (search the node list for “HTTP” or “API request”)." },
+  relevance_ai: { group: "AI agent builders", label: "Relevance AI", first: "At the end of the agent or tool add a step that sends an API request (search for “API” or “HTTP”)." },
+  lindy: { group: "AI agent builders", label: "Lindy", first: "At the end of the agent add an action that sends an HTTP or webhook request (search for “HTTP” or “webhook”)." },
+  stack_ai: { group: "AI agent builders", label: "Stack AI", first: "At the end of the flow add a node that calls an API (search for “API” or “HTTP”)." },
+  vellum: { group: "AI agent builders", label: "Vellum", first: "At the end of the workflow add an API or code node that sends an HTTP POST." },
+} satisfies Record<string, { group: string; label: string; first: string }>;
+
+export type HttpToolId = keyof typeof HTTP_TOOLS;
+export type GuidePlatform = "n8n" | "zapier" | "make" | "custom" | HttpToolId;
 
 export const FIELD_NAME = "target_record_id";
 
@@ -26,6 +34,15 @@ export type Guide = {
 };
 
 export const guideFor = (platform: string): Guide => {
+  const http = (HTTP_TOOLS as Record<string, { label: string; first: string }>)[platform];
+  if (http) {
+    return {
+      tool: http.label,
+      steps: [http.first, "Method: POST. URL: paste your address.", "Body: JSON, with one field named target_record_id.", "Run the automation once."],
+      valueHelp: k => `Its value is the “${k || "id"}” of the record your automation just handled. Pick it from an earlier step.`,
+      json: () => `{"target_record_id": "<value>"}`,
+    };
+  }
   switch (platform) {
     case "n8n":
       return {
@@ -69,15 +86,6 @@ export const guideFor = (platform: string): Guide => {
         valueHelp: (k, e) => e ? `Already filled in: ${e} is the same value your scenario saved as “${k || "the id"}”. Paste the message below as it is.` : `Between the quotes, pick “${k || "the id"}” from the list that opens.`,
         json: (_k, e) => `{"target_record_id": "${e ?? ""}"}`,
       };
-    case "pipedream": case "activepieces": case "power_automate": case "workato": case "ghl_workflows": {
-      const t = HTTP_TOOLS[platform];
-      return {
-        tool: t.label,
-        steps: [t.first, "Method: POST. URL: paste your address.", "Body: JSON, with one field named target_record_id.", "Run the automation once."],
-        valueHelp: k => `Its value is the “${k || "id"}” of the record your automation just handled. Pick it from an earlier step.`,
-        json: () => `{"target_record_id": "<value>"}`,
-      };
-    }
     default:
       return {
         tool: "your tool",

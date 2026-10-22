@@ -118,3 +118,11 @@ describe("V95 check modes through the protect route", () => {
     expect(created[0].configuration.expectedFrom).toBeUndefined();
   });
 });
+
+describe("reported target app", () => {
+  it("stores a known app with the step and drops an unknown one", async () => {
+    await call({ provider: "gumloop", externalId: "w", name: "n", expectedOutcomes: [{ label: "a", type: "record_exists", system: "reported", target: { step: "Notion", app: "notion" } }, { label: "b", type: "record_exists", system: "reported", target: { step: "x", app: "<b>" } }] });
+    expect(created[0].configuration.target).toEqual({ step: "notion", app: "notion" });
+    expect(created[1].configuration.target).toEqual({ step: "x" });
+  });
+});

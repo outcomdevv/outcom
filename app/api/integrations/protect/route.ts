@@ -5,6 +5,7 @@ import { parseSheetTarget } from "@/lib/google-sheets";
 import { parseAirtableTarget } from "@/lib/airtable";
 import { parseHubspotTarget } from "@/lib/hubspot";
 import { slugStep } from "@/lib/evidence";
+import { cleanApp } from "@/lib/destination-apps";
 
 // Business systems an outcome can be verified against. "event" = no external system (checks the run payload only).
 const SYSTEMS = new Set(["ghl", "google_sheets", "airtable", "hubspot", "reported", "event"]);
@@ -20,7 +21,7 @@ const ENTITY: Record<string, string> = { google_sheets: "row", airtable: "record
 function parseTarget(system: string, raw: unknown, fields: string[]) {
   if (system === "google_sheets") return parseSheetTarget(raw);
   if (system === "airtable") return parseAirtableTarget(raw);
-  if (system === "reported") { const step = slugStep(raw && typeof raw === "object" ? (raw as any).step : ""); return step ? { step } : null; }
+  if (system === "reported") { const o = raw && typeof raw === "object" ? (raw as any) : {}; const step = slugStep(o.step); const app = cleanApp(o.app); return step ? { step, ...(app ? { app } : {}) } : null; }
   if (system === "hubspot") return parseHubspotTarget({ ...(raw && typeof raw === "object" ? raw : {}), properties: fields });
   return null;
 }

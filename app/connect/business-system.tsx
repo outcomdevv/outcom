@@ -1,5 +1,6 @@
 "use client";
 
+import { DESTINATION_APPS, DESTINATION_GROUPS, destinationApp } from "@/lib/destination-apps";
 import { useState } from "react";
 import LoadingScreen from "@/app/loading-screen";
 import { IntegrationLogo } from "@/app/integrations";
@@ -40,6 +41,9 @@ type Props = {
   /** "Any other app": the short name of the read-back step that reports what it saw. */
   reportedStep?: string;
   onReportedStep?: (v: string) => void;
+  /** Which app the result lands in (Notion, Salesforce, Slack...). Only used to word the instructions and label the evidence. */
+  reportedApp?: string;
+  onReportedApp?: (id: string) => void;
 };
 
 async function api(url: string) {
@@ -48,7 +52,7 @@ async function api(url: string) {
   return { ok: r.ok, status: r.status, j };
 }
 
-export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, airtableConnected, hubspotConnected, airtableOAuth, hubspotOAuth, airtable, onAirtable, hubspot, onHubspot, onTokenSaved, sheet, onSheet, onHeaders, onConnectGoogle, ghlPanel, reportedStep = "", onReportedStep }: Props) {
+export default function BusinessSystemPicker({ value, onChange, googleConnected, googleConfigured, robotEmail, ghlConnected, airtableConnected, hubspotConnected, airtableOAuth, hubspotOAuth, airtable, onAirtable, hubspot, onHubspot, onTokenSaved, sheet, onSheet, onHeaders, onConnectGoogle, ghlPanel, reportedStep = "", onReportedStep, reportedApp = "", onReportedApp }: Props) {
   const [useOwnGoogle, setUseOwnGoogle] = useState(false);
   const robot = !googleConnected && Boolean(robotEmail) && !useOwnGoogle;
   const acc = robot ? "&access=service_account" : "";
@@ -144,7 +148,14 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
       {value === "hubspot" && <HubspotPanel oauthReady={hubspotOAuth} connected={hubspotConnected} onConnected={onTokenSaved} value={hubspot} onChange={onHubspot} onHeaders={h => onHeaders?.(h)} />}
 
       {value === "reported" && <div className="cx-sheet">
-        <p className="cx-note">Works with any app your automation can read, for example Salesforce, Notion, Pipedrive or Stripe. After the step that writes, your automation adds a step that looks the record up and sends the result to Outcom. Outcom judges it and shows PASS, FAIL or UNKNOWN. The label says the evidence was reported by your workflow, not read by Outcom.</p>
+        <p className="cx-note">Works with any app your automation can read, for example Salesforce, Notion, Slack, a database such as Supabase or PostgreSQL, Google Drive or Stripe. After the step that writes, your automation adds a step that looks the record up and sends the result to Outcom. Outcom judges it and shows PASS, FAIL or UNKNOWN. The label says the evidence was reported by your workflow, not read by Outcom.</p>
+        <label className="cx-field">Which app is it?
+          <select value={reportedApp} onChange={e => onReportedApp?.(e.target.value)}>
+            <option value="">Choose…</option>
+            {DESTINATION_GROUPS.map(g => <optgroup key={g} label={g}>{DESTINATION_APPS.filter(a => a.group === g).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</optgroup>)}
+          </select>
+          {destinationApp(reportedApp) && <small className="cx-muted">Your automation looks up {destinationApp(reportedApp)!.lookup}, then reports what it found.</small>}
+        </label>
         <label className="cx-field">Short name for that read-back step
           <input value={reportedStep} onChange={e => onReportedStep?.(e.target.value)} placeholder="for example crm" autoComplete="off" name="outcom-reported-step" maxLength={60} />
         </label>
