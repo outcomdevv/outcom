@@ -2,6 +2,7 @@
 
 import DescribeChecks from "./describe-checks";
 import MoreChecks from "./more-checks";
+import { BrandLogo } from "./brand-logo";
 import { HTTP_TOOLS, type HttpToolId } from "@/lib/connect-guide";
 import { CHECK_TEMPLATES } from "@/lib/check-templates";
 import type { CheckSuggestion } from "@/lib/check-suggestions";
@@ -447,13 +448,21 @@ export default function ConnectClient() {
               </button>
             ))}
           </div>
-          <label className="cx-field">Another tool?
-            <select value={EXTRA_TOOLS.some(t => t.id === platform) ? platform : ""} onChange={e => { if (e.target.value) { setPlatform(e.target.value as Platform); setMessage(null); setDiscoveryLoaded(false); } }}>
-              <option value="">Choose…</option>
-              {EXTRA_GROUPS.map(g => <optgroup key={g} label={g}>{EXTRA_TOOLS.filter(t => t.group === g).map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</optgroup>)}
-            </select>
-            <small className="cx-muted">Anything that can send an HTTP request works. These tools get their own instructions.</small>
-          </label>
+          <div className="cx-more">
+            <h4>More tools <small>Anything that can send an HTTP request works. Each tool below gets its own instructions.</small></h4>
+            {EXTRA_GROUPS.map(g => (
+              <div key={g}>
+                <span className="cx-group">{g}</span>
+                <div className="cx-options cx-mini">
+                  {EXTRA_TOOLS.filter(t => t.group === g).map(t => (
+                    <button type="button" key={t.id} className={`cx-option ${platform === t.id ? "on" : ""}`} onClick={() => { setPlatform(t.id); setMessage(null); setDiscoveryLoaded(false); }}>
+                      {t.id === "ghl_workflows" ? <IntegrationLogo name="ghl" size={30} /> : <BrandLogo id={t.id} label={t.name} size={30} />}<span><b>{t.name}</b></span><i>{platform === t.id ? "✓" : ""}</i>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
 
           <label className="cx-field">Name this automation
             <input name="outcom-automation-name" autoComplete="off" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Lead intake → Sheet" />

@@ -165,3 +165,13 @@
 .cx-option .integration-logo-ghl{width:56px;height:34px;object-fit:contain;flex:none}
 .cx-option:disabled{opacity:.5;cursor:not-allowed}
 .watches-panel .proof-links li>span{flex:1}
+
+/* V96.1 clickable tool and app cards */
+.cx-more{margin-top:18px;display:grid;gap:10px}
+.cx-more h4{margin:0;font-size:14px;font-weight:800}
+.cx-more h4 small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:2px}
+.cx-group{display:block;margin:6px 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:800}
+.cx-mini{grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:8px}
+.cx-mini .cx-option{padding:10px 12px;gap:10px;border-radius:14px}
+.cx-mini .cx-option b{font-size:13.5px}
+.cx-mini .cx-option i{width:16px}

@@ -56,3 +56,17 @@ describe("evidence label names the app", () => {
     expect((await checkOutcome(event, contract())).evidence.join(" ")).toMatch(/reported by the workflow · step "crm"/);
   });
 });
+
+import { BRANDS, brandUrl, initials } from "@/lib/brand-logos";
+describe("brand logos", () => {
+  it("every tool and app card has a brand entry, and missing logos fall back to initials", () => {
+    for (const id of [...Object.keys(HTTP_TOOLS), ...DESTINATION_APPS.filter(a => a.id !== "other").map(a => a.id)]) {
+      if (id === "ghl_workflows") continue; // uses the HighLevel logo
+      expect(BRANDS[id], id).toBeDefined();
+    }
+    expect(brandUrl("notion")).toBe("https://cdn.simpleicons.org/notion/000000");
+    expect(brandUrl("gumloop")).toBeNull();
+    expect(initials("Relevance AI")).toBe("RA");
+    expect(initials("Supabase / PostgreSQL / MySQL")).toBe("SP");
+  });
+});

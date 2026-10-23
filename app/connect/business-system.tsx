@@ -5,7 +5,7 @@ import { useState } from "react";
 import LoadingScreen from "@/app/loading-screen";
 import { IntegrationLogo } from "@/app/integrations";
 import { AnyAppIcon, BlockIcon, SheetIcon } from "@/app/connect/icons";
-import { AirtableLogo } from "@/app/connect/brand-logo";
+import { AirtableLogo, BrandLogo } from "@/app/connect/brand-logo";
 import { AirtablePanel, HubspotPanel, type AirtableTargetState, type HubspotTargetState } from "@/app/connect/token-panels";
 import type { TargetKind } from "@/lib/connect-checks";
 
@@ -142,6 +142,25 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
         </button>
       </div>
 
+      <div className="cx-more">
+        <h4>More apps <small>Your automation looks the result up and reports what it found.</small></h4>
+        {DESTINATION_GROUPS.filter(g => g !== "Other").map(g => (
+          <div key={g}>
+            <span className="cx-group">{g}</span>
+            <div className="cx-options cx-mini">
+              {DESTINATION_APPS.filter(a => a.group === g).map(a => {
+                const on = value === "reported" && reportedApp === a.id;
+                return (
+                  <button type="button" key={a.id} className={`cx-option ${on ? "on" : ""}`} onClick={() => { onChange("reported"); onReportedApp?.(a.id); }}>
+                    <BrandLogo id={a.id} label={a.label} size={30} /><span><b>{a.label}</b></span><i>{on ? "✓" : ""}</i>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
       {value === "none" && <p className="cx-note">Outcom will only catch failed runs and runs with no output. Pick Google Sheets later to check the real result.</p>}
 
       {value === "airtable" && <AirtablePanel oauthReady={airtableOAuth} connected={airtableConnected} onConnected={onTokenSaved} value={airtable} onChange={onAirtable} onHeaders={h => onHeaders?.(h)} />}
@@ -149,13 +168,9 @@ export default function BusinessSystemPicker({ value, onChange, googleConnected,
 
       {value === "reported" && <div className="cx-sheet">
         <p className="cx-note">Works with any app your automation can read, for example Salesforce, Notion, Slack, a database such as Supabase or PostgreSQL, Google Drive or Stripe. After the step that writes, your automation adds a step that looks the record up and sends the result to Outcom. Outcom judges it and shows PASS, FAIL or UNKNOWN. The label says the evidence was reported by your workflow, not read by Outcom.</p>
-        <label className="cx-field">Which app is it?
-          <select value={reportedApp} onChange={e => onReportedApp?.(e.target.value)}>
-            <option value="">Choose…</option>
-            {DESTINATION_GROUPS.map(g => <optgroup key={g} label={g}>{DESTINATION_APPS.filter(a => a.group === g).map(a => <option key={a.id} value={a.id}>{a.label}</option>)}</optgroup>)}
-          </select>
-          {destinationApp(reportedApp) && <small className="cx-muted">Your automation looks up {destinationApp(reportedApp)!.lookup}, then reports what it found.</small>}
-        </label>
+        {destinationApp(reportedApp)
+          ? <p className="cx-ok"><b>{destinationApp(reportedApp)!.label}</b>: your automation looks up {destinationApp(reportedApp)!.lookup}, then reports what it found.</p>
+          : <p className="cx-muted">Pick your app above to get exact instructions, or keep “Any other app” if it is not listed.</p>}
         <label className="cx-field">Short name for that read-back step
           <input value={reportedStep} onChange={e => onReportedStep?.(e.target.value)} placeholder="for example crm" autoComplete="off" name="outcom-reported-step" maxLength={60} />
         </label>
