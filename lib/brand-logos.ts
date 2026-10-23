@@ -1,38 +1,41 @@
-// Logos for the tools and apps shown as cards. Each is a Simple Icons slug; when a slug does not exist the card
-// shows a coloured initials badge instead, so a missing logo never leaves a broken image.
-export type Brand = { slug: string | null; color: string };
+// Real company logos for the tool and app cards. Nothing here is drawn or invented:
+//  1. a logo that exists in a public icon library is loaded from it (Iconify serves the logos project and Simple Icons);
+//  2. otherwise the card looks for an official logo file that the team puts in /public/brands/<id>.svg or .png;
+//  3. only if neither exists does the card show a plain grey badge with the name's initials.
+export type LogoSource = { prefix: "logos" | "simple-icons"; name: string; color?: string };
 
-export const BRANDS: Record<string, Brand> = {
+export const LOGO_SOURCES: Record<string, LogoSource> = {
   // automation platforms
-  pipedream: { slug: "pipedream", color: "34D399" },
-  activepieces: { slug: "activepieces", color: "6E41E2" },
-  power_automate: { slug: "powerautomate", color: "0066FF" },
-  workato: { slug: null, color: "FF6D00" },
-  uipath: { slug: "uipath", color: "FA4616" },
-  airtable_automations: { slug: "airtable", color: "18BFFF" },
-  gumloop: { slug: null, color: "F97316" },
-  relevance_ai: { slug: null, color: "7C3AED" },
-  lindy: { slug: null, color: "2563EB" },
-  stack_ai: { slug: null, color: "0F766E" },
-  vellum: { slug: null, color: "111827" },
+  pipedream: { prefix: "logos", name: "pipedream" },
+  power_automate: { prefix: "simple-icons", name: "powerautomate", color: "0066FF" },
+  uipath: { prefix: "simple-icons", name: "uipath", color: "FA4616" },
+  airtable_automations: { prefix: "logos", name: "airtable" },
   // destination apps
-  salesforce: { slug: "salesforce", color: "00A1E0" },
-  pipedrive: { slug: "pipedrive", color: "111827" },
-  intercom: { slug: "intercom", color: "6AFDEF" },
-  notion: { slug: "notion", color: "000000" },
-  coda: { slug: "coda", color: "F46A54" },
-  postgres: { slug: "postgresql", color: "4169E1" },
-  mongodb: { slug: "mongodb", color: "47A248" },
-  google_drive: { slug: "googledrive", color: "4285F4" },
-  dropbox: { slug: "dropbox", color: "0061FF" },
-  slack: { slug: "slack", color: "4A154B" },
-  teams: { slug: "microsoftteams", color: "6264A7" },
-  stripe: { slug: "stripe", color: "635BFF" },
+  salesforce: { prefix: "logos", name: "salesforce" },
+  pipedrive: { prefix: "logos", name: "pipedrive" },
+  intercom: { prefix: "logos", name: "intercom" },
+  notion: { prefix: "logos", name: "notion-icon" },
+  coda: { prefix: "logos", name: "coda-icon" },
+  postgres: { prefix: "logos", name: "postgresql" },
+  mongodb: { prefix: "logos", name: "mongodb-icon" },
+  google_drive: { prefix: "logos", name: "google-drive" },
+  dropbox: { prefix: "logos", name: "dropbox" },
+  slack: { prefix: "logos", name: "slack-icon" },
+  teams: { prefix: "logos", name: "microsoft-teams" },
+  stripe: { prefix: "logos", name: "stripe" },
 };
 
-export const brandUrl = (id: string): string | null => {
-  const b = BRANDS[id];
-  return b?.slug ? `https://cdn.simpleicons.org/${b.slug}/${b.color}` : null;
-};
-export const brandColor = (id: string) => `#${BRANDS[id]?.color ?? "6B7280"}`;
+/** Tools with no logo in any public library. Put the company's official file at public/brands/<id>.svg (or .png). */
+export const NEEDS_OFFICIAL_LOGO = ["lindy", "vellum"] as const;
+
+const ICONIFY = "https://api.iconify.design";
+
+/** Where to try loading a logo from, in order. */
+export function logoChain(id: string): string[] {
+  const s = LOGO_SOURCES[id];
+  const local = [`/brands/${id}.svg`, `/brands/${id}.png`];
+  if (!s) return local;
+  return [`${ICONIFY}/${s.prefix}/${s.name}.svg${s.color ? `?color=%23${s.color}` : ""}`, ...local];
+}
+
 export const initials = (label: string) => label.replace(/[^A-Za-z0-9 ]/g, " ").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";

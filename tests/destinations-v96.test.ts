@@ -57,15 +57,24 @@ describe("evidence label names the app", () => {
   });
 });
 
-import { BRANDS, brandUrl, initials } from "@/lib/brand-logos";
+import { existsSync } from "node:fs";
+import { LOGO_SOURCES, NEEDS_OFFICIAL_LOGO, initials, logoChain } from "@/lib/brand-logos";
 describe("brand logos", () => {
-  it("every tool and app card has a brand entry, and missing logos fall back to initials", () => {
-    for (const id of [...Object.keys(HTTP_TOOLS), ...DESTINATION_APPS.filter(a => a.id !== "other").map(a => a.id)]) {
-      if (id === "ghl_workflows") continue; // uses the HighLevel logo
-      expect(BRANDS[id], id).toBeDefined();
+  const ids = [...Object.keys(HTTP_TOOLS), ...DESTINATION_APPS.filter(a => a.id !== "other").map(a => a.id)].filter(id => id !== "ghl_workflows"); // HighLevel uses its own logo
+  it("every card either has a public logo source / official file or is listed as needing an official file, never both", () => {
+    for (const id of ids) {
+      const has = Boolean(LOGO_SOURCES[id]) || ["svg", "png"].some(e => existsSync(`public/brands/${id}.${e}`));
+      const needs = (NEEDS_OFFICIAL_LOGO as readonly string[]).includes(id);
+      expect(has !== needs, id).toBe(true);
     }
-    expect(brandUrl("notion")).toBe("https://cdn.simpleicons.org/notion/000000");
-    expect(brandUrl("gumloop")).toBeNull();
+  });
+  it("loads the real source first, then an official file placed in /brands, and never invents a mark", () => {
+    expect(logoChain("slack")[0]).toBe("https://api.iconify.design/logos/slack-icon.svg");
+    expect(logoChain("power_automate")[0]).toBe("https://api.iconify.design/simple-icons/powerautomate.svg?color=%230066FF");
+    expect(logoChain("slack").slice(1)).toEqual(["/brands/slack.svg", "/brands/slack.png"]);
+    expect(logoChain("workato")).toEqual(["/brands/workato.svg", "/brands/workato.png"]);
+  });
+  it("initials are only the plain fallback", () => {
     expect(initials("Relevance AI")).toBe("RA");
     expect(initials("Supabase / PostgreSQL / MySQL")).toBe("SP");
   });
