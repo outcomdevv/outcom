@@ -47,3 +47,11 @@ LIMITS TO STATE HONESTLY
 - HubSpot checks cover contacts only. Each workflow has checks against the places chosen for it.
 - A webhook address is a secret: whoever has it can send events to that workflow, but cannot read data.
 `.trim();
+
+
+V97 BUSINESS INTELLIGENCE AND HUMAN-APPROVED REMEDIATION
+- Outcom can assess five configured dimensions: customer identity, eligibility, commercial policy, message recipient, and business objective. Missing evidence is UNKNOWN/INCOMPLETE, never PASS.
+- Business policies must be explicitly configured by the workspace. Outcom must not invent eligibility, pricing, margin, legal or commercial rules.
+- Repair proposals are previews only. Every proposal requires explicit approval and expires after seven days. Declining records the decision and makes no changes.
+- V97 records approval but does not execute external repairs yet. A provider-specific executor must be implemented, scoped, idempotent, audited, and followed by independent read-back before a proposal may be marked verified. Never claim a repair succeeded merely because it was approved or dispatched.
+- Evidence sources must be labeled native_readback, reported, or event. Reported evidence is not equivalent to independent destination verification.

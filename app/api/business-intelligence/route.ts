@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { createSupabaseServiceClient } from "@/lib/supabase/server";
+import { requireWorkspace } from "@/lib/auth";
+export const dynamic = "force-dynamic";
+export async function GET() { try { const ctx=await requireWorkspace(); const db:any=createSupabaseServiceClient(); const {data,error}=await db.from("business_assessments").select("id,workflow_id,event_id,entity_key,assessment,created_at").eq("workspace_id",ctx.workspaceId).order("created_at",{ascending:false}).limit(500); if(error) throw error; const rows=data??[]; const totals={pass:0,fail:0,incomplete:0}; for(const r of rows){const v=r.assessment?.verdict;if(typeof v === "string" && Object.prototype.hasOwnProperty.call(totals,v)) totals[v as keyof typeof totals]++;} return NextResponse.json({assessments:rows,totals,dimensions:["identity","eligibility","commercial_sense","recipient","objective"]}); } catch(e) { return NextResponse.json({error:e instanceof Error?e.message:"Could not load business intelligence."},{status:401}); } }
