@@ -25,6 +25,7 @@ export type ExecutionResult = {
 };
 export interface ExecutionProvider {
   readonly id: string;
+  readonly mode: ExecutionMode;
   supports(action: RemediationAction): boolean;
   execute(request: ExecutionRequest): Promise<{ operationId: string; before?: Record<string, unknown> | null; after?: Record<string, unknown> | null }>;
   verify(request: ExecutionRequest, operationId: string): Promise<{ passed: boolean; detail: string; observed?: Record<string, unknown> | null }>;
