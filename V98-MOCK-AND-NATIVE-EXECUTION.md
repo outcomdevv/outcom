@@ -8,7 +8,7 @@
 - Simulation evidence is explicitly marked with mode `simulation` and `simulated: true`.
 
 ## Safety boundaries
-- The mock provider performs no network, database, n8n, CRM, or customer-system writes.
+- The mock provider performs no network, n8n, CRM, or customer-system writes. The simulation API persists only its own execution-attempt and audit evidence in Outcom's database.
 - Simulation success is not evidence of a real-world repair.
 - The engine has no default provider. A provider must be explicitly registered by trusted server code.
 - Live providers require recorded approval and pass the workspace autonomy gate.
