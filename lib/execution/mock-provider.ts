@@ -3,7 +3,8 @@ import type { ExecutionProvider, ExecutionRequest } from "./types";
 
 /** In-memory simulator only. No external writes. */
 export class MockExecutionProvider implements ExecutionProvider {
-  readonly id = "mock_simulator";\n  readonly mode = "simulation" as const;
+  readonly id = "mock_simulator";
+  readonly mode = "simulation" as const;
   private readonly cache = new Map<string, { operationId: string; before: Record<string, unknown>; after: Record<string, unknown> }>();
   constructor(private readonly options: { failExecution?: boolean; failVerification?: boolean } = {}) {}
   supports(action: RemediationAction) { return action !== "manual_review"; }
