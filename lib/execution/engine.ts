@@ -18,7 +18,7 @@ export async function runNativeExecution(input: {
   cooldownElapsed: boolean;
 }): Promise<ExecutionResult> {
   const provider = providers.get(input.providerId);
-  if (!provider || !provider.supports(input.request.action)) return blocked(input.providerId, "No registered provider supports this action.");
+  if (!provider || !provider.supports(input.request.action)) return blocked(input.providerId, "No registered provider supports this action.", "simulation");
   if (provider.mode === "live") {
     if (!input.approved) return blocked(provider.id, "A recorded human approval is required before dispatch.");
     const gate = evaluateAutonomy({
@@ -50,6 +50,6 @@ export async function runNativeExecution(input: {
     };
   }
 }
-function blocked(provider: string, message: string): ExecutionResult {
-  return { mode: "live", state: "blocked", message, evidence: { provider, operationId: "not_started", checks: [{ name: "dispatch_gate", passed: false, detail: message }] } };
+function blocked(provider: string, message: string, mode: "simulation" | "live" = "live"): ExecutionResult {
+  return { mode, state: "blocked", message, evidence: { provider, operationId: "not_started", checks: [{ name: "dispatch_gate", passed: false, detail: message }] } };
 }
