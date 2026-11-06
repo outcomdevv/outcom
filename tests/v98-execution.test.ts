@@ -36,4 +36,28 @@ describe("V98 mock and native execution foundation", () => {
     const result = await runNativeExecution({ request, policy, providerId: "mock_simulator", risk: "low", approved: false, withinRateLimit: true, cooldownElapsed: true });
     expect(result.state).toBe("failed");
   });
+  it("blocks live dispatch without recorded approval", async () => {
+    const liveProvider = {
+      id: "test_live", mode: "live" as const, supports: () => true,
+      execute: async () => ({ operationId: "live_1" }),
+      verify: async () => ({ passed: true, detail: "verified" }),
+    };
+    registerExecutionProvider(liveProvider);
+    const result = await runNativeExecution({ request, policy, providerId: "test_live", risk: "low", approved: false, withinRateLimit: true, cooldownElapsed: true });
+    expect(result.state).toBe("blocked");
+    expect(result.evidence.operationId).toBe("not_started");
+  });
+  it("blocks live dispatch when workspace policy disallows the action", async () => {
+    const liveProvider = {
+      id: "test_live", mode: "live" as const, supports: () => true,
+      execute: async () => ({ operationId: "live_1" }),
+      verify: async () => ({ passed: true, detail: "verified" }),
+    };
+    registerExecutionProvider(liveProvider);
+    const restrictivePolicy = normalizeAutonomyPolicy({ mode: "rule_based", enabled: true, allowedActions: [], allowedWorkflowIds: ["wf_1"], maxRisk: "low" });
+    const result = await runNativeExecution({ request, policy: restrictivePolicy, providerId: "test_live", risk: "low", approved: true, withinRateLimit: true, cooldownElapsed: true });
+    expect(result.state).toBe("blocked");
+    expect(result.evidence.operationId).toBe("not_started");
+  });
+
 });
