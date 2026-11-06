@@ -6,7 +6,7 @@ import type { ExecutionRequest } from "@/lib/execution/types";
 
 const request: ExecutionRequest = { workspaceId: "ws_1", proposalId: "p_1", workflowId: "wf_1", action: "retry_workflow", preview: {}, idempotencyKey: "key_1" };
 const policy = normalizeAutonomyPolicy({ mode: "rule_based", enabled: true, allowedActions: ["retry_workflow"], allowedWorkflowIds: ["wf_1"], maxRisk: "low" });
-afterEach(() => unregisterExecutionProvider("mock_simulator"));
+afterEach(() => { unregisterExecutionProvider("mock_simulator"); unregisterExecutionProvider("test_live"); });
 
 describe("V98 mock and native execution foundation", () => {
   it("runs a simulation and labels its evidence as simulated", async () => {
